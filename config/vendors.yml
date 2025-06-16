@@ -1,0 +1,35 @@
+# Vendor Configuration
+# This file contains the list of vendors and their contact information
+# Format: vendor_name, email, approval_level (CUI or non-CUI)
+
+vendors:
+  - name: "Acme Finishing"
+    email: "quotes@acmefinishing.com"
+    approval_level: "non-CUI"
+    processes:
+      - "anodizing"
+      - "powder coating"
+      - "plating"
+    
+  - name: "Precision Materials"
+    email: "rfq@precisionmaterials.com"
+    approval_level: "CUI"
+    processes:
+      - "raw materials"
+      - "sheet metal"
+      - "bar stock"
+    
+  - name: "FastHardware Inc."
+    email: "quotes@fasthardware.com"
+    approval_level: "non-CUI"
+    processes:
+      - "fasteners"
+      - "hardware"
+      - "components"
+
+  - name: "SecureFinish LLC"
+    email: "secure@securefinish.com"
+    approval_level: "CUI"
+    processes:
+      - "mil-spec coating"
+      - "specialized finishing"

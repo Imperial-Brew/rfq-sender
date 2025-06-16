@@ -1,0 +1,30 @@
+# Email Configuration
+# This file contains the SMTP or Exchange settings for sending emails
+# Environment variables can override these settings
+
+# SMTP Configuration
+smtp:
+  server: "${SMTP_SERVER:smtp.example.com}"
+  port: "${SMTP_PORT:587}"
+  use_tls: "${SMTP_USE_TLS:true}"
+  username: "${SMTP_USERNAME:username}"
+  password: "${SMTP_PASSWORD:password}"  # Use environment variable in production
+  from_email: "${SMTP_FROM_EMAIL:rfq@example.com}"
+  from_name: "${SMTP_FROM_NAME:RFQ System}"
+
+# Exchange Configuration (if using Exchange instead of SMTP)
+exchange:
+  server: "${EXCHANGE_SERVER:outlook.office365.com}"
+  username: "${EXCHANGE_USERNAME:username@example.com}"
+  password: "${EXCHANGE_PASSWORD:password}"  # Use environment variable in production
+  from_email: "${EXCHANGE_FROM_EMAIL:username@example.com}"
+  from_name: "${EXCHANGE_FROM_NAME:RFQ System}"
+
+# Email Settings
+settings:
+  use_exchange: "${USE_EXCHANGE:false}"  # Set to true to use Exchange instead of SMTP
+  cc_emails: "${CC_EMAILS:}"  # Comma-separated list of emails to CC
+  bcc_emails: "${BCC_EMAILS:}"  # Comma-separated list of emails to BCC
+  subject_prefix: "${SUBJECT_PREFIX:[RFQ]}"  # Prefix for email subjects
+  max_attachment_size_mb: "${MAX_ATTACHMENT_SIZE_MB:10}"  # Maximum attachment size in MB
+  company_name: "${COMPANY_NAME:Your Company}"  # Company name for email templates
