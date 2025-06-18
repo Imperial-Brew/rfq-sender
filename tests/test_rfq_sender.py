@@ -7,6 +7,7 @@ This module contains tests for the core functionality of the RFQ Sender system.
 import os
 import sys
 import tempfile
+import argparse
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -23,7 +24,7 @@ def test_validate_email():
     assert rfq_sender.validate_email("test@example.com") is True
     assert rfq_sender.validate_email("user.name+tag@example.co.uk") is True
     assert rfq_sender.validate_email("user-name@example.org") is True
-    
+
     # Invalid emails
     assert rfq_sender.validate_email("test@") is False
     assert rfq_sender.validate_email("@example.com") is False
@@ -41,10 +42,10 @@ def test_check_attachments():
             f.write("Test file 1")
         with open(valid_file2, "w") as f:
             f.write("Test file 2")
-        
+
         # Non-existent file
         invalid_file = os.path.join(temp_dir, "invalid.txt")
-        
+
         # Test with all valid files
         all_valid, valid_attachments, invalid_attachments = rfq_sender.check_attachments(
             [valid_file1, valid_file2]
@@ -52,7 +53,7 @@ def test_check_attachments():
         assert all_valid is True
         assert len(valid_attachments) == 2
         assert len(invalid_attachments) == 0
-        
+
         # Test with mixed valid and invalid files
         all_valid, valid_attachments, invalid_attachments = rfq_sender.check_attachments(
             [valid_file1, invalid_file]
@@ -70,23 +71,23 @@ def test_get_attachments():
         # Create test files
         part_no = "0250-20000"
         process = "cleaning"
-        
+
         # Files that should match
         matching_file1 = os.path.join(temp_dir, f"{part_no}_{process}.pdf")
         matching_file2 = os.path.join(temp_dir, f"{part_no}_drawing.pdf")
-        
+
         # Files that should not match
         non_matching_file = os.path.join(temp_dir, "other_part.pdf")
-        
+
         # Create the files
         for file_path in [matching_file1, matching_file2, non_matching_file]:
             with open(file_path, "w") as f:
                 f.write("Test file")
-        
+
         # Test attachment retrieval
         with patch("rfq_sender.logger"):  # Mock logger to avoid logging during tests
             attachments = rfq_sender.get_attachments(part_no, process, temp_dir)
-            
+
             # Should find the two matching files
             assert len(attachments) == 2
             assert matching_file1 in attachments
@@ -100,26 +101,80 @@ def test_render_template():
         # Create a test template
         template_dir = os.path.join(temp_dir, "templates")
         os.makedirs(template_dir)
-        
+
         test_template = os.path.join(template_dir, "test.j2")
         with open(test_template, "w") as f:
             f.write("Hello, {{ name }}!")
-        
+
         # Mock the jinja2 environment
         mock_env = MagicMock()
         mock_template = MagicMock()
         mock_template.render.return_value = "Hello, World!"
         mock_env.get_template.return_value = mock_template
-        
+
         with patch("jinja2.Environment", return_value=mock_env):
             with patch("os.path.dirname", return_value=temp_dir):
                 # Test template rendering
                 result = rfq_sender.render_template("test.j2", {"name": "World"})
-                
+
                 # Check that the template was rendered correctly
                 assert result == "Hello, World!"
                 mock_env.get_template.assert_called_once_with("test.j2")
                 mock_template.render.assert_called_once_with(name="World")
+
+
+def test_cli_argument_parsing():
+    """Test command-line argument parsing."""
+    # Test with required arguments
+    with patch("sys.argv", [
+        "rfq_sender.py",
+        "--part_no", "0250-20000",
+        "--process", "cleaning",
+        "--file_location", "path/to/files",
+        "--quantities", "1,2,5,10"
+    ]):
+        with patch("argparse.ArgumentParser.parse_args", wraps=argparse.ArgumentParser.parse_args):
+            args = rfq_sender.parse_args()
+
+            # Check required arguments
+            assert args.part_no == "0250-20000"
+            assert args.process == "cleaning"
+            assert args.file_location == "path/to/files"
+            assert args.quantities == "1,2,5,10"
+
+            # Check default values for optional arguments
+            assert args.spec is None
+            assert args.dry_run is False
+
+    # Test with optional arguments
+    with patch("sys.argv", [
+        "rfq_sender.py",
+        "--part_no", "0250-20000",
+        "--process", "cleaning",
+        "--file_location", "path/to/files",
+        "--quantities", "1,2,5,10",
+        "--spec", "Special instructions",
+        "--dry-run"
+    ]):
+        with patch("argparse.ArgumentParser.parse_args", wraps=argparse.ArgumentParser.parse_args):
+            args = rfq_sender.parse_args()
+
+            # Check optional arguments
+            assert args.spec == "Special instructions"
+            assert args.dry_run is True
+
+    # Test with subcommand
+    with patch("sys.argv", [
+        "rfq_sender.py",
+        "show-log",
+        "--limit", "5"
+    ]):
+        with patch("argparse.ArgumentParser.parse_args", wraps=argparse.ArgumentParser.parse_args):
+            args = rfq_sender.parse_args()
+
+            # Check subcommand and its arguments
+            assert args.command == "show-log"
+            assert args.limit == 5
 
 
 if __name__ == "__main__":

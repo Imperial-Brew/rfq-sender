@@ -41,14 +41,37 @@ This project follows the style guidelines outlined below. These guidelines are d
 - Use pre-commit hooks for code quality checks
 - Run flake8 for linting with configuration in .flake8
 - Use isort for import sorting with black profile
+- Include performance and load tests for critical components
+- Test with realistic data volumes to identify bottlenecks
 
 ## Logging
 - Use `logger.info()` for successes, `logger.warning()` for recoverable issues, `logger.error()` for failures
 - Include context information in log messages
 - Use structured logging where appropriate
+- Configure log rotation to prevent log files from growing too large
+- Consider using a centralized logging service for production environments
 
 ## Security
 - Store sensitive information in environment variables, never in code
 - Use .env file for local development only (never commit)
 - Follow least privilege principle for API tokens and AWS credentials
 - Use pre-commit hooks to prevent committing secrets
+- Implement proper input validation to prevent injection attacks
+- Regularly update dependencies to address security vulnerabilities
+
+## Scalability and Performance
+- Design for horizontal scaling where possible
+- Use connection pooling for database and external services
+- Implement caching for frequently accessed data
+- Consider using a more robust database for production (PostgreSQL, MySQL)
+- Implement batch processing for large operations
+- Use asynchronous processing for I/O-bound operations
+- Monitor performance metrics in production
+
+## Deployment and Operations
+- Use containerization (Docker) for consistent environments
+- Implement CI/CD pipelines for automated testing and deployment
+- Use infrastructure as code for reproducible deployments
+- Implement health checks and monitoring
+- Have a rollback strategy for failed deployments
+- Document operational procedures for common tasks

@@ -4,60 +4,60 @@
 
 - [ ] 1. Project & Environment Setup
 	- [x] 1.1. Create a new Git repository (e.g. rfq-sender)
-	- [ ] 1.2. Add a standard Python 3 virtualenv (or poetry/pipenv) and check in requirements.txt/pyproject.toml
-	- [ ] 1.3. Install core dependencies:
-		- [ ] Jinja2 (templating)
-		- [ ] email (stdlib) / exchangelib (if needed)
-		- [ ] sqlite3 (stdlib)
-		- [ ] pytest (for testing)
-- [ ] 2. Configuration & Constants
-	- [ ] 2.1. Define a YAML or JSON config file (config/vendors.yml) listing:
-		- [ ] vendor name, email, and (later) approval level (CUI vs. non‐CUI)
-	- [ ] 2.2. Define SMTP (or Exchange) settings in a separate config (config/email.yml) with environment overrides
-- [ ] 3. Command‐Line Interface & User Inputs
-	- [ ] 3.1. Build out argparse (or Typer/Click) to accept:
-		- [ ] --part_no (e.g. 0250-20000)
-		- [ ] --process (e.g. "cleaning")
-		- [ ] --spec (optional free‐text)
-		- [ ] --file_location (path or list of paths)
-		- [ ] --quantities (parsed as a list of ints; validate format like 1,2,5,10)
-	- [ ] 3.2. Add basic validation and help text
-- [ ] 4. File Attachment Retrieval
-	- [ ] 4.1. Write get_attachments(part_no, process, file_location) to glob for matching filenames (e.g. *0250-20000*clean*.pdf)
-	- [ ] 4.2. Unit‐test that function against a small sample folder
-- [ ] 5. Templating & Document Assembly
-	- [ ] 5.1. Create placeholder Jinja templates under templates/:
-		- [ ] cover_letter.j2
-		- [ ] pricing_form.j2
-	- [ ] 5.2. Implement render_template(template_name, context)
-	- [ ] 5.3. Test with dummy context to confirm outputs
-- [ ] 6. Email Generation & Sending
-	- [ ] 6.1. Build a loop that reads the vendor list from config and—for each vendor—
-		- [ ] Renders subject/body via templates
-		- [ ] Attaches the files from step 4
-	- [ ] 6.2. Wire up SMTP (or Exchange) send logic
-	- [ ] 6.3. Dry‐run in a "test" mode (e.g. --dry-run) that prints email contents without sending
-- [ ] 7. RFQ Tracking Database
-	- [ ] 7.1. Define an SQLite schema (rfq_log table) with columns:
-		- [ ] id, part_no, process, vendor_name, vendor_email, qtys, sent_at, quote_no
-	- [ ] 7.2. Implement log_rfq(...) after each send
-	- [ ] 7.3. Add a CLI subcommand (e.g. rfq-sender show-log) to dump recent entries
-- [ ] 8. Error Handling & Edge Cases
-	- [ ] 8.1. Handle missing attachments (warn or abort)
-	- [ ] 8.2. Retry logic for transient SMTP failures
-	- [ ] 8.3. Validate vendor email format—skip/flag invalid addresses
-- [ ] 9. Documentation & Guidelines Integration
+ - [x] 1.2. Add a standard Python 3 virtualenv (or poetry/pipenv) and check in requirements.txt/pyproject.toml
+	- [x] 1.3. Install core dependencies:
+		- [x] Jinja2 (templating)
+		- [x] email (stdlib) / exchangelib (if needed)
+		- [x] sqlite3 (stdlib)
+		- [x] pytest (for testing)
+- [x] 2. Configuration & Constants
+	- [x] 2.1. Define a YAML or JSON config file (config/vendors.yml) listing:
+		- [x] vendor name, email, and (later) approval level (CUI vs. non‐CUI)
+	- [x] 2.2. Define SMTP (or Exchange) settings in a separate config (config/email.yml) with environment overrides
+- [x] 3. Command‐Line Interface & User Inputs
+	- [x] 3.1. Build out argparse (or Typer/Click) to accept:
+		- [x] --part_no (e.g. 0250-20000)
+		- [x] --process (e.g. "cleaning")
+		- [x] --spec (optional free‐text)
+		- [x] --file_location (path or list of paths)
+		- [x] --quantities (parsed as a list of ints; validate format like 1,2,5,10)
+	- [x] 3.2. Add basic validation and help text
+- [x] 4. File Attachment Retrieval
+	- [x] 4.1. Write get_attachments(part_no, process, file_location) to glob for matching filenames (e.g. *0250-20000*clean*.pdf)
+	- [x] 4.2. Unit‐test that function against a small sample folder
+- [x] 5. Templating & Document Assembly
+	- [x] 5.1. Create placeholder Jinja templates under templates/:
+		- [x] cover_letter.j2
+		- [x] pricing_form.j2
+	- [x] 5.2. Implement render_template(template_name, context)
+	- [x] 5.3. Test with dummy context to confirm outputs
+- [x] 6. Email Generation & Sending
+	- [x] 6.1. Build a loop that reads the vendor list from config and—for each vendor—
+		- [x] Renders subject/body via templates
+		- [x] Attaches the files from step 4
+	- [x] 6.2. Wire up SMTP (or Exchange) send logic
+	- [x] 6.3. Dry‐run in a "test" mode (e.g. --dry-run) that prints email contents without sending
+- [x] 7. RFQ Tracking Database
+	- [x] 7.1. Define an SQLite schema (rfq_log table) with columns:
+		- [x] id, part_no, process, vendor_name, vendor_email, qtys, sent_at, quote_no
+	- [x] 7.2. Implement log_rfq(...) after each send
+	- [x] 7.3. Add a CLI subcommand (e.g. rfq-sender show-log) to dump recent entries
+- [x] 8. Error Handling & Edge Cases
+	- [x] 8.1. Handle missing attachments (warn or abort)
+	- [x] 8.2. Retry logic for transient SMTP failures
+	- [x] 8.3. Validate vendor email format—skip/flag invalid addresses
+- [x] 9. Documentation & Guidelines Integration
 	- [x] 9.1. Flesh out README.md with:
 		- [x] Setup steps
 		- [x] Config file formats
 		- [x] Usage examples
 		- [x] Template instructions
-	- [ ] 9.2. Link back to your existing "goals & guidelines" doc with a brief overview
-- [ ] 10. Testing & CI
-	- [ ] 10.1. Write pytest tests for:
-		- [ ] CLI argument parsing
-		- [ ] Attachment retrieval logic
-		- [ ] Template rendering
-	- [ ] 10.2. Add a GitHub Actions (or similar) workflow to:
-		- [ ] Run tests on each push
-		- [ ] Lint via flake8 or black
+	- [x] 9.2. Link back to your existing "goals & guidelines" doc with a brief overview
+- [x] 10. Testing & CI
+	- [x] 10.1. Write pytest tests for:
+		- [x] CLI argument parsing
+		- [x] Attachment retrieval logic
+		- [x] Template rendering
+	- [x] 10.2. Add a GitHub Actions (or similar) workflow to:
+		- [x] Run tests on each push
+		- [x] Lint via flake8 or black

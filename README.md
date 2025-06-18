@@ -12,6 +12,7 @@ A system for managing and sending Request for Quote (RFQ) emails to multiple ven
 - [Environment Variables](#environment-variables)
 - [Usage](#usage)
 - [Development](#development)
+- [Scalability](#scalability)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -126,7 +127,29 @@ This will create a draft email in Outlook with a test subject and body, allowing
 
 ## Development
 
-This project follows the style guidelines outlined in the [Project Style Guidelines](docs/guidelines.md).
+This project follows the style guidelines outlined in the [Project Style Guidelines](.junie/guidelines.md).
+
+### Style Guidelines Overview
+
+- **Python Code Style**: Use type hints, follow PEP 8, use docstrings with Args/Returns sections
+- **Markdown Formatting**: Use GitHub Flavored Markdown, task lists, code blocks with language identifiers
+- **Commit Messages**: Use the format `<scope>(<module>): <short summary>`
+- **Documentation**: Maintain comprehensive README.md, document classes and methods
+- **Project Structure**: Place scripts in scripts/ directory, use modular components
+- **Testing and Quality**: Write tests using pytest, use pre-commit hooks
+- **Logging**: Use appropriate log levels (info, warning, error) with context
+- **Security**: Store sensitive information in environment variables, never in code
+
+## Scalability
+
+The RFQ Sender system is designed to handle a moderate volume of RFQs, vendors, and attachments. For larger scale operations, consider the following:
+
+- **Database**: SQLite is suitable for development and small deployments. For production with high concurrency, consider migrating to PostgreSQL or MySQL.
+- **Email Processing**: For large batches of emails, implement batch processing and rate limiting to avoid overwhelming SMTP servers.
+- **File Handling**: Large attachments should be handled with care, potentially implementing streaming or compression.
+- **Asynchronous Processing**: Consider refactoring to use async/await for improved performance with I/O-bound operations.
+
+For detailed recommendations on scaling the RFQ Sender system, see [Scaling Guide](docs/SCALING.md).
 
 ## Contributing
 
