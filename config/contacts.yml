@@ -1,0 +1,473 @@
+vendors:
+- name: 3P Processing Inc
+  type: finishing
+  contacts:
+  - name: Robert Pepper
+    email: Quotes@3p-p.com
+    phone: (316)529-0828
+    primary: true
+- name: AI Industries
+  type: finishing
+  contacts:
+  - name: Steve Lanouette
+    email: slanouette@aiindustries.com
+    phone: 512-990-3999
+    primary: true
+- name: AMI Metals
+  type: material
+  contacts:
+  - name: Douglas Ramirez
+    email: Douglas.ramirez@amimetals.com
+    phone: null
+    primary: true
+  - name: Melissa Tricinella
+    email: Melissa.tricinella@amimetals.com
+    phone: null
+    primary: false
+- name: Advanced Aero Coatings, LLC
+  type: finishing
+  contacts:
+  - name: Anthony Byington
+    email: andy@aeroaac.com
+    phone: 817-280-0467
+    primary: true
+  - name: Mike Forbis
+    email: mike@aeroaac.com
+    phone: 817-280-0467
+    primary: false
+  - name: Shana Excell
+    email: shana@aeroaac.com
+    phone: 817-280-0467
+    primary: false
+- name: Ascenx
+  type: harnesses
+  contacts:
+  - name: Elaine Kim
+    email: elaine.kim@ascenx.com
+    phone: null
+    primary: true
+  - name: Stacy Wong
+    email: stacy.wong@ascenx.com
+    phone: null
+    primary: false
+- name: Austin Seal Company
+  type: seals
+  contacts:
+  - name: Cindy Perez
+    email: cindyp@austinseal.com
+    phone: 512-832-0047
+    primary: true
+  - name: Susan Alamo
+    email: salamo@austinseal.com
+    phone: null
+    primary: false
+- name: Azel
+  type: Weldments
+  contacts:
+  - name: Andy Vo
+    email: andy.vo@azelent.com
+    phone: (510) 209-2196
+    primary: true
+- name: Blackland Precision Hardware, LLC
+  type: Hardware
+  contacts:
+  - name: Carlton Tanner
+    email: sales@blacklandprecision.com
+    phone: 512-535-6941
+    primary: true
+- name: Bralco Metals
+  type: material
+  contacts:
+  - name: Jonathan Yates
+    email: jyates@bralco.com
+    phone: (972)276-2676
+    primary: true
+  - name: Cheryl Thompson
+    email: cthompson@bralco.com
+    phone: 214-291-4119
+    primary: false
+- name: Brooks Industrial Coatings, Inc.
+  type: finishing
+  contacts:
+  - name: Selisa Powell
+    email: spowell@bic-texas.com
+    phone: 512-990-5333
+    primary: true
+- name: Cadi Company
+  type: material
+  contacts:
+  - name: Wayne Jakusz
+    email: wayne.jakusz@cadicompany.com
+    phone: null
+    primary: true
+- name: Castle Metals
+  type: material
+  contacts:
+  - name: .nan
+    email: gcarrasco@amcastle.com
+    phone: null
+    primary: true
+  - name: .nan
+    email: jzundel@amcastle.com
+    phone: null
+    primary: false
+- name: Cello Tape
+  type: Labels
+  contacts:
+  - name: Tom Norman
+    email: tom.norman@cellotape.com
+    phone: 510-580-6085
+    primary: true
+- name: Coast Aluminum
+  type: material
+  contacts:
+  - name: .nan
+    email: tlien@coastaluminum.com
+    phone: null
+    primary: true
+- name: Consolidated Metal Technologies, Inc.
+  type: finishing
+  contacts:
+  - name: Dawn Carpenter
+    email: dawn@cmtfinishing.com
+    phone: 512-255-9296
+    primary: true
+- name: Copper & Brass
+  type: material
+  contacts:
+  - name: Heather Barr
+    email: Heather.barr@thyssenkrupp-materials.com
+    phone: null
+    primary: true
+  - name: Jonathan Santamaria
+    email: jonathan.santamaria@thyssenkrupp-materials.com
+    phone: null
+    primary: false
+  - name: Kristopher Price
+    email: kristopher.price@thyssenkrupp-materials.com
+    phone: null
+    primary: false
+  - name: Kevin Moon
+    email: kevin.moon@thyssenkrupp-materials.com
+    phone: null
+    primary: false
+- name: DB Roberts
+  type: Hardware
+  contacts:
+  - name: Tanja Oster
+    email: toster@dbroberts.com
+    phone: 972.202.4544
+    primary: true
+  - name: Amy Nguyen
+    email: anguyen@dbroberts.com
+    phone: null
+    primary: false
+- name: DC Electronics
+  type: harnesses
+  contacts:
+  - name: Esthefania Garcia
+    email: e_garcia@dcelectronics.com
+    phone: 408-947-4500
+    primary: true
+  - name: Kendi Luceli R Beltran
+    email: k_beltran@dcelectronics.com
+    phone: null
+    primary: false
+- name: EMJ Metals
+  type: material
+  contacts:
+  - name: Michael Baker
+    email: MBaker@emjmetals.com
+    phone: 713-672-1621
+    primary: true
+- name: Embee Processing
+  type: finishing
+  contacts:
+  - name: Justin Garcia
+    email: JustinG@embee.com
+    phone: 714-546-9842
+    primary: true
+- name: Fry Steel
+  type: material
+  contacts:
+  - name: Marissa Valdez
+    email: Marissa.Valdez@frysteel.com
+    phone: null
+    primary: true
+  - name: Johnathan Garcia
+    email: Johnathan.Garcia@frysteel.com
+    phone: null
+    primary: false
+- name: Gleco Plating
+  type: finishing
+  contacts:
+  - name: Cory Mouser
+    email: cory@glecoplating.com
+    phone: 972-475-4300
+    primary: true
+- name: HUB Metals
+  type: material
+  contacts:
+  - name: .nan
+    email: ericy@hubmetals.com;
+    phone: null
+    primary: true
+- name: Hadco Metal
+  type: material
+  contacts:
+  - name: Steve C
+    email: stevec@hadco-metal.com;
+    phone: null
+    primary: true
+- name: Har-Conn Aerospace, Inc.
+  type: finishing
+  contacts:
+  - name: laura coleman
+    email: laura.coleman@hcaerospace.com
+    phone: null
+    primary: true
+  - name: Shana Pope
+    email: shana.excell@hcaerospace.com
+    phone: null
+    primary: false
+- name: Harrison Electropolishing L.P.
+  type: finishing
+  contacts:
+  - name: Sales
+    email: sales@harrisonep.com
+    phone: 832-467-3099
+    primary: true
+  - name: Matthew Buck
+    email: matthewb@harrisonep.com
+    phone: 832-467-3100
+    primary: false
+  - name: Lenny Gonzalez
+    email: lennyg@harrisonep.com
+    phone: 832-467-3100
+    primary: false
+- name: Harting
+  type: Turck
+  contacts:
+  - name: Alberto Gutierrez
+    email: Alberto.Gutierrez@Harting.com
+    phone: null
+    primary: true
+  - name: Jan Belingon
+    email: jan.belingon@Harting.com
+    phone: (847)717-9324
+    primary: false
+  - name: Lisa Ramirez
+    email: Lisa.Ramirez@Harting.com
+    phone: null
+    primary: false
+- name: High Performance Alloys
+  type: material
+  contacts:
+  - name: Tracy Allen
+    email: Tracy.Allen@hpalloys.com
+    phone: null
+    primary: true
+- name: Hytek Finishes
+  type: finishing
+  contacts:
+  - name: Quotes
+    email: quotes@hytekfinishes.com
+    phone: null
+    primary: true
+  - name: Joshua Schaaf
+    email: joshua.schaaf@hytekfinishes.com
+    phone: (253) 796-4584
+    primary: false
+  - name: Lissa Garay
+    email: lissa.garay@hytekfinishes.com
+    phone: (253) 796-4584 
+    primary: false
+- name: Metals4U
+  type: material
+  contacts:
+  - name: Mark Ivarra
+    email: mark@metals4u.com
+    phone: 512-351-7741
+    primary: true
+- name: Nxedge Inc.
+  type: finishing
+  contacts:
+  - name: Chandrika Shah
+    email: chandrika.shah@nxedgeinc.com
+    phone: 408.727.0933
+    primary: true
+- name: Pentagon Technologies
+  type: finishing
+  contacts:
+  - name: Quotes
+    email: quotecreate@pen-tec.com
+    phone: null
+    primary: true
+  - name: Rogelio Sanchez
+    email: rsanchez@pen-tec.com
+    phone: (512) 790-2019
+    primary: false
+  - name: Aaron R. Hill
+    email: ahill@pen-tec.com
+    phone: (512) 971-8970
+    primary: false
+- name: Powermatic
+  type: Turck
+  contacts:
+  - name: No specific person
+    email: CustomerService@powermatic.net
+    phone: null
+    primary: true
+  - name: Veronica Maldonado
+    email: vmaldonado@powermatic.net
+    phone: null
+    primary: false
+- name: Progressive Alloy
+  type: material
+  contacts:
+  - name: Joshua Blakeley
+    email: jblakeley@progressivealloy.com
+    phone: 702-405-2710
+    primary: true
+  - name: Brittany Grossman
+    email: bgrossman@progressivealloy.com
+    phone: 702-826-3385
+    primary: false
+  - name: Ryan Pohl
+    email: rpohl@progressivealloy.com
+    phone: 702-405-2710
+    primary: false
+  - name: John Olson
+    email: jolson@progressivealloy.com
+    phone: 702-405-2710
+    primary: false
+- name: Rapid Manufacturing
+  type: harnesses
+  contacts:
+  - name: Jaime Lopez
+    email: jaime_l@rapidmfg.com
+    phone: 714-768-3706
+    primary: true
+  - name: Blaize Garcia
+    email: blaize.garcia@rapidmfg.com
+    phone: null
+    primary: false
+  - name: Annie Li
+    email: annield@rapidmfg.com
+    phone: null
+    primary: false
+- name: Right Stainless & Alloys
+  type: material
+  contacts:
+  - name: Jeff Treadwell
+    email: jtreadwell@rightstainless.com
+    phone: 512-395-2037
+    primary: true
+- name: Rolled Alloys
+  type: material
+  contacts:
+  - name: .nan
+    email: cbaird@rolledalloys.com
+    phone: null
+    primary: true
+- name: Sierra Alloys
+  type: material
+  contacts:
+  - name: .nan
+    email: jkerkhove@sierraalloys.com
+    phone: null
+    primary: true
+  - name: .nan
+    email: aigarashi@sierraalloys.com
+    phone: null
+    primary: false
+  - name: .nan
+    email: cjacobian@sierraalloys.com
+    phone: null
+    primary: false
+- name: Sunshine Metals
+  type: material
+  contacts:
+  - name: Amanda Eisler
+    email: aeisler@sunshinemetals.com
+    phone: 316-252-8597
+    primary: true
+  - name: .nan
+    email: Tburbach@Sunshinemetals.com;
+    phone: null
+    primary: false
+- name: Supra Alloys
+  type: material
+  contacts:
+  - name: .nan
+    email: PFriddle@supraalloys.com;
+    phone: null
+    primary: true
+  - name: .nan
+    email: spatterson@supraalloys.com;
+    phone: null
+    primary: false
+- name: Turn-key Coatings, Inc.
+  type: finishing
+  contacts:
+  - name: Mary-Beth Mccoughey
+    email: Sales@turnkeycoatings.com
+    phone: (832) 623.7397
+    primary: true
+- name: TechMetals
+  type: finishing
+  contacts:
+  - name: Quotes
+    email: quoting@techmetals.com
+    phone: 937-253-5311
+    primary: true
+  - name: Kimberly Jones
+    email: kjones@techmetals.com
+    phone: 937-253-5311
+    primary: false
+  - name: Sidney Burton
+    email: sburton@techmetals.com
+    phone: 937-253-5311
+    primary: false
+- name: Texas Heat Treating
+  type: finishing
+  contacts:
+  - name: Tito Correa
+    email: TCorrea@texasheattreating.com
+    phone: (512) 255-5884
+    primary: true
+- name: Titanium Industries
+  type: material
+  contacts:
+  - name: .nan
+    email: peastman@titanium.com
+    phone: null
+    primary: true
+- name: Trident Metals
+  type: material
+  contacts:
+  - name: Richard Kollath
+    email: richard.kollath@trident-metals.com
+    phone: 972-699-3245
+    primary: true
+- name: Ultra Clean Technologies
+  type: Weldments
+  contacts:
+  - name: Elisabete Sarmento
+    email: esarmento@uct.com
+    phone: 510-566-3824
+    primary: true
+- name: Universal Metals
+  type: material
+  contacts:
+  - name: Greg
+    email: Greg@UniversalMetals.com
+    phone: null
+    primary: true
+- name: Valex
+  type: Weldments
+  contacts:
+  - name: Amanda Allison
+    email: amanda.allison@valex.com
+    phone: null
+    primary: true

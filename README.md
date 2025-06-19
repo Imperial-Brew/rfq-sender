@@ -43,8 +43,8 @@ rfq-sender/
 ├── config/           # Configuration files (vendors, email settings)
 ├── data/             # Database and data files
 ├── docs/             # Documentation
+│   └── templates/    # Jinja2 templates for emails and forms
 ├── scripts/          # Python scripts
-├── templates/        # Jinja2 templates for emails and forms
 └── tests/            # Test files
 ```
 

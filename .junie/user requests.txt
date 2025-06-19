@@ -1,0 +1,39 @@
+
+OS
+Flesh out Processes and Specs
+
+deep dive capabilities of each vendor
+
+Address Spec types, classes, and various exceptions
+
+Address Customer AVLs (Approved Vendor Lists)
+
+automate adding parts to queue from Paperless
+
+address identifying process/spec fast as possibl
+
+automate email production
+
+automate email reception
+
+automate vendor response tracking
+
+
+Material:
+Consider ways to automate queue building
+
+build line cards for vendors
+
+verify vendors and contacts
+
+automate email send and rec
+
+consider nesting/demand/shipping
+
+HDWE:
+separate types of hde with appropriate vendors
+
+automate queue building: (price= $1,000,000?)
+
+Automate purchased component table updates
+

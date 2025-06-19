@@ -1,0 +1,140 @@
+quote_id,vendor_id,sent_timestamp,status
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 18:43:04.350734,draft_saved_with_issues
+7919,"Consolidated Metal Technologies, Inc.",2025-06-18 18:43:04.772716,draft_saved_with_issues
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 18:43:05.125744,draft_saved_with_issues
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 19:00:27.121304,draft_saved_with_issues_NICKEL PLATE
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 19:00:28.618728,draft_saved_with_issues_SOL-EPOXY
+7919,"Consolidated Metal Technologies, Inc.",2025-06-18 19:00:29.258353,draft_saved_with_issues_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 19:00:29.927580,draft_saved_with_issues_Anodize
+7387,Gleco Plating,2025-06-18 20:02:44.163082,draft_saved_with_issues_NICKEL PLATE
+7387,NONE,2025-06-18 20:02:44.333977,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 20:02:44.714076,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 20:02:45.557841,draft_saved_with_issues_Anodize
+7387,Gleco Plating,2025-06-18 20:16:35.228333,draft_saved_with_issues_NICKEL PLATE
+7387,NONE,2025-06-18 20:16:35.376885,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 20:16:35.616450,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 20:16:36.559924,draft_saved_with_issues_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 20:23:30.794955,draft_saved_with_issues_Electroless Nickel
+7387,NONE,2025-06-18 20:23:31.172278,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 20:23:31.526881,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 20:23:32.654768,draft_saved_with_issues_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 20:27:04.118604,draft_saved_with_issues_Electroless Nickel
+7387,Gleco Plating,2025-06-18 20:27:06.159001,draft_saved_with_issues_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 20:27:07.916418,draft_saved_with_issues_Electroless Nickel
+7387,NONE,2025-06-18 20:27:08.083479,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 20:27:08.459258,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 20:27:09.580271,draft_saved_with_issues_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 20:27:10.588898,draft_saved_with_issues_Anodize
+7833,Gleco Plating,2025-06-18 20:27:11.457366,draft_saved_with_issues_Anodize
+7833,Nxedge Inc.,2025-06-18 20:27:12.337701,draft_saved_with_issues_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 21:08:55.592356,draft_saved_with_issues_Electroless Nickel
+7387,Gleco Plating,2025-06-18 21:08:58.188539,draft_saved_with_issues_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 21:09:01.034081,draft_saved_with_issues_Electroless Nickel
+7387,NONE,2025-06-18 21:09:01.285930,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 21:09:01.681713,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 21:09:02.678276,draft_saved_with_issues_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 21:09:03.666771,draft_saved_with_issues_Anodize
+7833,Gleco Plating,2025-06-18 21:09:04.641002,draft_saved_with_issues_Anodize
+7833,Nxedge Inc.,2025-06-18 21:09:05.552493,draft_saved_with_issues_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 21:14:33.838381,draft_saved_with_issues_Electroless Nickel
+7387,Gleco Plating,2025-06-18 21:14:35.488632,draft_saved_with_issues_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 21:14:37.369569,draft_saved_with_issues_Electroless Nickel
+7387,NONE,2025-06-18 21:14:37.607639,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 21:14:37.982945,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 21:14:39.305640,draft_saved_with_issues_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 21:14:40.575845,draft_saved_with_issues_Anodize
+7833,Gleco Plating,2025-06-18 21:14:41.799632,draft_saved_with_issues_Anodize
+7833,Nxedge Inc.,2025-06-18 21:14:43.154907,draft_saved_with_issues_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 21:29:52.274814,draft_saved_with_issues_Electroless Nickel
+7387,Gleco Plating,2025-06-18 21:29:53.767443,draft_saved_with_issues_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 21:29:55.288900,draft_saved_with_issues_Electroless Nickel
+7387,NONE,2025-06-18 21:29:55.426940,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 21:29:55.627623,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 21:29:56.346676,draft_saved_with_issues_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 21:29:57.274375,draft_saved_with_issues_Anodize
+7833,Gleco Plating,2025-06-18 21:29:57.925246,draft_saved_with_issues_Anodize
+7833,Nxedge Inc.,2025-06-18 21:29:58.554789,draft_saved_with_issues_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 21:41:55.504752,draft_saved_Electroless Nickel
+7387,Gleco Plating,2025-06-18 21:42:10.381926,draft_saved_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 21:42:21.675047,draft_saved_Electroless Nickel
+7387,NONE,2025-06-18 21:42:21.819186,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 21:42:22.016474,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 21:42:24.149880,draft_saved_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 21:42:25.631774,draft_saved_Anodize
+7833,Gleco Plating,2025-06-18 21:42:27.102511,draft_saved_Anodize
+7833,Nxedge Inc.,2025-06-18 21:42:28.620562,draft_saved_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 21:50:45.925607,draft_saved_Electroless Nickel
+7387,Gleco Plating,2025-06-18 21:50:52.854569,draft_saved_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 21:50:59.792562,draft_saved_Electroless Nickel
+7387,NONE,2025-06-18 21:50:59.929927,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 21:51:00.131687,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 21:51:01.060916,draft_saved_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 21:51:02.025853,draft_saved_Anodize
+7833,Gleco Plating,2025-06-18 21:51:02.925533,draft_saved_Anodize
+7833,Nxedge Inc.,2025-06-18 21:51:03.906909,draft_saved_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 21:59:05.234933,draft_saved_Electroless Nickel
+7387,Gleco Plating,2025-06-18 21:59:23.817359,draft_saved_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 21:59:42.283724,draft_saved_Electroless Nickel
+7387,NONE,2025-06-18 21:59:42.435281,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 21:59:42.639408,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 21:59:44.723603,draft_saved_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 21:59:46.239880,draft_saved_Anodize
+7833,Gleco Plating,2025-06-18 21:59:47.800168,draft_saved_Anodize
+7833,Nxedge Inc.,2025-06-18 21:59:49.319386,draft_saved_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 22:18:05.100348,draft_saved_Electroless Nickel
+7387,Gleco Plating,2025-06-18 22:18:23.202264,draft_saved_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 22:18:41.566559,draft_saved_Electroless Nickel
+7387,NONE,2025-06-18 22:18:41.762714,skipped_no_vendor_SOL-EPOXY
+7919,NONE,2025-06-18 22:18:41.982859,skipped_no_vendor_Silver Plate
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 22:18:44.171337,draft_saved_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 22:18:45.990798,draft_saved_Anodize
+7833,Gleco Plating,2025-06-18 22:18:47.541263,draft_saved_Anodize
+7833,Nxedge Inc.,2025-06-18 22:18:49.234138,draft_saved_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 22:25:16.535073,draft_saved_Electroless Nickel
+7387,Gleco Plating,2025-06-18 22:25:19.451994,draft_saved_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 22:25:22.587796,draft_saved_Electroless Nickel
+7387,NONE,2025-06-18 22:25:22.746802,skipped_no_vendor_SOL-EPOXY
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 22:25:24.971948,draft_saved_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 22:25:26.920396,draft_saved_Anodize
+7833,Gleco Plating,2025-06-18 22:25:28.643266,draft_saved_Anodize
+7833,Nxedge Inc.,2025-06-18 22:25:30.481828,draft_saved_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 22:26:49.954244,draft_saved_Electroless Nickel
+7387,Gleco Plating,2025-06-18 22:26:52.829474,draft_saved_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 22:26:55.688585,draft_saved_Electroless Nickel
+7387,NONE,2025-06-18 22:26:55.825279,skipped_no_vendor_SOL-EPOXY
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 22:26:57.824589,draft_saved_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 22:26:59.588528,draft_saved_Anodize
+7833,Gleco Plating,2025-06-18 22:27:00.211701,draft_saved_with_issues_Anodize
+7833,Nxedge Inc.,2025-06-18 22:27:00.699387,draft_saved_with_issues_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 22:30:47.627730,draft_saved_Electroless Nickel
+7387,Gleco Plating,2025-06-18 22:30:50.774342,draft_saved_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 22:30:53.701576,draft_saved_Electroless Nickel
+7387,NONE,2025-06-18 22:30:53.838810,skipped_no_vendor_SOL-EPOXY
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 22:30:54.678174,draft_saved_with_issues_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 22:30:55.512903,draft_saved_with_issues_Anodize
+7833,Gleco Plating,2025-06-18 22:30:56.296552,draft_saved_with_issues_Anodize
+7833,Nxedge Inc.,2025-06-18 22:30:57.065030,draft_saved_with_issues_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 22:34:04.958144,draft_saved_with_issues_Electroless Nickel
+7387,Gleco Plating,2025-06-18 22:34:05.625405,draft_saved_with_issues_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 22:34:06.485853,draft_saved_with_issues_Electroless Nickel
+7387,NONE,2025-06-18 22:34:06.629947,skipped_no_vendor_SOL-EPOXY
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 22:34:07.514202,draft_saved_with_issues_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 22:34:08.339976,draft_saved_with_issues_Anodize
+7833,Gleco Plating,2025-06-18 22:34:09.053061,draft_saved_with_issues_Anodize
+7833,Nxedge Inc.,2025-06-18 22:34:09.702785,draft_saved_with_issues_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 22:36:04.136444,draft_saved_Electroless Nickel
+7387,Gleco Plating,2025-06-18 22:36:06.735961,draft_saved_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 22:36:09.327094,draft_saved_Electroless Nickel
+7387,NONE,2025-06-18 22:36:09.470154,skipped_no_vendor_SOL-EPOXY
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 22:36:11.394164,draft_saved_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 22:36:13.078503,draft_saved_Anodize
+7833,Gleco Plating,2025-06-18 22:36:14.572628,draft_saved_Anodize
+7833,Nxedge Inc.,2025-06-18 22:36:16.255567,draft_saved_Anodize
+7387,"Consolidated Metal Technologies, Inc.",2025-06-18 22:39:36.936368,draft_saved_Electroless Nickel
+7387,Gleco Plating,2025-06-18 22:39:39.975066,draft_saved_Electroless Nickel
+7387,Nxedge Inc.,2025-06-18 22:39:43.117685,draft_saved_Electroless Nickel
+7387,NONE,2025-06-18 22:39:43.253432,skipped_no_vendor_SOL-EPOXY
+7833,"Consolidated Metal Technologies, Inc.",2025-06-18 22:39:45.423037,draft_saved_Anodize
+7833,"Brooks Industrial Coatings, Inc.",2025-06-18 22:39:47.103076,draft_saved_Anodize
+7833,Gleco Plating,2025-06-18 22:39:48.831261,draft_saved_Anodize
+7833,Nxedge Inc.,2025-06-18 22:39:50.532018,draft_saved_Anodize

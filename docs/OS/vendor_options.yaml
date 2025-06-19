@@ -1,0 +1,560 @@
+vendors:
+- name: Tech Metals
+  location: Dayton, Ohio
+  website: https://techmetals.com/
+  processes:
+  - name: Electropolish
+    specs:
+    - number: ASTM B 912
+      familiar: true
+  - name: Anodize
+    specs:
+    - number: MIL-A-8625
+      familiar: true
+    - number: AMS 2469
+      familiar: true
+    - number: AMS 2471
+      familiar: true
+    - number: AMS 2472
+      familiar: true
+    - number: ASTM B 580
+      familiar: true
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-C-5541
+      familiar: true
+    - number: AMS 2473
+      familiar: true
+    - number: MIL-DTL-5541
+      familiar: true
+    - number: BAC 5719
+      familiar: true
+  - name: Passivation
+    specs:
+    - number: AMS QQ P 35
+      familiar: true
+    - number: AMS 2700
+      familiar: true
+    - number: ASTM A 380
+      familiar: true
+    - number: ASTM A 967
+      familiar: true
+    - number: FED-QQ-P-35
+      familiar: true
+  - name: Tin Plating
+    specs:
+    - number: ASTM B545
+      familiar: true
+  - name: Zinc Plating
+    specs:
+    - number: ASTM B 633
+      familiar: true
+  - name: Zinc Nickel Plate
+    specs:
+    - number: AMS 2417
+      familiar: true
+    - number: BAC 5680
+      familiar: true
+    - number: BAC 5637
+      familiar: true
+  - name: Silver Plating
+    specs:
+    - number: AMS 2410
+      familiar: true
+    - number: AMS 2411
+      familiar: true
+    - number: AMS 2412
+      familiar: true
+    - number: ASTM B 700
+      familiar: true
+    - number: QQ-S-365
+      familiar: true
+  - name: Copper Plating
+    specs:
+    - number: AMS 2418
+      familiar: true
+  - name: Electroless Nickel
+    specs:
+    - number: ASTM B 733
+      familiar: true
+    - number: AMS 2403
+      familiar: true
+    - number: AMS 2424
+      familiar: true
+    - number: AMS-QQ-N-290
+      familiar: true
+    - number: FED-QQ-N-290
+      familiar: true
+- name: Gleco Plating
+  location: Rowlett, Texas
+  website: 'http://www.glecoplating.com/'
+  processes:
+  - name: Anodize
+    specs:
+    - number: MIL-A-8625
+      familiar: true
+  - name: Bright Nickel
+    specs:
+    - number: AMS-QQ-N-290
+      familiar: true
+    - number: ASTM B 689
+      familiar: true
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-DTL-5541
+      familiar: true
+  - name: Electroless Nickel
+    specs:
+    - number: MIL-C-26074
+      familiar: true
+    - number: ASTM B 733
+      familiar: true
+    - number: AMS 2404
+      familiar: true
+  - name: Passivation
+    specs:
+    - number: AMS 2700
+      familiar: true
+    - number: ASTM A 380
+      familiar: true
+    - number: ASTM A 967
+      familiar: true
+    - number: AMS-QQ-P-35
+      familiar: true
+  - name: Tin Plating
+    specs:
+    - number: MIL-T-10727
+      familiar: true
+    - number: ASTM B545
+      familiar: true
+  - name: Zinc Plating
+    specs:
+    - number: ASTM B 633
+      familiar: true
+  - name: Zinc Nickel Plate
+    specs:
+    - number: ASTM B841
+      familiar: true
+    - number: AMS 2417
+      familiar: true
+  - name: Phosphate
+    specs:
+    - number: MIL-DTL-16232
+      familiar: true
+  - name: Silver Plating
+    specs:
+    - number: QQ-S-365
+      familiar: true
+    - number: ASTM B700
+      familiar: true
+  - name: Gold Plating
+    specs:
+    - number: ASTM B488
+      familiar: true
+    - number: MIL-DTL-45204
+      familiar: true
+  - name: Dry Film Lube
+    specs:
+    - number: MIL-PRF-16010
+      familiar: true
+- name: Turn-key Coatings, Inc.
+  location: Houston, Texas
+  website: https://turnkeycoatings.com/main.htm
+  processes:
+  - name: Electropolish
+    specs:
+    - number: PRC-5009
+      familiar: true
+  - name: Anodize
+    specs:
+    - number: MIL-C-5541
+      familiar: true
+    - number: PRC-5005
+      familiar: true
+    - number: AMS-C-5541
+      familiar: true
+    - number: ASTM B 449
+      familiar: true
+    - number: MIL-A-8625
+      familiar: true
+    - number: PRC-5006
+      familiar: true
+    - number: ASTM B 580
+      familiar: true
+    - number: AMS 2469
+      familiar: true
+    - number: AMS 2472
+      familiar: true
+  - name: Bright Nickel
+    specs:
+    - number: AMS-QQ-N-290
+      familiar: true
+    - number: ASTM B 689
+      familiar: true
+    - number: PRC-5004
+      familiar: true
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-C-5541
+      familiar: true
+    - number: PRC-5005
+      familiar: true
+    - number: AMS-C-5541
+      familiar: true
+    - number: ASTM B 449
+      familiar: true
+  - name: Electroless Nickel
+    specs:
+    - number: MIL-C-26074
+      familiar: true
+    - number: PRC-5007
+      familiar: false
+    - number: ASTM B 733
+      familiar: true
+    - number: AMS 2404
+      familiar: true
+  - name: Passivation
+    specs:
+    - number: AMS 2700
+      familiar: true
+    - number: AMS-QQ-P-35
+      familiar: true
+    - number: ASTM A 967
+      familiar: true
+  - name: Zinc Plating
+    specs:
+    - number: QQ-Z-325
+      familiar: true
+    - number: ASTM B 633
+      familiar: true
+  - name: Phosphate
+    specs:
+    - number: MIL-DTL-16232
+      familiar: true
+  - name: Silver Plating
+    specs:
+    - number: QQ-S-365
+      familiar: true
+    - number: ASTM B 700
+      familiar: true
+  - name: Gold Plating
+    specs:
+    - number: MIL-DTL-45204
+      familiar: true
+    - number: ASTM B 488
+      familiar: true
+    - number: AMS 2422
+      familiar: true
+- name: Consolidated Metal Technologies, Inc.
+  location: Round Rock, Texas
+  website: https://cmtfinishing.com
+  processes:
+  - name: Electropolish
+    specs: null
+  - name: Clean
+    specs:
+    - number: 0250-09720
+      familiar: true
+    - number: 0250-20000
+      familiar: true
+    - number: 0250-29357
+      familiar: true
+    - number: 0250-31176
+      familiar: true
+    - number: 0250-70351
+      familiar: true
+  - name: Anodize
+    specs:
+    - number: MIL-A-8625
+      familiar: true
+    - number: ASTM B 580
+      familiar: true
+  - name: Bright Nickel
+    specs:
+    - number: AMS-QQ-N-290
+      familiar: true
+    - number: AMS 2423
+      familiar: true
+    - number: AMS 2403
+      familiar: true
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-C-5541
+      familiar: true
+    - number: MIL-DTL-5541
+      familiar: true
+    - number: ASTM B449
+      familiar: true
+  - name: Electroless Nickel
+    specs:
+    - number: ASTM B 733
+      familiar: true
+    - number: MIL-C-26074
+      familiar: true
+    - number: AMS 2404
+      familiar: true
+  - name: Passivation
+    specs:
+    - number: AMS-QQ-P-35
+      familiar: true
+    - number: ASTM A 380
+      familiar: true
+    - number: ASTM A 967
+      familiar: true
+    - number: AMS 2700
+      familiar: true
+  - name: Tin Plating
+    specs:
+    - number: MIL-T-10727
+      familiar: true
+    - number: ASTM B545
+      familiar: true
+  - name: Zinc Plating
+    specs:
+    - number: QQ-Z-325
+      familiar: true
+    - number: ASTM B 633
+      familiar: true
+- name: Pentagon Technologies
+  location: CA/NY/TX
+  website: .nan
+  processes:
+  - name: Clean
+    specs:
+    - number: 0250-70351
+      familiar: true
+    - number: 0250-20000
+      familiar: true
+- name: AI Industries
+  location: .nan
+  website: .nan
+  processes:
+  - name: Clean
+    specs:
+    - number: 0250-70351
+      familiar: true
+    - number: 0250-20000
+      familiar: true
+- name: Nxedge Inc.
+  location: Morgan Hill, California; Santa Clara, California; San Carlos, California;
+    Boise, Idaho
+  website: https://nxedge.com/
+  processes:
+  - name: Clean
+    specs:
+    - number: 0250-70351
+      familiar: true
+    - number: 0250-20000
+      familiar: true
+    - number: 0250-30100
+      familiar: true
+  - name: Anodize
+    specs:
+    - number: MIL-A-8625
+      familiar: true
+    - number: ASTM B 580
+      familiar: true
+  - name: Electroless Nickel
+    specs:
+    - number: MIL-C-26074
+      familiar: true
+    - number: AMS 2404
+      familiar: true
+  - name: Gold Plating
+    specs:
+    - number: ASTM B488
+      familiar: true
+    - number: MIL-DTL-45204
+      familiar: true
+  - name: Silver Plating
+    specs:
+    - number: QQ-S-365
+      familiar: true
+    - number: ASTM B 700
+      familiar: true
+- name: Advanced Aero Coatings, LLC
+  location: Fort Worth, Texas
+  website: https://advancedaerocoatings.com/
+  processes:
+  - name: Clean
+    specs:
+    - number: BPS 4138
+      familiar: true
+    - number: MDP9-5
+      familiar: true
+    - number: ACS-PRS-2203
+      familiar: true
+  - name: Anodize
+    specs:
+    - number: BAC 5632
+      familiar: true
+    - number: MIL-A-8625
+      familiar: true
+    - number: BPS 4555
+      familiar: true
+    - number: MIL-A-8625
+      familiar: true
+    - number: STP58-208
+      familiar: true
+    - number: MDP4-2
+      familiar: true
+    - number: MIL-A-8625
+      familiar: true
+    - number: NE40-016
+      familiar: true
+    - number: MIL-A-8625
+      familiar: true
+  - name: Chromate Conversion
+    specs:
+    - number: BAC5719
+      familiar: true
+    - number: STP58-405
+      familiar: true
+    - number: MDP4-57
+      familiar: true
+    - number: BPS 4182
+      familiar: true
+    - number: NE40-0026
+      familiar: true
+    - number: HP4-57
+      familiar: true
+    - number: MIL-DTL-5541
+      familiar: true
+    - number: AMS-C-5541
+      familiar: true
+    - number: MIL-C-5541
+      familiar: true
+  - name: Passivation
+    specs:
+    - number: AMS 2700
+      familiar: true
+    - number: AMS-QQ-P-35
+      familiar: true
+    - number: BPS 4007
+      familiar: true
+    - number: SS8435
+      familiar: true
+    - number: MDP4-8
+      familiar: true
+  - name: SOL-EPOXY
+    specs: null
+  - name: Penetrant Inspection
+    specs:
+    - number: ASTM E1417
+      familiar: true
+    - number: GT23A
+      familiar: true
+    - number: STP53-201
+      familiar: false
+    - number: LCP72-1068
+      familiar: false
+    - number: MDP6-13
+      familiar: true
+    - number: BAC 5423
+      familiar: true
+    - number: GP17G
+      familiar: true
+    - number: NE07-001
+      familiar: true
+    - number: ACS-PRS-7005
+      familiar: true
+    - number: BSS 7039
+      familiar: true
+    - number: HP6-13
+      familiar: true
+    - number: NDTS-1101
+      familiar: true
+    - number: BPS 4089
+      familiar: true
+    - number: MIL-STD-6866
+      familiar: true
+    - number: LMA-PC201
+      familiar: true
+- name: Embee Processing
+  location: Santa Ana, CA
+  website: https://www.embee.com/
+  processes:
+  - name: Electropolish
+    specs: null
+- name: Har-Conn Aerospace, Inc.
+  location: West Hartford, CT
+  website: http://www.har-conn.com/
+  processes:
+  - name: Electropolish
+    specs: null
+- name: Hytek Finishes
+  location: Kent, WA
+  website: http://hytekfinishes.com/
+  processes:
+  - name: Electropolish
+    specs:
+    - number: ASTM A 967
+      familiar: false
+    - number: ASTM A 380
+      familiar: false
+    - number: AMS-QQ-P-35
+      familiar: false
+- name: Brooks Industrial Coatings, Inc.
+  location: Austin, Texas
+  website: http://bic-texas.com/
+  processes:
+  - name: Anodize
+    specs:
+    - number: MIL-A-8625
+      familiar: true
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-C-5541
+      familiar: true
+  - name: Passivation
+    specs:
+    - number: ASTM A 967
+      familiar: true
+    - number: ASTM A 380
+      familiar: true
+    - number: AMS-QQ-P-35
+      familiar: true
+- name: Harrison Electropolishing L.P.
+  location: Houston, Texas
+  website: http://www.harrisonep.com/
+  processes:
+  - name: Electropolish
+    specs:
+    - number: ASTM B912
+      familiar: true
+    - number: SEMI F17
+      familiar: true
+    - number: SEMI F19
+      familiar: true
+    - number: ASME BPE
+      familiar: true
+  - name: Passivation
+    specs:
+    - number: ASTM A 967
+      familiar: true
+    - number: ASTM A 380
+      familiar: true
+    - number: AMS-QQ-P-35
+      familiar: true
+    - number: ASTM B912
+      familiar: true
+    - number: ASTM B600
+      familiar: true
+    - number: MIL-S-5002
+      familiar: true
+    - number: AMS 2700
+      familiar: true
+  - name: Oxygen Cleaning
+    specs:
+    - number: ASTM G93
+      familiar: true
+    - number: CGA G-4.1
+      familiar: true
+- name: 3P Processing Inc
+  location: Wichita, Kansas
+  website: https://www.3pprocessing.com/
+  processes:
+  - name: Electropolish
+    specs:
+    - number: ASTM B912
+      familiar: true
