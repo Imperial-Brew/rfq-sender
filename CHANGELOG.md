@@ -28,6 +28,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scalability and performance guidelines
 - Deployment and operations guidelines
 - Comprehensive project review summary
+- Email from list script for processing RFQs from CSV files
+- Comprehensive project status report
+- Test fix plan for addressing failing tests
+- Development roadmap for future enhancements
+- Documentation index for easier navigation
+- Session summary documenting completed work
+- Vendor capability matching in email_from_list.py script
+- Integration with vendor_options.yaml for process capabilities
+- Support for contacts.csv for vendor contact information
+- Support for creating separate emails for each process in email_from_list.py
+- Integration with cover_letter.j2 template for email body
+- Support for including Sample_Table(Empty)-OS.csv in email body
+- Mechanism to handle processes not listed in vendor_options.yaml
+- Support for including user's signature in emails
+- Comprehensive documentation for email_from_list.py script
+- Script for finding vendors by process capability (find_vendors_by_process.py)
 
 ### Changed
 - Enhanced security measures for handling sensitive data
@@ -38,6 +54,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced style guidelines with scalability and performance recommendations
 - Updated README.md with scalability considerations
 - Expanded testing guidelines to include performance and load testing
+- Removed CSV/Excel to YAML conversion scripts that are no longer needed
+- Updated email_from_list.py to use contacts.csv and vendor_options.yaml instead of Vendor_Quotes.csv
+- Improved vendor selection in email_from_list.py to match processes with vendor capabilities
+- Enhanced email body creation with proper formatting for callout information
+- Improved file path validation and attachment handling in email_from_list.py
+- Modified email_from_list.py to create separate emails for each process
+- Updated email_from_list.py to use Jinja2 templates for email body
+- Enhanced email_from_list.py to include sample table in email body
+- Updated email_from_list.py to add processes to vendor capabilities when not found
 
 ### Fixed
 - Added missing environment variables in configuration

@@ -17,37 +17,49 @@ Environment Variables:
     - SMTP_FROM_NAME: Name to use as sender
 """
 
+import logging
 import os
 import sys
-import logging
 from pathlib import Path
+from typing import Optional
+
 from dotenv import load_dotenv
 
-# Create logs directory if it doesn't exist
-# Get the project root directory (parent of scripts directory)
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-logs_dir = os.path.join(project_root, "logs")
-os.makedirs(logs_dir, exist_ok=True)
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(os.path.join(logs_dir, "create_test_email.log")),
-    ],
-)
-logger = logging.getLogger("create_test_email")
+def setup_logging(logs_dir: str) -> logging.Logger:
+    """
+    Set up logging configuration.
 
-def create_outlook_draft(to_email: str, subject: str, body: str) -> bool:
+    Args:
+        logs_dir: Directory where log files will be stored
+
+    Returns:
+        Logger object configured for this script
+    """
+    # Ensure logs directory exists
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # Set up logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(os.path.join(logs_dir, "create_test_email.log")),
+        ],
+    )
+    return logging.getLogger("create_test_email")
+
+
+def create_outlook_draft(to_email: str, subject: str, body: str, logger: logging.Logger) -> bool:
     """
     Create a draft email in Outlook.
 
     Args:
-        to_email (str): Recipient email address
-        subject (str): Email subject
-        body (str): Email body
+        to_email: Recipient email address
+        subject: Email subject
+        body: Email body
+        logger: Logger object for logging messages
 
     Returns:
         bool: True if successful, False otherwise
@@ -80,39 +92,85 @@ def create_outlook_draft(to_email: str, subject: str, body: str) -> bool:
         logger.error(f"Failed to create draft email: {str(e)}")
         return False
 
+
+def get_env_variable(var_name: str, default: Optional[str] = None, logger: logging.Logger = None) -> str:
+    """
+    Get environment variable with validation.
+
+    Args:
+        var_name: Name of the environment variable
+        default: Default value if environment variable is not set
+        logger: Logger object for logging messages
+
+    Returns:
+        Value of the environment variable or default
+
+    Raises:
+        ValueError: If environment variable is not set and no default is provided
+    """
+    value = os.environ.get(var_name, default)
+
+    if value is None:
+        error_msg = f"Environment variable {var_name} is not set and no default provided"
+        if logger:
+            logger.error(error_msg)
+        raise ValueError(error_msg)
+
+    return value
+
+
 def main() -> None:
     """Main entry point for the script."""
-    # Load environment variables from .env file
-    load_dotenv()
+    try:
+        # Get the project root directory (parent of scripts directory)
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        logs_dir = os.path.join(project_root, "logs")
 
-    # Get email configuration from environment variables
-    from_email = os.environ.get("SMTP_FROM_EMAIL", "your_email@example.com")
-    from_name = os.environ.get("SMTP_FROM_NAME", "RFQ System")
+        # Set up logging
+        logger = setup_logging(logs_dir)
 
-    # Log environment variable values
-    logger.info(f"Using sender email: {from_email}")
-    logger.info(f"Using sender name: {from_name}")
+        # Load environment variables from .env file
+        load_dotenv()
+        logger.info("Loaded environment variables from .env file")
 
-    # Create test email
-    to_email = "example@example.com"
-    subject = "TEST"
-    body = f"""TEST EMAIL
+        # Get email configuration from environment variables with validation
+        try:
+            from_email = get_env_variable("SMTP_FROM_EMAIL", "your_email@example.com", logger)
+            from_name = get_env_variable("SMTP_FROM_NAME", "RFQ System", logger)
+        except ValueError as e:
+            logger.error(f"Configuration error: {str(e)}")
+            sys.exit(1)
+
+        # Log environment variable values
+        logger.info(f"Using sender email: {from_email}")
+        logger.info(f"Using sender name: {from_name}")
+
+        # Create test email
+        to_email = "example@example.com"
+        subject = "TEST"
+        body = f"""TEST EMAIL
 
 From: {from_name} <{from_email}>
 
 This is a test email created using the RFQ Sender system.
 No action is required.
-    """
+        """
 
-    logger.info(f"Creating test email from {from_email} to {to_email}")
+        logger.info(f"Creating test email from {from_email} to {to_email}")
 
-    success = create_outlook_draft(to_email, subject, body)
+        success = create_outlook_draft(to_email, subject, body, logger)
 
-    if success:
-        logger.info("Test email created successfully. Please review it in Outlook.")
-    else:
-        logger.error("Failed to create test email.")
+        if success:
+            logger.info("Test email created successfully. Please review it in Outlook.")
+        else:
+            logger.error("Failed to create test email.")
+            sys.exit(1)
+
+    except Exception as e:
+        # Catch any unexpected exceptions
+        print(f"Script failed with unexpected error: {str(e)}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
