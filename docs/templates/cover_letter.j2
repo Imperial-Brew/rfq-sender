@@ -1,27 +1,25 @@
 {# Cover Letter Template for RFQ Emails #}
 Hello {{ vendor.first_name }},<br>
-
+<br>
 We are requesting a quote for the following part and process:<br>
-
+<br>
 {% if sample_table %}
 {{ sample_table }}<br>
 {% endif %}
 
 {% if attachments %}
-The following files are attached for your reference:<br>
-{% for attachment in attachments %}
-- {{ attachment | basename }}<br>
-{% endfor %}
+{% if attachments|length == 1 %}
+1 related file is attached for your reference.<br>
+{% else %}
+{{ attachments|length }} related files are attached for your reference.<br>
+{% endif %}
 {% else %}
 No files are attached to this request. Please let us know if you need additional information.
 {% endif %}
 
 
 Please respond with your quote by {{ due_date or "as soon as possible" }}.<br>
-
+<br>
 Thank you for your assistance.<br>
-
-Best regards,
-{{ sender_name }}
-{{ sender_email }}
-{{ company_name }}
+<br>
+<!-- HTML signature will be appended here -->

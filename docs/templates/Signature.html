@@ -1,0 +1,13 @@
+with open("signature.html", "r", encoding="utf-8") as sig_file:
+    signature_html = sig_file.read()
+
+# Then append to your email body (assuming you're composing HTML)
+email_body = f"""
+<html>
+  <body>
+    {your_main_message_here}
+    <br><br>
+    {signature_html}
+  </body>
+</html>
+"""

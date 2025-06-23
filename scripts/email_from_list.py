@@ -144,8 +144,21 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, log
         queue = queue.rename(columns=queue_column_mapping)
 
         # Process contacts data
-        # Filter to primary contacts only (if needed)
-        primary_contacts = contacts[contacts['type'] == 'finishing']
+        # Filter to primary contacts only
+        # The 'Primary' value is in the 9th column which might be unnamed in the CSV
+        # Find the column that contains 'Primary' values
+        primary_column = None
+        for col in contacts.columns:
+            if 'Primary' in contacts[col].values:
+                primary_column = col
+                break
+
+        # Filter to primary contacts in the finishing category
+        if primary_column:
+            primary_contacts = contacts[(contacts['type'] == 'finishing') & (contacts[primary_column] == 'Primary')]
+        else:
+            # Fallback to just filtering by type if we can't find the primary column
+            primary_contacts = contacts[contacts['type'] == 'finishing']
 
         # Create vendor info dictionary
         vendor_info = {}
@@ -172,11 +185,9 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, log
                 vendor_name = vendor['name']
                 if vendor_name in vendor_info:
                     # Add capabilities information
-                    processes = []
                     if 'processes' in vendor:
-                        for process in vendor['processes']:
-                            processes.append(process['name'])
-                    vendor_info[vendor_name]['processes'] = processes
+                        # Store the full process objects, ensuring it's not None
+                        vendor_info[vendor_name]['processes'] = vendor['processes'] if vendor['processes'] is not None else []
 
     except Exception as e:
         if logger:
@@ -375,7 +386,8 @@ def create_email_body(
     template_path: str = None,
     sample_table_path: str = None,
     signature: str = None,
-    html_format: bool = True
+    html_format: bool = True,
+    actual_attachments: List[str] = None
 ) -> Tuple[str, str]:
     """
     Create email subject and body for an RFQ.
@@ -395,12 +407,15 @@ def create_email_body(
         sample_table_path: Path to the sample table template
         signature: Email signature to include
         html_format: Whether to format the email as HTML (True) or plain text (False)
+        actual_attachments: List of actual file paths that will be attached to the email
 
     Returns:
         Tuple containing:
             - Email subject
             - Email body (HTML or plain text)
     """
+    import datetime
+
     quote_id = items['quote_id'].iloc[0]
     vendor_name = vendor_info['vendor_name']
     first_name = vendor_info.get('first_name', '')
@@ -415,6 +430,9 @@ def create_email_body(
     else:
         filtered_items = items
         subject = f"RFQ for Quote {quote_id}"
+
+    # Calculate due date (7 days from now)
+    due_date = (datetime.datetime.now() + datetime.timedelta(days=7)).strftime("%B %d, %Y")
 
     if use_template and template_path and os.path.exists(template_path):
         # Create sample table if specified
@@ -434,16 +452,21 @@ def create_email_body(
             'process': process or ', '.join(filtered_items['process'].unique()),
             'spec': filtered_items['spec'].iloc[0] if 'spec' in filtered_items.columns and not filtered_items['spec'].isna().all() else None,
             'quantities': filtered_items['qty'].unique().tolist() if 'qty' in filtered_items.columns else [],
-            'attachments': filtered_items['file_path'].dropna().unique().tolist() if 'file_path' in filtered_items.columns else [],
-            'due_date': None,  # Could be added as a parameter
-            'sender_name': signature.split('\n')[0] if signature else "Your Name",
-            'sender_email': signature.split('\n')[1] if signature and len(signature.split('\n')) > 1 else "",
-            'company_name': signature.split('\n')[2] if signature and len(signature.split('\n')) > 2 else "",
+            'attachments': actual_attachments if actual_attachments is not None else (filtered_items['file_path'].dropna().unique().tolist() if 'file_path' in filtered_items.columns else []),
+            'due_date': due_date,  # Use the calculated due date
+            'sender_name': "Your Name",  # Default values, will be overridden by HTML signature
+            'sender_email': "your.email@example.com",
+            'company_name': "Your Company",
             'sample_table': sample_table  # Add sample table to context
         }
 
         # Render the template
         body = render_template(template_path, context)
+
+        # Append HTML signature if provided
+        if signature and html_format and signature.strip().startswith('<'):
+            # Append the HTML signature
+            body = body + signature
     else:
         if html_format:
             # Create HTML content
@@ -738,10 +761,10 @@ def process_queue(
                         continue
 
                     for vendor_process in info['processes']:
-                        if isinstance(vendor_process, dict) and 'specs' in vendor_process:
+                        if isinstance(vendor_process, dict) and 'specs' in vendor_process and vendor_process['specs'] is not None:
                             for vendor_spec in vendor_process['specs']:
                                 if isinstance(vendor_spec, dict) and 'number' in vendor_spec:
-                                    if spec.lower() in vendor_spec['number'].lower():
+                                    if spec.lower() == vendor_spec['number'].lower():
                                         suitable_vendors.append(vendor_id)
                                         break
 
@@ -759,11 +782,11 @@ def process_queue(
                     # If the vendor has a processes list and the process is in it
                     if 'processes' in info:
                         for vendor_process in info['processes']:
-                            if isinstance(vendor_process, str) and process.lower() in vendor_process.lower():
+                            if isinstance(vendor_process, str) and process.lower() == vendor_process.lower():
                                 suitable_vendors.append(vendor_id)
                                 break
                             elif isinstance(vendor_process, dict) and 'name' in vendor_process:
-                                if process.lower() in vendor_process['name'].lower():
+                                if process.lower() == vendor_process['name'].lower():
                                     suitable_vendors.append(vendor_id)
                                     break
 
@@ -799,24 +822,14 @@ def process_queue(
 
                 recipient = info['email']
 
-                # Build email
-                subject, body = create_email_body(
-                    info, 
-                    process_items, 
-                    process=process,
-                    use_template=use_template,
-                    template_path=template_path,
-                    sample_table_path=sample_table_path,
-                    signature=signature,
-                    html_format=True
-                )
-
                 # Get attachment paths
                 attachments = []
                 for r in process_items.itertuples():
                     if hasattr(r, 'file_path') and pd.notna(r.file_path):
                         # Handle file paths from the CSV
                         file_path = r.file_path.strip()
+                        # Convert to raw string to handle special characters
+                        file_path = rf"{file_path}"
                         part_number = r.part_number.strip()
 
                         # Check if the path exists
@@ -879,6 +892,19 @@ def process_queue(
                     else:
                         print(f"No valid attachments found for quote {quote_id}, process {process}")
 
+                # Build email with actual attachment count
+                subject, body = create_email_body(
+                    info, 
+                    process_items, 
+                    process=process,
+                    use_template=use_template,
+                    template_path=template_path,
+                    sample_table_path=sample_table_path,
+                    signature=signature,
+                    html_format=True,
+                    actual_attachments=attachments
+                )
+
                 # Create draft
                 success = create_draft_email(
                     outlook, 
@@ -888,7 +914,7 @@ def process_queue(
                     attachments, 
                     logger,
                     html_format=True,
-                    use_outlook_signature=True
+                    use_outlook_signature=False
                 )
 
                 if success:
@@ -923,11 +949,21 @@ def main() -> None:
         # Template paths
         template_path = os.path.join(project_root, 'docs', 'templates', 'cover_letter.j2')
         sample_table_path = os.path.join(project_root, 'docs', 'templates', 'Sample_Table(Empty)-OS.csv')
+        signature_path = os.path.join(project_root, 'docs', 'templates', 'email_signature.html')
 
-        # User signature - this will be used if Outlook's signature is not available
-        # Note: When use_outlook_signature=True in create_draft_email, this signature is ignored
-        # and Outlook's general signature is used instead
-        signature = """
+        # Set up logging
+        logs_dir = os.path.join(project_root, "logs")
+        logger = setup_logging(logs_dir)
+
+        # Read HTML signature from file
+        try:
+            with open(signature_path, 'r', encoding='utf-8') as f:
+                signature = f.read()
+            logger.info(f"Using HTML signature from {signature_path}")
+        except Exception as e:
+            # Fallback to text signature if HTML signature file can't be read
+            logger.warning(f"Could not read HTML signature file: {str(e)}. Using text signature instead.")
+            signature = """
 Best regards,
 
 Your Name
@@ -935,10 +971,6 @@ your.email@example.com
 Your Company
 Phone: (123) 456-7890
 """
-
-        # Set up logging
-        logs_dir = os.path.join(project_root, "logs")
-        logger = setup_logging(logs_dir)
 
         # Load data
         queue, vendor_info = load_data(queue_file, contacts_file, vendor_options_file, logger)
@@ -962,10 +994,8 @@ Phone: (123) 456-7890
         # Report results
         if logger:
             logger.info(f"All drafts generated. Success: {successful_drafts}/{total_quotes}")
-            logger.info("Note: Files were not retrieved. This will be addressed in a future update.")
         else:
             print(f"All drafts generated. Success: {successful_drafts}/{total_quotes}")
-            print("Note: Files were not retrieved. This will be addressed in a future update.")
 
     except Exception as e:
         # If logger is not defined yet, print to console
