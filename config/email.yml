@@ -26,5 +26,5 @@ settings:
   cc_emails: "${CC_EMAILS:}"  # Comma-separated list of emails to CC
   bcc_emails: "${BCC_EMAILS:}"  # Comma-separated list of emails to BCC
   subject_prefix: "${SUBJECT_PREFIX:[RFQ]}"  # Prefix for email subjects
-  max_attachment_size_mb: "${MAX_ATTACHMENT_SIZE_MB:10}"  # Maximum attachment size in MB
+  max_attachment_size_mb: "${MAX_ATTACHMENT_SIZE_MB:10}"  # (Deprecated) Maximum attachment size in MB - no longer used as all files are now shared via Box
   company_name: "${COMPANY_NAME:Your Company}"  # Company name for email templates

@@ -48,6 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for addressing emails to the first name from contacts.csv
 - HTML table formatting for better display in emails
 - Integration with Outlook's general signature
+- Box integration for secure file sharing (box_integration.py)
+- JWT authentication for Box integration
+- Chunked uploads for large files with progress reporting
+- Retry logic with exponential backoff for failed Box operations
+- Comprehensive Box integration documentation (BOX_INTEGRATION.md)
+- Test scripts for Box integration (test_box_integration.py, test_email_with_box.py)
 
 ### Changed
 - Enhanced security measures for handling sensitive data
@@ -89,6 +95,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced file attachment logic to ignore Excel and Word documents
 - Improved table population to include Process, Spec, and QTYs fields from the queue
 - Fixed table styling to ensure proper grid outlines for all cells
+- Fixed Box authentication issue by switching from OAuth2 to JWT authentication
+- Updated Box integration documentation with troubleshooting information for authentication errors
 
 ## [0.1.0] - 2023-10-01
 

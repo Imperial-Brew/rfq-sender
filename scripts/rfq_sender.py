@@ -23,6 +23,16 @@ from dotenv import load_dotenv
 
 import jinja2
 import yaml
+import questionary
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+from rich.table import Table
+from rich.panel import Panel
+
+# Import SpecProcessValidator from spec_check.py
+from spec_check import SpecProcessValidator
+
+console = Console()
 
 # Load environment variables from .env file
 load_dotenv()
@@ -56,25 +66,29 @@ def parse_args() -> argparse.Namespace:
         description="Send RFQ emails to vendors for finishing, material, and hardware quotes."
     )
 
-    # Required arguments
+    # Add interactive mode flag
+    parser.add_argument(
+        "--interactive", 
+        "-i", 
+        action="store_true",
+        help="Run in interactive mode with a user-friendly interface"
+    )
+
+    # Required arguments (not required if in interactive mode)
     parser.add_argument(
         "--part_no", 
-        required=True, 
         help="Part number (e.g. 0250-20000)"
     )
     parser.add_argument(
         "--process", 
-        required=True, 
         help="Process name (e.g. 'cleaning', 'anodizing')"
     )
     parser.add_argument(
         "--file_location", 
-        required=True, 
         help="Path to directory containing files to attach"
     )
     parser.add_argument(
         "--quantities", 
-        required=True, 
         help="Comma-separated list of quantities (e.g. '1,2,5,10')"
     )
 
@@ -90,7 +104,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--config-dir", 
-        default=os.path.join("..", "config"),
+        default=os.path.join(project_root, "config"),
         help="Path to configuration directory"
     )
 
@@ -159,14 +173,84 @@ def load_config(config_dir: str) -> dict:
     """
     config = {}
 
-    # Load vendor configuration
-    vendors_file = os.path.join(config_dir, "vendors.yml")
-    if os.path.exists(vendors_file):
-        with open(vendors_file, "r") as f:
-            config["vendors"] = yaml.safe_load(f)
+    # First, load vendor_options.yaml to get the reference list of vendors
+    vendor_options_file = os.path.join(project_root, "docs", "OS", "vendor_options.yaml")
+    vendor_options = {}
+    if os.path.exists(vendor_options_file):
+        try:
+            with open(vendor_options_file, "r", encoding="utf-8") as f:
+                vendor_options = yaml.safe_load(f)
+            logger.info(f"Loaded vendor options from {vendor_options_file}")
+        except Exception as e:
+            logger.error(f"Failed to load vendor options: {str(e)}")
+            sys.exit(1)
     else:
-        logger.error(f"Vendor configuration file not found: {vendors_file}")
+        logger.error(f"Vendor options file not found: {vendor_options_file}")
         sys.exit(1)
+
+    # Extract vendor names and their processes from vendor_options.yaml
+    vendor_processes = {}
+    if "vendors" in vendor_options:
+        for vendor in vendor_options["vendors"]:
+            vendor_name = vendor.get("name", "")
+            processes = []
+            for process in vendor.get("processes", []):
+                if isinstance(process, dict) and "name" in process:
+                    process_name = process["name"]
+                    processes.append(process_name)
+            vendor_processes[vendor_name] = processes
+        logger.info(f"Found {len(vendor_processes)} vendors in vendor_options.yaml")
+    else:
+        logger.error("No vendors found in vendor_options.yaml")
+        sys.exit(1)
+
+    # Now load contacts.yml to get contact information for the vendors
+    contacts_file = os.path.join(config_dir, "contacts.yml")
+    if os.path.exists(contacts_file):
+        with open(contacts_file, "r") as f:
+            contacts_data = yaml.safe_load(f)
+    else:
+        logger.error(f"Contacts file not found: {contacts_file}")
+        sys.exit(1)
+
+    # Create transformed vendor objects only for vendors in vendor_options.yaml
+    transformed_vendors = []
+    for vendor_name, processes in vendor_processes.items():
+        # Find this vendor in contacts.yml
+        vendor_contact = None
+        for contact_vendor in contacts_data.get("vendors", []):
+            if contact_vendor.get("name", "") == vendor_name:
+                vendor_contact = contact_vendor
+                break
+
+        if not vendor_contact:
+            logger.warning(f"Vendor '{vendor_name}' found in vendor_options.yaml but not in contacts.yml")
+            continue
+
+        # Extract the email address from the primary contact
+        email = None
+        for contact in vendor_contact.get("contacts", []):
+            if contact.get("primary", False):
+                email = contact.get("email")
+                break
+
+        # Skip vendors without a primary contact email
+        if not email:
+            logger.warning(f"No primary contact email found for vendor '{vendor_name}'")
+            continue
+
+        # Create a transformed vendor object
+        transformed_vendor = {
+            "name": vendor_name,
+            "email": email,
+            "processes": processes
+        }
+
+        transformed_vendors.append(transformed_vendor)
+        logger.info(f"Added vendor '{vendor_name}' with {len(processes)} processes")
+
+    # Wrap the transformed vendors in another "vendors" key to match what the code expects
+    config["vendors"] = {"vendors": transformed_vendors}
 
     # Load email configuration
     email_file = os.path.join(config_dir, "email.yml")
@@ -235,7 +319,7 @@ def render_template(template_name: str, context: Dict[str, any]) -> str:
         str: Rendered template as a string
     """
     # Set up Jinja2 environment
-    template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
+    template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "templates")
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(template_dir),
         autoescape=jinja2.select_autoescape(["html", "xml"]),
@@ -545,14 +629,510 @@ def send_email(
             return False
 
 
+def validate_process_name(process: str) -> str:
+    """
+    Validate a process name using SpecProcessValidator.
+
+    If the process name is not found, suggest similar processes and allow the user to select one.
+    If no similar processes are found or the user doesn't select one, offer to add a new process.
+
+    Args:
+        process: The process name to validate
+
+    Returns:
+        The validated/selected/added process name
+    """
+    # Initialize the validator
+    validator = SpecProcessValidator()
+
+    # Check if the process exists
+    exists, normalized, suggestions = validator.check_process(process)
+
+    if exists:
+        # Process exists, return the normalized name
+        logger.info(f"Process '{process}' is valid. Normalized: '{normalized}'")
+        return normalized
+
+    # Process doesn't exist
+    logger.warning(f"Process '{process}' not found. Normalized: '{normalized}'")
+
+    if suggestions:
+        # Suggest similar processes
+        console.print(f"[yellow]Process '{process}' not recognized.[/yellow]")
+
+        # Add "Add a new process" option
+        choices = [
+            questionary.Choice(title=f"Did you mean: {suggestion}", value=suggestion)
+            for suggestion in suggestions
+        ]
+        choices.append(questionary.Choice(title="Add a new process", value="__add_new__"))
+        choices.append(questionary.Choice(title="Use as entered", value="__use_as_is__"))
+
+        selected = questionary.select(
+            "Select an option:",
+            choices=choices
+        ).ask()
+
+        if selected == "__add_new__":
+            # Add a new process
+            add_to_specific = questionary.confirm(
+                "Add to a specific vendor?",
+                default=False
+            ).ask()
+
+            vendor_name = None
+            if add_to_specific:
+                # Get list of vendor names
+                vendor_names = [v['name'] for v in validator.ref['vendors']]
+                vendor_name = questionary.select(
+                    "Select the vendor:",
+                    choices=vendor_names
+                ).ask()
+
+            success = validator.add_process(process, vendor_name)
+
+            if success:
+                console.print(f"[green]✅ Process '{process}' added successfully.[/green]")
+                return process
+            else:
+                console.print(f"[red]❌ Process '{process}' could not be added.[/red]")
+                return process
+        elif selected == "__use_as_is__":
+            # Use the process name as entered
+            return process
+        else:
+            # Use the selected suggestion
+            logger.info(f"Using suggested process: '{selected}'")
+            return selected
+    else:
+        # No suggestions found
+        console.print(f"[yellow]No similar processes found for '{process}'.[/yellow]")
+
+        # Ask if the user wants to add a new process
+        add_new = questionary.confirm(
+            "Would you like to add a new process?",
+            default=True
+        ).ask()
+
+        if add_new:
+            # Add a new process
+            add_to_specific = questionary.confirm(
+                "Add to a specific vendor?",
+                default=False
+            ).ask()
+
+            vendor_name = None
+            if add_to_specific:
+                # Get list of vendor names
+                vendor_names = [v['name'] for v in validator.ref['vendors']]
+                vendor_name = questionary.select(
+                    "Select the vendor:",
+                    choices=vendor_names
+                ).ask()
+
+            success = validator.add_process(process, vendor_name)
+
+            if success:
+                console.print(f"[green]✅ Process '{process}' added successfully.[/green]")
+                return process
+            else:
+                console.print(f"[red]❌ Process '{process}' could not be added.[/red]")
+                return process
+        else:
+            # Use the process name as entered
+            return process
+
+
+def validate_spec_name(spec: str, process: str) -> str:
+    """
+    Validate a spec name using SpecProcessValidator.
+
+    If the spec name is not found, suggest similar specs and allow the user to select one.
+    If no similar specs are found or the user doesn't select one, offer to add a new spec.
+
+    Args:
+        spec: The spec name to validate
+        process: The process name to associate with the spec
+
+    Returns:
+        The validated/selected/added spec name
+    """
+    # If spec is empty, return it as is
+    if not spec:
+        return spec
+
+    # Initialize the validator
+    validator = SpecProcessValidator()
+
+    # Check if the spec exists
+    exists, normalized, suggestions = validator.check_spec(spec)
+
+    if exists:
+        # Spec exists, return the normalized name
+        logger.info(f"Spec '{spec}' is valid. Normalized: '{normalized}'")
+        return normalized
+
+    # Spec doesn't exist
+    logger.warning(f"Spec '{spec}' not found. Normalized: '{normalized}'")
+
+    if suggestions:
+        # Suggest similar specs
+        console.print(f"[yellow]Spec '{spec}' not recognized.[/yellow]")
+
+        # Add "Add a new spec" option
+        choices = [
+            questionary.Choice(title=f"Did you mean: {suggestion}", value=suggestion)
+            for suggestion in suggestions
+        ]
+        choices.append(questionary.Choice(title="Add a new spec", value="__add_new__"))
+        choices.append(questionary.Choice(title="Use as entered", value="__use_as_is__"))
+
+        selected = questionary.select(
+            "Select an option:",
+            choices=choices
+        ).ask()
+
+        if selected == "__add_new__":
+            # Add a new spec
+            add_to_specific = questionary.confirm(
+                "Add to a specific vendor?",
+                default=False
+            ).ask()
+
+            vendor_name = None
+            if add_to_specific:
+                # Get list of vendor names
+                vendor_names = [v['name'] for v in validator.ref['vendors']]
+                vendor_name = questionary.select(
+                    "Select the vendor:",
+                    choices=vendor_names
+                ).ask()
+
+            success = validator.add_spec(spec, process, vendor_name)
+
+            if success:
+                console.print(f"[green]✅ Spec '{spec}' added successfully to process '{process}'.[/green]")
+                return spec
+            else:
+                console.print(f"[red]❌ Spec '{spec}' could not be added.[/red]")
+                return spec
+        elif selected == "__use_as_is__":
+            # Use the spec name as entered
+            return spec
+        else:
+            # Use the selected suggestion
+            logger.info(f"Using suggested spec: '{selected}'")
+            return selected
+    else:
+        # No suggestions found
+        console.print(f"[yellow]No similar specs found for '{spec}'.[/yellow]")
+
+        # Ask if the user wants to add a new spec
+        add_new = questionary.confirm(
+            "Would you like to add a new spec?",
+            default=True
+        ).ask()
+
+        if add_new:
+            # Add a new spec
+            add_to_specific = questionary.confirm(
+                "Add to a specific vendor?",
+                default=False
+            ).ask()
+
+            vendor_name = None
+            if add_to_specific:
+                # Get list of vendor names
+                vendor_names = [v['name'] for v in validator.ref['vendors']]
+                vendor_name = questionary.select(
+                    "Select the vendor:",
+                    choices=vendor_names
+                ).ask()
+
+            success = validator.add_spec(spec, process, vendor_name)
+
+            if success:
+                console.print(f"[green]✅ Spec '{spec}' added successfully to process '{process}'.[/green]")
+                return spec
+            else:
+                console.print(f"[red]❌ Spec '{spec}' could not be added.[/red]")
+                return spec
+        else:
+            # Use the spec name as entered
+            return spec
+
+
+def interactive_show_log(conn: sqlite3.Connection) -> None:
+    """
+    Show RFQ log entries in an interactive way.
+
+    Args:
+        conn: Database connection
+    """
+    # Ask for the number of log entries to show
+    limit = questionary.text(
+        "Number of log entries to show:",
+        default="10"
+    ).ask()
+
+    try:
+        limit = int(limit)
+        log_entries = show_rfq_log(conn, limit)
+
+        if not log_entries:
+            console.print("[yellow]No RFQ log entries found[/yellow]")
+            return
+
+        # Display log entries in a table
+        table = Table(title=f"RFQ Log Entries (Last {limit})")
+        table.add_column("ID")
+        table.add_column("Part Number")
+        table.add_column("Process")
+        table.add_column("Vendor")
+        table.add_column("Sent At")
+        table.add_column("Quote Number")
+
+        for entry in log_entries:
+            table.add_row(
+                str(entry['id']),
+                entry['part_no'],
+                entry['process'],
+                f"{entry['vendor_name']} ({entry['vendor_email']})",
+                entry['sent_at'],
+                entry['quote_no'] or "N/A"
+            )
+
+        console.print(table)
+
+    except ValueError:
+        console.print("[red]Invalid number of entries[/red]")
+
+
+def interactive_mode(conn: sqlite3.Connection) -> None:
+    """
+    Run the script in interactive mode with a user-friendly interface.
+
+    Args:
+        conn: Database connection
+    """
+    console.print(Panel.fit(
+        "[bold blue]RFQ Sender - Interactive Mode[/bold blue]\n\n"
+        "This tool helps you send RFQ emails to vendors for finishing, material, and hardware quotes.",
+        title="Welcome",
+        border_style="green"
+    ))
+
+    # Main menu
+    while True:
+        action = questionary.select(
+            "What would you like to do?",
+            choices=[
+                "Send a new RFQ",
+                "View RFQ log",
+                "Exit"
+            ]
+        ).ask()
+
+        if action == "Exit":
+            console.print("[green]Goodbye![/green]")
+            break
+
+        elif action == "View RFQ log":
+            interactive_show_log(conn)
+
+        elif action == "Send a new RFQ":
+            # Get RFQ details interactively
+            part_no = questionary.text(
+                "Part number:",
+                validate=lambda text: len(text.strip()) > 0
+            ).ask()
+
+            process_input = questionary.text(
+                "Process name:",
+                validate=lambda text: len(text.strip()) > 0
+            ).ask()
+
+            # Validate the process name
+            process = validate_process_name(process_input)
+
+            file_location = questionary.path(
+                "Path to directory containing files to attach:"
+            ).ask()
+
+            quantities_str = questionary.text(
+                "Comma-separated list of quantities (e.g. '1,2,5,10'):",
+                validate=lambda text: all(q.strip().isdigit() for q in text.split(","))
+            ).ask()
+
+            spec_input = questionary.text(
+                "Specification details (optional):"
+            ).ask()
+
+            # Validate the spec name if provided
+            spec = validate_spec_name(spec_input, process) if spec_input else ""
+
+            dry_run = questionary.confirm(
+                "Perform a dry run (don't actually send emails)?",
+                default=False
+            ).ask()
+
+            # Load configuration
+            config_dir = os.path.join(project_root, "config")
+            config = load_config(config_dir)
+
+            # Get attachments with progress indicator
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+            ) as progress:
+                task = progress.add_task("Finding attachments...", total=1)
+                attachments = get_attachments(part_no, process, file_location)
+                progress.update(task, completed=1)
+
+            # Parse quantities
+            quantities = [int(q.strip()) for q in quantities_str.split(",")]
+
+            # Get matching vendors for the process
+            matching_vendors = []
+            for vendor in config["vendors"]["vendors"]:
+                if process.lower() in [p.lower() for p in vendor.get("processes", [])]:
+                    matching_vendors.append(vendor)
+
+            if not matching_vendors:
+                console.print(f"[red]No vendors found for process: {process}[/red]")
+                continue
+
+            # Let user select which vendors to send to
+            vendor_choices = [
+                questionary.Choice(
+                    title=f"{vendor['name']} ({vendor['email']})",
+                    value=vendor
+                )
+                for vendor in matching_vendors
+            ]
+
+            selected_vendors = questionary.checkbox(
+                "Select vendors to send RFQ to:",
+                choices=vendor_choices
+            ).ask()
+
+            if not selected_vendors:
+                console.print("[yellow]No vendors selected, returning to main menu[/yellow]")
+                continue
+
+            # Prepare email context
+            email_context = {
+                "part_no": part_no,
+                "process": process,
+                "spec": spec,
+                "quantities": quantities,
+                "attachments": attachments,
+                "sender_name": config["email"]["smtp"]["from_name"],
+                "sender_email": config["email"]["smtp"]["from_email"],
+                "company_name": config["email"]["settings"].get("company_name", "Your Company"),
+                "due_date": (datetime.datetime.now() + datetime.timedelta(days=7)).strftime("%Y-%m-%d"),
+            }
+
+            # Send emails with progress bar
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeElapsedColumn(),
+            ) as progress:
+                task = progress.add_task("Sending RFQs...", total=len(selected_vendors))
+
+                success_count = 0
+                for vendor in selected_vendors:
+                    progress.update(task, description=f"Sending to {vendor['name']}...")
+
+                    # Add vendor to context
+                    context = {**email_context, "vendor": vendor}
+
+                    # Render templates
+                    cover_letter = render_template("cover_letter.j2", context)
+                    pricing_form = render_template("pricing_form.j2", context)
+
+                    # Apply CUI compliance handling to the cover letter
+                    cover_letter = handle_cui_compliance(vendor, cover_letter)
+
+                    # Create pricing form file
+                    pricing_form_path = os.path.join(
+                        "temp",
+                        f"pricing_form_{part_no}_{vendor['name'].replace(' ', '_')}.md"
+                    )
+                    os.makedirs("temp", exist_ok=True)
+                    with open(pricing_form_path, "w") as f:
+                        f.write(pricing_form)
+
+                    # Add pricing form to attachments
+                    all_attachments = attachments + [pricing_form_path]
+
+                    # Send email
+                    subject = f"{config['email']['settings'].get('subject_prefix', '[RFQ]')} {part_no} - {process}"
+
+                    # Add CUI indicator to subject if vendor has CUI approval
+                    if vendor.get("approval_level", "").lower() == "cui":
+                        subject = f"[CUI] {subject}"
+
+                    if send_email(
+                        vendor["email"],
+                        subject,
+                        cover_letter,
+                        all_attachments,
+                        config,
+                        dry_run,
+                    ):
+                        success_count += 1
+
+                        # Log to database
+                        if not dry_run:
+                            log_rfq(
+                                conn,
+                                part_no,
+                                process,
+                                vendor["name"],
+                                vendor["email"],
+                                quantities,
+                            )
+
+                    # Clean up temporary file
+                    if os.path.exists(pricing_form_path) and not dry_run:
+                        os.remove(pricing_form_path)
+
+                    progress.advance(task)
+
+            console.print(f"[green]Successfully sent {success_count}/{len(selected_vendors)} RFQs[/green]")
+
+
 def main():
     """Main entry point for the script."""
 
     # Initialize database
     conn = init_database()
 
-    # Parse and validate arguments
+    # Parse arguments
     args = parse_args()
+
+    # Check if we should run in interactive mode
+    if args.interactive:
+        try:
+            interactive_mode(conn)
+        except Exception as e:
+            # Check if it's a NoConsoleScreenBufferError
+            if "NoConsoleScreenBufferError" in str(e):
+                console.print("[red]Error: Cannot run interactive mode in this environment.[/red]")
+                console.print("[yellow]This error typically occurs when running from an IDE or other non-console environment.[/yellow]")
+                console.print("[yellow]Try running the script directly from a command prompt (cmd.exe) or PowerShell.[/yellow]")
+                console.print("\n[green]Falling back to non-interactive mode. Use --help to see available commands.[/green]")
+                logger.warning("NoConsoleScreenBufferError: Falling back to non-interactive mode")
+            else:
+                # For other exceptions, log the error and re-raise
+                logger.error(f"Error in interactive mode: {str(e)}")
+                raise
+        conn.close()
+        return
 
     # Handle subcommands
     if args.command == "show-log":
@@ -561,29 +1141,43 @@ def main():
         log_entries = show_rfq_log(conn, args.limit)
 
         if not log_entries:
-            logger.info("No RFQ log entries found")
+            console.print("[yellow]No RFQ log entries found[/yellow]")
             return
 
-        # Print log entries
-        print("\nRFQ Log Entries:")
-        print("=" * 80)
-        for entry in log_entries:
-            print(f"ID: {entry['id']}")
-            print(f"Part Number: {entry['part_no']}")
-            print(f"Process: {entry['process']}")
-            print(f"Vendor: {entry['vendor_name']} ({entry['vendor_email']})")
-            print(f"Quantities: {entry['quantities']}")
-            print(f"Sent At: {entry['sent_at']}")
-            if entry['quote_no']:
-                print(f"Quote Number: {entry['quote_no']}")
-            print("-" * 80)
+        # Print log entries in a table
+        table = Table(title=f"RFQ Log Entries (Last {args.limit})")
+        table.add_column("ID")
+        table.add_column("Part Number")
+        table.add_column("Process")
+        table.add_column("Vendor")
+        table.add_column("Sent At")
+        table.add_column("Quote Number")
 
+        for entry in log_entries:
+            table.add_row(
+                str(entry['id']),
+                entry['part_no'],
+                entry['process'],
+                f"{entry['vendor_name']} ({entry['vendor_email']})",
+                entry['sent_at'],
+                entry['quote_no'] or "N/A"
+            )
+
+        console.print(table)
+        conn.close()
         return
+
+    # Check if required arguments are provided
+    if not all([args.part_no, args.process, args.file_location, args.quantities]):
+        console.print("[red]Error: Missing required arguments. Use --interactive for guided input or provide all required arguments.[/red]")
+        console.print("Required arguments: --part_no, --process, --file_location, --quantities")
+        sys.exit(1)
 
     # Validate arguments
     is_valid, error_message = validate_args(args)
     if not is_valid:
         logger.error(f"Invalid arguments: {error_message}")
+        console.print(f"[red]Invalid arguments: {error_message}[/red]")
         sys.exit(1)
 
     # Load configuration
@@ -603,9 +1197,11 @@ def main():
 
     if not matching_vendors:
         logger.warning(f"No vendors found for process: {args.process}")
+        console.print(f"[red]No vendors found for process: {args.process}[/red]")
         sys.exit(1)
 
     logger.info(f"Found {len(matching_vendors)} vendors for process: {args.process}")
+    console.print(f"[green]Found {len(matching_vendors)} vendors for process: {args.process}[/green]")
 
     # Prepare email context
     email_context = {
@@ -680,11 +1276,13 @@ def main():
 
     # Log results
     logger.info(f"Sent {success_count} of {len(matching_vendors)} RFQ emails")
+    console.print(f"[bold green]Sent {success_count} of {len(matching_vendors)} RFQ emails[/bold green]")
 
     # Close database connection
     conn.close()
 
     logger.info("RFQ processing completed")
+    console.print("[bold green]RFQ processing completed[/bold green]")
 
 
 if __name__ == "__main__":

@@ -35,6 +35,7 @@ ENV/
 logs/
 temp/
 data/*.db
+scripts/0__config.json
 
 # Windows
 Thumbs.db

@@ -25,13 +25,84 @@ import logging
 import os
 import sys
 import csv
-from typing import Dict, List, Optional, Tuple, Any
+import argparse
+from box_integration import BoxIntegration
+from typing import Dict, List, Optional, Tuple, Any, Union
 
 import pandas as pd
 import win32com.client as win32
 import yaml
 import jinja2
+import questionary
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+from rich.table import Table
 from pandas import DataFrame
+
+# Import SpecProcessValidator from spec_check.py
+from spec_check import SpecProcessValidator
+
+console = Console()
+
+
+def normalize_process_spec(text: str, validator: SpecProcessValidator = None) -> str:
+    """
+    Normalize a process or spec name using the SpecProcessValidator.
+
+    Args:
+        text: The process or spec name to normalize
+        validator: Optional SpecProcessValidator instance. If None, a new one will be created.
+
+    Returns:
+        The normalized process or spec name
+    """
+    if not text:
+        return ""
+
+    # Create a validator if one wasn't provided
+    if validator is None:
+        validator = SpecProcessValidator()
+
+    # Use the validator's normalize method
+    return validator.normalize(text)
+
+
+def enhanced_normalize_for_comparison(text: str, is_spec: bool = False) -> str:
+    """
+    Enhanced normalization for comparison purposes.
+
+    This function goes beyond the basic normalization to handle specific cases:
+    1. For specs, it removes all spaces to handle cases like "ASTM B633" vs "ASTM B 633"
+    2. For processes, it handles cases where one term is a subset of another
+
+    Args:
+        text: The text to normalize
+        is_spec: Whether the text is a spec (True) or process (False)
+
+    Returns:
+        The enhanced normalized text for comparison
+    """
+    if not text:
+        return ""
+
+    # Convert to string and lowercase
+    text = str(text).lower()
+
+    # Remove all spaces for specs to handle cases like "ASTM B633" vs "ASTM B 633"
+    if is_spec:
+        text = text.replace(" ", "")
+
+    # For processes, handle special cases
+    else:
+        # Handle "zinc" vs "zinc plating"
+        if text == "zinc":
+            text = "zincplating"
+        elif text == "zincplating" or text == "zinc plating":
+            text = "zincplating"
+
+    return text
+
+
 
 
 def setup_logging(logs_dir: str) -> logging.Logger:
@@ -120,11 +191,27 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, log
         raise FileNotFoundError(f"Vendor options file not found: {vendor_options_file}")
 
     try:
-        # Load queue data with Windows encoding fallback
-        queue = pd.read_csv(queue_file, encoding='cp1252')
+        # Load queue data with UTF-8 encoding and error handling
+        try:
+            queue = pd.read_csv(queue_file, encoding='utf-8')
+        except UnicodeDecodeError:
+            # Fall back to cp1252 if UTF-8 fails
+            queue = pd.read_csv(queue_file, encoding='cp1252')
 
-        # Load contacts data
-        contacts = pd.read_csv(contacts_file, encoding='cp1252')
+        # Log the number of items where SENT=YES, but don't filter them out
+        if 'SENT' in queue.columns:
+            sent_items_count = len(queue[queue['SENT'] == 'YES'])
+            if logger:
+                logger.info(f"Found {sent_items_count} items where SENT=YES. Total items: {len(queue)}")
+            else:
+                print(f"Found {sent_items_count} items where SENT=YES. Total items: {len(queue)}")
+
+        # Load contacts data with UTF-8 encoding and error handling
+        try:
+            contacts = pd.read_csv(contacts_file, encoding='utf-8')
+        except UnicodeDecodeError:
+            # Fall back to cp1252 if UTF-8 fails
+            contacts = pd.read_csv(contacts_file, encoding='cp1252')
 
         # Load vendor options data
         with open(vendor_options_file, 'r', encoding='utf-8') as f:
@@ -286,10 +373,16 @@ def create_sample_table(items: DataFrame, process: str, template_path: str, html
     # Filter items by process
     process_items = items[items['process'] == process]
 
-    # Read the template
-    with open(template_path, 'r', newline='') as f:
-        reader = csv.reader(f)
-        header = next(reader)  # Get header row
+    # Read the template with UTF-8 encoding and error handling
+    try:
+        with open(template_path, 'r', newline='', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            header = next(reader)  # Get header row
+    except UnicodeDecodeError:
+        # Fall back to cp1252 with error handling if UTF-8 fails
+        with open(template_path, 'r', newline='', encoding='cp1252', errors='replace') as f:
+            reader = csv.reader(f)
+            header = next(reader)  # Get header row
 
     if html_format:
         # Create an HTML table with proper styling
@@ -463,10 +556,7 @@ def create_email_body(
         # Render the template
         body = render_template(template_path, context)
 
-        # Append HTML signature if provided
-        if signature and html_format and signature.strip().startswith('<'):
-            # Append the HTML signature
-            body = body + signature
+        # Don't append signature here, it will be added after Box file information
     else:
         if html_format:
             # Create HTML content
@@ -503,12 +593,7 @@ def create_email_body(
                 html_parts.append("<p>Please fill out the following table and return it to us:</p>")
                 html_parts.append(sample_table)
 
-            # Add signature
-            if signature:
-                newline = '\n'  # Define newline character outside the f-string
-                html_parts.append(f"<p>{signature.replace(newline, '<br>')}</p>")
-            else:
-                html_parts.append("<p>Thanks,<br>Your Name</p>")
+            # Don't add signature here, it will be added after Box file information
 
             body = "".join(html_parts)
         else:
@@ -543,24 +628,23 @@ def create_email_body(
                 sample_table = create_sample_table(filtered_items, process, sample_table_path, html_format=False)
                 body += f"\n\nPlease fill out the following table and return it to us:\n\n{sample_table}"
 
-            # Add signature
-            if signature:
-                body += f"\n\n{signature}"
-            else:
-                body += "\n\nThanks,\nYour Name"
+            # Don't add signature here, it will be added after Box file information
 
     return subject, body
 
 
 def create_draft_email(
-    outlook: Any, 
-    recipient: str, 
-    subject: str, 
-    body: str, 
-    attachments: List[str],
-    logger: logging.Logger = None,
-    html_format: bool = True,
-    use_outlook_signature: bool = True
+        outlook: Any,
+        recipient: str,
+        subject: str,
+        body: str,
+        attachments: List[str],
+        logger: logging.Logger = None,
+        html_format: bool = True,
+        use_outlook_signature: bool = True,
+        quote_id: str = None,
+        process: str = None,
+        signature: str = None
 ) -> bool:
     """
     Create a draft email in Outlook.
@@ -574,6 +658,9 @@ def create_draft_email(
         logger: Optional logger for logging messages
         html_format: Whether the body is HTML (True) or plain text (False)
         use_outlook_signature: Whether to use Outlook's general signature
+        quote_id: ID of the quote (used for Box folder name)
+        process: Process name (used for Box folder name)
+        signature: Email signature to add at the end of the email
 
     Returns:
         bool: True if successful, False otherwise
@@ -605,21 +692,261 @@ def create_draft_email(
             mail.BodyFormat = 1  # 1 = olFormatPlain
             mail.Body = body
 
-        # Attach files
+        # Track missing attachments and files for Box
         missing_attachments = []
+        files_for_box = []
+        box_files_info = []  # To store information about files uploaded to Box
+
+        # Collect valid files for Box upload
         for path in attachments:
-            if os.path.isfile(path):
-                mail.Attachments.Add(path)
-                if logger:
-                    logger.debug(f"Attached file: {path}")
-                else:
-                    print(f"Attached file: {path}")
-            else:
+            if not os.path.isfile(path):
                 if logger:
                     logger.warning(f"Missing attachment: {path}")
                 else:
                     print(f"Missing attachment: {path}")
                 missing_attachments.append(path)
+                continue
+
+            # Add file to Box upload list
+            files_for_box.append(path)
+            file_size_mb = os.path.getsize(path) / (1024 * 1024)
+            if logger:
+                logger.info(f"File will be uploaded to Box: {path} ({file_size_mb:.2f} MB)")
+            else:
+                print(f"File will be uploaded to Box: {path} ({file_size_mb:.2f} MB)")
+
+        # Upload files to Box
+        box_share_link = None
+        if files_for_box:
+            try:
+                # Initialize Box integration
+                box = BoxIntegration(logger)
+                
+                # Check if Box client was initialized successfully
+                if not box.client:
+                    error_msg = "Failed to initialize Box client. Check your Box credentials in the 0__config.json file."
+                    if logger:
+                        logger.error(error_msg)
+                    else:
+                        print(error_msg)
+                        
+                    # Add error information to all files
+                    for path in files_for_box:
+                        file_size_mb = os.path.getsize(path) / (1024 * 1024)
+                        folder_path = os.path.dirname(path)
+                        
+                        box_files_info.append({
+                            'path': path,
+                            'size': file_size_mb,
+                            'folder': folder_path,
+                            'box_uploaded': False,
+                            'error': "Box authentication failed. Check credentials in environment variables."
+                        })
+                    
+                    # Skip the rest of the Box operations
+                    raise Exception("Box authentication failed. Check credentials in environment variables.")
+                
+                # Create folder name based on quote ID and process
+                timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+                folder_name = f"RFQ_{quote_id}_{process}_{timestamp}" if quote_id and process else f"RFQ_Files_{timestamp}"
+
+                # Create folder in Box
+                folder = box.create_folder(folder_name)
+                if folder:
+                    # Upload files to Box
+                    uploaded_files = box.upload_files(files_for_box, folder)
+
+                    # Create share link
+                    box_share_link = box.create_share_link(folder)
+
+                    if box_share_link:
+                        # Add information about uploaded files
+                        for path in files_for_box:
+                            file_size_mb = os.path.getsize(path) / (1024 * 1024)
+                            folder_path = os.path.dirname(path)
+
+                            box_files_info.append({
+                                'path': path,
+                                'size': file_size_mb,
+                                'folder': folder_path,
+                                'box_uploaded': True
+                            })
+
+                            if logger:
+                                logger.info(f"Uploaded to Box: {path} ({file_size_mb:.2f} MB)")
+                            else:
+                                print(f"Uploaded to Box: {path} ({file_size_mb:.2f} MB)")
+                    else:
+                        # If share link creation failed, add files to box_files_info without Box info
+                        for path in files_for_box:
+                            file_size_mb = os.path.getsize(path) / (1024 * 1024)
+                            folder_path = os.path.dirname(path)
+
+                            box_files_info.append({
+                                'path': path,
+                                'size': file_size_mb,
+                                'folder': folder_path,
+                                'box_uploaded': True,  # Files were uploaded, but share link creation failed
+                                'error': "Failed to create Box share link"
+                            })
+
+                        if logger:
+                            logger.warning(f"Files were uploaded to Box folder '{folder_name}' (ID: {folder.id}) but failed to create share link")
+                            logger.warning("Check Box sharing permissions. The folder may still be accessible through the Box web interface.")
+                        else:
+                            print(f"Files were uploaded to Box folder '{folder_name}' (ID: {folder.id}) but failed to create share link")
+                            print("Check Box sharing permissions. The folder may still be accessible through the Box web interface.")
+                else:
+                    # If folder creation failed, add files to box_files_info without Box info
+                    for path in files_for_box:
+                        file_size_mb = os.path.getsize(path) / (1024 * 1024)
+                        folder_path = os.path.dirname(path)
+
+                        box_files_info.append({
+                            'path': path,
+                            'size': file_size_mb,
+                            'folder': folder_path,
+                            'box_uploaded': False,
+                            'error': "Failed to create Box folder"
+                        })
+
+                    if logger:
+                        logger.warning(f"Failed to create Box folder: {folder_name}")
+                        logger.warning("Check Box credentials and permissions. Ensure you have write access to the Box account.")
+                    else:
+                        print(f"Failed to create Box folder: {folder_name}")
+                        print("Check Box credentials and permissions. Ensure you have write access to the Box account.")
+
+            except Exception as e:
+                # If Box integration failed, add files to box_files_info without Box info
+                for path in files_for_box:
+                    file_size_mb = os.path.getsize(path) / (1024 * 1024)
+                    folder_path = os.path.dirname(path)
+
+                    box_files_info.append({
+                        'path': path,
+                        'size': file_size_mb,
+                        'folder': folder_path,
+                        'box_uploaded': False,
+                        'error': str(e)  # Store the error message
+                    })
+
+                # Provide more specific error information
+                error_type = type(e).__name__
+                error_message = str(e)
+                
+                if "authentication" in error_message.lower() or "credentials" in error_message.lower() or "token" in error_message.lower():
+                    error_hint = "Check Box credentials in the 0__config.json file."
+                elif "network" in error_message.lower() or "connection" in error_message.lower() or "timeout" in error_message.lower():
+                    error_hint = "Check network connection."
+                elif "permission" in error_message.lower() or "access" in error_message.lower():
+                    error_hint = "Check Box permissions."
+                else:
+                    error_hint = "Check Box configuration and try again."
+
+                if logger:
+                    logger.error(f"Error using Box integration: {error_type}: {error_message}")
+                    logger.error(f"Suggestion: {error_hint}")
+                else:
+                    print(f"Error using Box integration: {error_type}: {error_message}")
+                    print(f"Suggestion: {error_hint}")
+
+        # Add information about files and Box link to the email body
+        if box_files_info:
+            if html_format:
+                # Start with a prominent Box share link if available
+                if box_share_link:
+                    files_note = f"""<hr>
+<div style='background-color: #f0f0f0; padding: 15px; border-left: 5px solid #0061d5; margin-bottom: 15px;'>
+    <p style='font-size: 16px; margin-bottom: 10px;'><strong>📁 Files for this RFQ are available via Box</strong></p>
+    <p style='font-size: 14px; background-color: #ffffff; padding: 10px; border: 1px solid #dddddd; border-radius: 4px;'>
+        <strong>📎 Box Share Link:</strong> <a href='{box_share_link}' style='color: #0061d5; text-decoration: underline; font-weight: bold;'>{box_share_link}</a>
+    </p>
+    <p style='font-size: 12px; color: #666666; margin-top: 5px;'>Click the link above to access all files for this RFQ</p>
+</div>
+<p><strong>The following files have been uploaded to Box:</strong></p><ul>"""
+                else:
+                    files_note = "<hr><p><strong>Files for this RFQ are available via Box:</strong></p><ul>"
+                
+                # Then list the files
+                for file_info in box_files_info:
+                    file_path = file_info['path']
+                    file_size_mb = file_info['size']
+                    box_uploaded = file_info.get('box_uploaded', False)
+
+                    note_text = f"<li>{os.path.basename(file_path)} ({file_size_mb:.2f} MB)"
+                    if box_uploaded:
+                        note_text += " - <strong>Uploaded to Box</strong>"
+                    else:
+                        note_text += " - <strong>Failed to upload to Box</strong>"
+                        # Add error information if available
+                        if 'error' in file_info:
+                            note_text += f"<br><em>Error: {file_info['error']}</em>"
+                    note_text += "</li>"
+                    files_note += note_text
+
+                # Close the list and add a note if no share link is available
+                if not box_share_link:
+                    files_note += "</ul><p>Please upload these files to BOX SharePoint and share the link, or contact the sender for alternative arrangements.</p>"
+                else:
+                    files_note += "</ul>"
+
+                # Add Box file information
+                mail.HTMLBody += files_note
+                
+                # Add signature after Box file information
+                if signature:
+                    mail.HTMLBody += f"<hr>{signature}"
+                else:
+                    mail.HTMLBody += "<hr><p>Thanks,<br>Your Name</p>"
+            else:
+                # Start with a prominent Box share link if available
+                if box_share_link:
+                    plain_note = f"""
+
+=======================================================================
+|                                                                     |
+|  FILES FOR THIS RFQ ARE AVAILABLE VIA BOX                           |
+|                                                                     |
+=======================================================================
+
+>> BOX SHARE LINK: {box_share_link}
+
+>> Click the link above to access all files for this RFQ <<
+
+The following files have been uploaded to Box:
+"""
+                else:
+                    plain_note = "\n\nFiles for this RFQ are available via Box:\n"
+                
+                # Then list the files
+                for file_info in box_files_info:
+                    file_path = file_info['path']
+                    file_size_mb = file_info['size']
+                    box_uploaded = file_info.get('box_uploaded', False)
+
+                    note_text = f"- {os.path.basename(file_path)} ({file_size_mb:.2f} MB)"
+                    if box_uploaded:
+                        note_text += " - UPLOADED TO BOX"
+                    else:
+                        note_text += " - FAILED TO UPLOAD TO BOX"
+                        # Add error information if available
+                        if 'error' in file_info:
+                            note_text += f"\n  Error: {file_info['error']}"
+                    plain_note += note_text + "\n"
+
+                # Add a note if no share link is available
+                if not box_share_link:
+                    plain_note += "\nPlease upload these files to BOX SharePoint and share the link, or contact the sender for alternative arrangements."
+
+                # Add plain note to body
+                mail.Body += plain_note
+                
+                # Add signature after Box file information
+                if signature:
+                    mail.Body += f"\n\n{signature}"
+                else:
+                    mail.Body += "\n\nThanks,\nYour Name"
 
         mail.Save()
 
@@ -630,6 +957,29 @@ def create_draft_email(
                 print(f"Email saved with {len(missing_attachments)} missing attachments")
             return False
 
+        if box_files_info and not box_share_link:
+            # Count how many files were successfully uploaded
+            successful_uploads = sum(1 for info in box_files_info if info.get('box_uploaded', False))
+            failed_uploads = len(box_files_info) - successful_uploads
+            
+            if failed_uploads == len(box_files_info):
+                # All uploads failed
+                if logger:
+                    logger.warning(f"Email saved but all {len(box_files_info)} files could not be uploaded to Box. Check Box credentials and network connection.")
+                else:
+                    print(f"Email saved but all {len(box_files_info)} files could not be uploaded to Box. Check Box credentials and network connection.")
+            else:
+                # Some uploads succeeded, some failed
+                if logger:
+                    logger.warning(f"Email saved but {failed_uploads} of {len(box_files_info)} files could not be uploaded to Box. {successful_uploads} files were uploaded successfully.")
+                else:
+                    print(f"Email saved but {failed_uploads} of {len(box_files_info)} files could not be uploaded to Box. {successful_uploads} files were uploaded successfully.")
+        elif box_files_info and box_share_link:
+            if logger:
+                logger.info(f"Email saved with {len(box_files_info)} files uploaded to Box. Share link: {box_share_link}")
+            else:
+                print(f"Email saved with {len(box_files_info)} files uploaded to Box. Share link: {box_share_link}")
+
         return True
 
     except Exception as e:
@@ -638,7 +988,6 @@ def create_draft_email(
         else:
             print(f"Error creating draft email: {str(e)}")
         return False
-
 
 def log_email(log_file: str, quote_id: Any, vendor_id: Any, status: str, logger: logging.Logger = None) -> None:
     """
@@ -662,7 +1011,8 @@ def log_email(log_file: str, quote_id: Any, vendor_id: Any, status: str, logger:
             log_file, 
             mode='a', 
             header=not os.path.exists(log_file), 
-            index=False
+            index=False,
+            encoding='utf-8'
         )
 
         if logger:
@@ -677,6 +1027,71 @@ def log_email(log_file: str, quote_id: Any, vendor_id: Any, status: str, logger:
             print(f"Failed to log email: {str(e)}")
 
 
+def update_vendor_quotes(
+    quote_items: DataFrame, 
+    vendor_id: str, 
+    vendor_email: str, 
+    vendor_quotes_file: str, 
+    logger: logging.Logger = None
+) -> None:
+    """
+    Update Vendor_Quotes.csv with quote information when a draft is created.
+
+    Args:
+        quote_items: DataFrame containing the quote items
+        vendor_id: ID of the vendor
+        vendor_email: Email of the vendor contact
+        vendor_quotes_file: Path to the Vendor_Quotes.csv file
+        logger: Optional logger for logging messages
+    """
+    try:
+        # Create a list to store the rows to add to Vendor_Quotes.csv
+        rows_to_add = []
+
+        # Process each item in the quote
+        for item in quote_items.itertuples():
+            # Create a dictionary with the data to add
+            row_data = {
+                'Quote#': item.quote_id if hasattr(item, 'quote_id') else '',
+                'Line': item.line if hasattr(item, 'line') else '',
+                'part_number': item.part_number if hasattr(item, 'part_number') else '',
+                'Process': item.process if hasattr(item, 'process') else '',
+                'Spec': item.spec if hasattr(item, 'spec') else '',
+                'Vendor': vendor_id,
+                'Contact Email': vendor_email,
+                'SENT': 'YES'
+            }
+
+            # Add any file path if available
+            if hasattr(item, 'file_path') and pd.notna(item.file_path):
+                row_data['file location'] = item.file_path
+
+            rows_to_add.append(row_data)
+
+        # Create a DataFrame from the rows
+        vendor_quotes_df = pd.DataFrame(rows_to_add)
+
+        # Write to Vendor_Quotes.csv
+        vendor_quotes_df.to_csv(
+            vendor_quotes_file,
+            mode='a',
+            header=not os.path.exists(vendor_quotes_file),
+            index=False,
+            encoding='utf-8'
+        )
+
+        if logger:
+            logger.info(f"Added {len(rows_to_add)} items to Vendor_Quotes.csv for quote {quote_items['quote_id'].iloc[0]}")
+        else:
+            print(f"Added {len(rows_to_add)} items to Vendor_Quotes.csv for quote {quote_items['quote_id'].iloc[0]}")
+
+    except Exception as e:
+        if logger:
+            logger.error(f"Failed to update Vendor_Quotes.csv: {str(e)}")
+        else:
+            print(f"Failed to update Vendor_Quotes.csv: {str(e)}")
+
+
 def process_queue(
     queue: DataFrame, 
     vendor_info: Dict[Any, Dict[str, Any]], 
@@ -686,7 +1101,9 @@ def process_queue(
     sample_table_path: str = None,
     signature: str = None,
     logger: logging.Logger = None,
-    default_vendor: str = None
+    default_vendor: str = None,
+    vendor_quotes_file: str = None,
+    queue_file: str = None
 ) -> Tuple[int, int]:
     """
     Process the queue and create draft emails.
@@ -709,6 +1126,8 @@ def process_queue(
         signature: Email signature to include
         logger: Optional logger for logging messages
         default_vendor: Default vendor to use if no suitable vendor is found
+        vendor_quotes_file: Path to the Vendor_Quotes.csv file for tracking sent quotes
+        queue_file: Path to the original Queue.csv file for updating SENT status
 
     Returns:
         Tuple containing:
@@ -719,11 +1138,23 @@ def process_queue(
     total_quotes = 0
     use_template = template_path is not None and os.path.exists(template_path)
 
-    # Get a list of unique quote IDs
-    unique_quotes = queue['quote_id'].unique()
+    # Create a validator for normalizing process and spec names
+    validator = SpecProcessValidator()
+
+    # Filter out items where SENT=YES for processing, but keep them in the queue for saving later
+    processing_queue = queue.copy()
+    if 'SENT' in processing_queue.columns:
+        processing_queue = processing_queue[processing_queue['SENT'] != 'YES']
+        if logger:
+            logger.info(f"Filtered out items where SENT=YES for processing. Items to process: {len(processing_queue)}")
+        else:
+            print(f"Filtered out items where SENT=YES for processing. Items to process: {len(processing_queue)}")
+
+    # Get a list of unique quote IDs from the filtered queue
+    unique_quotes = processing_queue['quote_id'].unique()
 
     for quote_id in unique_quotes:
-        items = queue[queue['quote_id'] == quote_id]
+        items = processing_queue[processing_queue['quote_id'] == quote_id]
 
         # Check if we have any vendor information
         if not vendor_info:
@@ -750,10 +1181,13 @@ def process_queue(
             if has_spec:
                 # Get the spec for this process
                 spec = process_items['spec'].iloc[0]
+                normalized_spec = normalize_process_spec(spec, validator)
                 if logger:
                     logger.info(f"Searching for vendors that support spec: {spec}")
+                    logger.info(f"Normalized spec: {normalized_spec}")
                 else:
                     print(f"Searching for vendors that support spec: {spec}")
+                    print(f"Normalized spec: {normalized_spec}")
 
                 # Find vendors that support this spec
                 for vendor_id, info in vendor_info.items():
@@ -764,7 +1198,27 @@ def process_queue(
                         if isinstance(vendor_process, dict) and 'specs' in vendor_process and vendor_process['specs'] is not None:
                             for vendor_spec in vendor_process['specs']:
                                 if isinstance(vendor_spec, dict) and 'number' in vendor_spec:
-                                    if spec.lower() == vendor_spec['number'].lower():
+                                    # Normalize both spec names for comparison
+                                    normalized_spec = normalize_process_spec(spec, validator)
+                                    normalized_vendor_spec = normalize_process_spec(vendor_spec['number'], validator)
+
+                                    # Enhanced normalization for comparison
+                                    enhanced_spec = enhanced_normalize_for_comparison(spec, is_spec=True)
+                                    enhanced_vendor_spec = enhanced_normalize_for_comparison(vendor_spec['number'], is_spec=True)
+
+                                    # Log the comparison for debugging
+                                    if logger:
+                                        logger.info(f"Comparing spec '{spec}' ({normalized_spec}) with vendor spec '{vendor_spec['number']}' ({normalized_vendor_spec})")
+                                        logger.info(f"Enhanced comparison: '{enhanced_spec}' vs '{enhanced_vendor_spec}'")
+                                    else:
+                                        print(f"Comparing spec '{spec}' ({normalized_spec}) with vendor spec '{vendor_spec['number']}' ({normalized_vendor_spec})")
+                                        print(f"Enhanced comparison: '{enhanced_spec}' vs '{enhanced_vendor_spec}'")
+
+                                    if normalized_spec == normalized_vendor_spec or enhanced_spec == enhanced_vendor_spec:
+                                        if logger:
+                                            logger.info(f"Found matching spec for vendor {vendor_id}")
+                                        else:
+                                            print(f"Found matching spec for vendor {vendor_id}")
                                         suitable_vendors.append(vendor_id)
                                         break
 
@@ -778,15 +1232,62 @@ def process_queue(
                         print(f"No vendors found supporting spec: {spec}")
                         print(f"Falling back to searching by process: {process}")
 
+                # Normalize the process name for logging
+                normalized_process = normalize_process_spec(process, validator)
+                if logger:
+                    logger.info(f"Normalized process: {normalized_process}")
+                else:
+                    print(f"Normalized process: {normalized_process}")
+
                 for vendor_id, info in vendor_info.items():
                     # If the vendor has a processes list and the process is in it
                     if 'processes' in info:
                         for vendor_process in info['processes']:
-                            if isinstance(vendor_process, str) and process.lower() == vendor_process.lower():
-                                suitable_vendors.append(vendor_id)
-                                break
+                            # Normalize process names for comparison
+                            normalized_process = normalize_process_spec(process, validator)
+
+                            if isinstance(vendor_process, str):
+                                normalized_vendor_process = normalize_process_spec(vendor_process, validator)
+
+                                # Enhanced normalization for comparison
+                                enhanced_process = enhanced_normalize_for_comparison(process, is_spec=False)
+                                enhanced_vendor_process = enhanced_normalize_for_comparison(vendor_process, is_spec=False)
+
+                                # Log the comparison for debugging
+                                if logger:
+                                    logger.info(f"Comparing process '{process}' ({normalized_process}) with vendor process '{vendor_process}' ({normalized_vendor_process})")
+                                    logger.info(f"Enhanced comparison: '{enhanced_process}' vs '{enhanced_vendor_process}'")
+                                else:
+                                    print(f"Comparing process '{process}' ({normalized_process}) with vendor process '{vendor_process}' ({normalized_vendor_process})")
+                                    print(f"Enhanced comparison: '{enhanced_process}' vs '{enhanced_vendor_process}'")
+
+                                if normalized_process == normalized_vendor_process or enhanced_process == enhanced_vendor_process:
+                                    if logger:
+                                        logger.info(f"Found matching process for vendor {vendor_id}")
+                                    else:
+                                        print(f"Found matching process for vendor {vendor_id}")
+                                    suitable_vendors.append(vendor_id)
+                                    break
                             elif isinstance(vendor_process, dict) and 'name' in vendor_process:
-                                if process.lower() == vendor_process['name'].lower():
+                                normalized_vendor_process = normalize_process_spec(vendor_process['name'], validator)
+
+                                # Enhanced normalization for comparison
+                                enhanced_process = enhanced_normalize_for_comparison(process, is_spec=False)
+                                enhanced_vendor_process = enhanced_normalize_for_comparison(vendor_process['name'], is_spec=False)
+
+                                # Log the comparison for debugging
+                                if logger:
+                                    logger.info(f"Comparing process '{process}' ({normalized_process}) with vendor process '{vendor_process['name']}' ({normalized_vendor_process})")
+                                    logger.info(f"Enhanced comparison: '{enhanced_process}' vs '{enhanced_vendor_process}'")
+                                else:
+                                    print(f"Comparing process '{process}' ({normalized_process}) with vendor process '{vendor_process['name']}' ({normalized_vendor_process})")
+                                    print(f"Enhanced comparison: '{enhanced_process}' vs '{enhanced_vendor_process}'")
+
+                                if normalized_process == normalized_vendor_process or enhanced_process == enhanced_vendor_process:
+                                    if logger:
+                                        logger.info(f"Found matching process for vendor {vendor_id}")
+                                    else:
+                                        print(f"Found matching process for vendor {vendor_id}")
                                     suitable_vendors.append(vendor_id)
                                     break
 
@@ -907,14 +1408,17 @@ def process_queue(
 
                 # Create draft
                 success = create_draft_email(
-                    outlook, 
-                    recipient, 
-                    subject, 
-                    body, 
-                    attachments, 
+                    outlook,
+                    recipient,
+                    subject,
+                    body,
+                    attachments,
                     logger,
                     html_format=True,
-                    use_outlook_signature=False
+                    use_outlook_signature=False,
+                    quote_id=quote_id,
+                    process=process,
+                    signature=signature
                 )
 
                 if success:
@@ -923,6 +1427,21 @@ def process_queue(
                     else:
                         print(f"Draft saved for quote {quote_id}, process {process} -> {recipient}")
                     log_email(log_file, quote_id, vendor_id, f'draft_saved_{process}', logger)
+
+                    # Update Vendor_Quotes.csv with quote information
+                    if vendor_quotes_file:
+                        update_vendor_quotes(
+                            process_items, 
+                            vendor_id, 
+                            recipient, 
+                            vendor_quotes_file, 
+                            logger
+                        )
+
+                        # Mark items as SENT=YES in the original queue
+                        for idx in process_items.index:
+                            queue.loc[idx, 'SENT'] = 'YES'
+
                     successful_drafts += 1
                 else:
                     if logger:
@@ -931,35 +1450,349 @@ def process_queue(
                         print(f"Issues encountered when creating draft for quote {quote_id}, process {process}")
                     log_email(log_file, quote_id, vendor_id, f'draft_saved_with_issues_{process}', logger)
 
+    # Save the updated queue data back to the CSV file if queue_file is provided
+    if queue_file and 'SENT' in queue.columns:
+        try:
+            if logger:
+                logger.info(f"Saving updated queue data to {queue_file}")
+            else:
+                print(f"Saving updated queue data to {queue_file}")
+
+            # Save the queue data back to the CSV file with UTF-8 encoding
+            queue.to_csv(queue_file, index=False, encoding='utf-8')
+
+            if logger:
+                logger.info(f"Queue data saved successfully")
+            else:
+                print(f"Queue data saved successfully")
+        except Exception as e:
+            if logger:
+                logger.error(f"Failed to save queue data: {str(e)}")
+            else:
+                print(f"Failed to save queue data: {str(e)}")
+
     return successful_drafts, total_quotes
+
+
+def parse_args() -> argparse.Namespace:
+    """
+    Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments
+    """
+    parser = argparse.ArgumentParser(
+        description="Create draft emails from a queue of RFQs."
+    )
+    parser.add_argument(
+        "--queue-file",
+        help="Path to the queue CSV file (default: data/Queue.csv)"
+    )
+    parser.add_argument(
+        "--contacts-file",
+        help="Path to the contacts CSV file (default: docs/OS/contacts.csv)"
+    )
+    parser.add_argument(
+        "--vendor-options-file",
+        help="Path to the vendor options YAML file (default: docs/OS/vendor_options.yaml)"
+    )
+    parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Run in interactive mode (default if no other arguments provided)"
+    )
+
+    return parser.parse_args()
+
+
+def interactive_mode(
+    project_root: str,
+    logger: logging.Logger
+) -> None:
+    """
+    Run the script in interactive mode with a user-friendly interface.
+
+    Args:
+        project_root: Path to the project root directory
+        logger: Logger for logging messages
+    """
+    console.print("[bold blue]Email From List - Interactive Mode[/bold blue]")
+    console.print("This tool creates draft emails from a queue of RFQs.")
+
+    # Default file paths
+    default_queue_file = os.path.join(project_root, 'data', 'Queue.csv')
+    default_contacts_file = os.path.join(project_root, 'docs', 'OS', 'contacts.csv')
+    default_vendor_options_file = os.path.join(project_root, 'docs', 'OS', 'vendor_options.yaml')
+    default_logs_file = os.path.join(project_root, 'logs.csv')
+    default_vendor_quotes_file = os.path.join(project_root, 'data', 'Vendor_Quotes.csv')
+    default_template_path = os.path.join(project_root, 'docs', 'templates', 'cover_letter.j2')
+    default_sample_table_path = os.path.join(project_root, 'docs', 'templates', 'Sample_Table(Empty)-OS.csv')
+    default_signature_path = os.path.join(project_root, 'docs', 'templates', 'email_signature.html')
+
+    # Get file paths interactively
+    queue_file = questionary.path(
+        "Path to Queue.csv file:",
+        default=default_queue_file
+    ).ask()
+
+    contacts_file = questionary.path(
+        "Path to contacts.csv file:",
+        default=default_contacts_file
+    ).ask()
+
+    vendor_options_file = questionary.path(
+        "Path to vendor_options.yaml file:",
+        default=default_vendor_options_file
+    ).ask()
+
+    logs_file = questionary.path(
+        "Path to logs.csv file:",
+        default=default_logs_file
+    ).ask()
+
+    vendor_quotes_file = questionary.path(
+        "Path to Vendor_Quotes.csv file:",
+        default=default_vendor_quotes_file
+    ).ask()
+
+    template_path = questionary.path(
+        "Path to email template file:",
+        default=default_template_path
+    ).ask()
+
+    sample_table_path = questionary.path(
+        "Path to sample table template file:",
+        default=default_sample_table_path
+    ).ask()
+
+    signature_path = questionary.path(
+        "Path to email signature file:",
+        default=default_signature_path
+    ).ask()
+
+    # Read HTML signature from file with error handling
+    try:
+        with open(signature_path, 'r', encoding='utf-8') as f:
+            signature = f.read()
+        logger.info(f"Using HTML signature from {signature_path}")
+    except UnicodeDecodeError:
+        # Fall back to cp1252 with error handling if UTF-8 fails
+        try:
+            with open(signature_path, 'r', encoding='cp1252', errors='replace') as f:
+                signature = f.read()
+            logger.info(f"Using HTML signature from {signature_path} (with cp1252 encoding)")
+        except Exception as e:
+            logger.warning(f"Could not read HTML signature file: {str(e)}. Using text signature instead.")
+            signature = """
+Best regards,
+
+Your Name
+your.email@example.com
+Your Company
+Phone: (123) 456-7890
+"""
+    except Exception as e:
+        logger.warning(f"Could not read HTML signature file: {str(e)}. Using text signature instead.")
+        signature = """
+Best regards,
+
+Your Name
+your.email@example.com
+Your Company
+Phone: (123) 456-7890
+"""
+
+    # Load data with progress indicator
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TimeElapsedColumn(),
+    ) as progress:
+        task = progress.add_task("Loading data...", total=2)
+
+        # Load queue data
+        progress.update(task, description="Loading queue data...")
+        queue, vendor_info = load_data(queue_file, contacts_file, vendor_options_file, logger)
+        progress.advance(task)
+
+        # Initialize Outlook
+        progress.update(task, description="Initializing Outlook...")
+        outlook = initialize_outlook(logger)
+        progress.advance(task)
+
+    # Show queue summary
+    console.print("\n[bold]Queue Summary:[/bold]")
+    table = Table(title=f"Items in Queue: {len(queue)}")
+    table.add_column("Quote ID")
+    table.add_column("Process")
+    table.add_column("Part Number")
+    table.add_column("Status")
+
+    for _, row in queue.iterrows():
+        table.add_row(
+            str(row.get('quote_id', 'N/A')),
+            str(row.get('process', 'N/A')),
+            str(row.get('part_number', 'N/A')),
+            "✅" if row.get('SENT') == 'YES' else "⏳"
+        )
+
+    console.print(table)
+
+    # Ask if user wants to process all or select specific quotes
+    process_all = questionary.confirm(
+        "Process all quotes in the queue?",
+        default=True
+    ).ask()
+
+    if not process_all:
+        # Let user select specific quotes to process
+        quote_ids = queue['quote_id'].unique().tolist()
+        selected_quotes = questionary.checkbox(
+            "Select quotes to process:",
+            choices=quote_ids
+        ).ask()
+
+        # Filter queue to selected quotes
+        queue = queue[queue['quote_id'].isin(selected_quotes)]
+
+    # Process queue with progress bar
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TimeElapsedColumn(),
+    ) as progress:
+        task = progress.add_task("Processing queue...", total=len(queue['quote_id'].unique()))
+
+        # Process queue
+        successful_drafts, total_quotes = process_queue(
+            queue, 
+            vendor_info, 
+            outlook, 
+            logs_file, 
+            template_path=template_path,
+            sample_table_path=sample_table_path,
+            signature=signature,
+            logger=logger,
+            default_vendor=None,
+            vendor_quotes_file=vendor_quotes_file,
+            queue_file=queue_file
+        )
+
+        progress.update(task, completed=len(queue['quote_id'].unique()))
+
+    # Show results
+    console.print(f"\n[bold green]Processing complete! Success: {successful_drafts}/{total_quotes}[/bold green]")
 
 
 def main() -> None:
     """Main entry point for the script."""
     try:
+        # Load environment variables from .env file
+        from dotenv import load_dotenv
+        load_dotenv()
+        
         # File paths
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)
 
-        queue_file = os.path.join(project_root, 'data', 'Queue.csv')
-        contacts_file = os.path.join(project_root, 'docs', 'OS', 'contacts.csv')
-        vendor_options_file = os.path.join(project_root, 'docs', 'OS', 'vendor_options.yaml')
+        # Set up logging
+        logs_dir = os.path.join(project_root, "logs")
+        logger = setup_logging(logs_dir)
+        
+        # Log that environment variables were loaded
+        logger.info("Loaded environment variables from .env file")
+        
+        # Verify Box credentials are present
+        # Check config file for client ID and client secret
+        config_file_path = os.path.join(script_dir, "0__config.json")
+        config_file_exists = os.path.exists(config_file_path)
+        config_credentials_valid = False
+        
+        if config_file_exists:
+            try:
+                import json
+                with open(config_file_path, 'r') as config_file:
+                    config = json.load(config_file)
+                    
+                client_id = config.get('boxAppSettings', {}).get('clientID')
+                client_secret = config.get('boxAppSettings', {}).get('clientSecret')
+                
+                if client_id and client_secret:
+                    config_credentials_valid = True
+                    logger.info("Box client ID and client secret found in 0__config.json")
+                else:
+                    logger.warning("Box client ID or client secret missing from 0__config.json")
+            except Exception as e:
+                logger.warning(f"Error reading 0__config.json: {str(e)}")
+        else:
+            logger.warning(f"Box config file not found: {config_file_path}")
+        
+        # JWT authentication is used for Box, which only requires the 0__config.json file
+        # No environment variables are needed
+        
+        # Log overall status
+        if not config_file_exists or not config_credentials_valid:
+            logger.warning("Box uploads may fail. Please check your 0__config.json file for Box JWT credentials.")
+
+        # Parse command-line arguments
+        args = parse_args()
+
+        # Check if we should run in interactive mode
+        # Run in interactive mode if --interactive flag is set or no arguments are provided
+        if args.interactive or all(v is None for k, v in vars(args).items() if k != 'interactive'):
+            try:
+                interactive_mode(project_root, logger)
+            except Exception as e:
+                # Check if it's a NoConsoleScreenBufferError
+                if "NoConsoleScreenBufferError" in str(e):
+                    console.print("[red]Error: Cannot run interactive mode in this environment.[/red]")
+                    console.print("[yellow]This error typically occurs when running from an IDE or other non-console environment.[/yellow]")
+                    console.print("[yellow]Try running the script directly from a command prompt (cmd.exe) or PowerShell.[/yellow]")
+                    console.print("\n[green]Falling back to non-interactive mode. Use --help to see available commands.[/green]")
+                    logger.warning("NoConsoleScreenBufferError: Falling back to non-interactive mode")
+                else:
+                    # For other exceptions, log the error and re-raise
+                    logger.error(f"Error in interactive mode: {str(e)}")
+                    raise
+                return
+            return
+
+        # Non-interactive mode with provided arguments or defaults
+        queue_file = args.queue_file or os.path.join(project_root, 'data', 'Queue.csv')
+        contacts_file = args.contacts_file or os.path.join(project_root, 'docs', 'OS', 'contacts.csv')
+        vendor_options_file = args.vendor_options_file or os.path.join(project_root, 'docs', 'OS', 'vendor_options.yaml')
         logs_file = os.path.join(project_root, 'logs.csv')
+        vendor_quotes_file = os.path.join(project_root, 'data', 'Vendor_Quotes.csv')
 
         # Template paths
         template_path = os.path.join(project_root, 'docs', 'templates', 'cover_letter.j2')
         sample_table_path = os.path.join(project_root, 'docs', 'templates', 'Sample_Table(Empty)-OS.csv')
         signature_path = os.path.join(project_root, 'docs', 'templates', 'email_signature.html')
 
-        # Set up logging
-        logs_dir = os.path.join(project_root, "logs")
-        logger = setup_logging(logs_dir)
-
         # Read HTML signature from file
         try:
             with open(signature_path, 'r', encoding='utf-8') as f:
                 signature = f.read()
             logger.info(f"Using HTML signature from {signature_path}")
+        except UnicodeDecodeError:
+            # Fall back to cp1252 with error handling if UTF-8 fails
+            try:
+                with open(signature_path, 'r', encoding='cp1252', errors='replace') as f:
+                    signature = f.read()
+                logger.info(f"Using HTML signature from {signature_path} (with cp1252 encoding)")
+            except Exception as e:
+                # Fallback to text signature if HTML signature file can't be read
+                logger.warning(f"Could not read HTML signature file: {str(e)}. Using text signature instead.")
+                signature = """
+Best regards,
+
+Your Name
+your.email@example.com
+Your Company
+Phone: (123) 456-7890
+"""
         except Exception as e:
             # Fallback to text signature if HTML signature file can't be read
             logger.warning(f"Could not read HTML signature file: {str(e)}. Using text signature instead.")
@@ -988,14 +1821,14 @@ Phone: (123) 456-7890
             sample_table_path=sample_table_path,
             signature=signature,
             logger=logger,
-            default_vendor=None  # No default vendor - will use first available if needed
+            default_vendor=None,  # No default vendor - will use first available if needed
+            vendor_quotes_file=vendor_quotes_file,
+            queue_file=queue_file
         )
 
         # Report results
-        if logger:
-            logger.info(f"All drafts generated. Success: {successful_drafts}/{total_quotes}")
-        else:
-            print(f"All drafts generated. Success: {successful_drafts}/{total_quotes}")
+        logger.info(f"All drafts generated. Success: {successful_drafts}/{total_quotes}")
+        console.print(f"[bold green]All drafts generated. Success: {successful_drafts}/{total_quotes}[/bold green]")
 
     except Exception as e:
         # If logger is not defined yet, print to console

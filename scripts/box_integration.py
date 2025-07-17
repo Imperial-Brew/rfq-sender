@@ -1,0 +1,550 @@
+"""
+Box Integration Module
+
+This module provides functions for interacting with Box, including:
+- Authentication with Box
+- Creating folders
+- Uploading files
+- Creating share links
+
+Usage:
+    from box_integration import BoxIntegration
+
+    # Initialize Box integration
+    box = BoxIntegration()
+
+    # Create a folder
+    folder = box.create_folder("My Folder")
+
+    # Upload files to the folder
+    uploaded_files = box.upload_files(["file1.pdf", "file2.pdf"], folder)
+
+    # Create a share link
+    share_link = box.create_share_link(folder)
+"""
+
+import os
+import logging
+from typing import List, Dict, Any, Optional, Union
+from datetime import datetime
+
+from boxsdk import Client, OAuth2, JWTAuth
+from boxsdk.exception import BoxAPIException
+from boxsdk.object.collaboration import CollaborationRole
+
+
+class BoxIntegration:
+    """
+    Box integration class for handling Box operations.
+    """
+
+    def __init__(self, logger: logging.Logger = None):
+        """
+        Initialize Box integration.
+
+        Args:
+            logger: Optional logger for logging messages
+        """
+        self.logger = logger
+        self.client = self._authenticate()
+
+    def _authenticate(self) -> Optional[Client]:
+        """
+        Authenticate with Box using JWT credentials from 0__config.json file.
+
+        Returns:
+            Box client if authentication is successful, None otherwise
+        """
+        try:
+            # Get the path to the config file
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            config_path = os.path.join(script_dir, "0__config.json")
+            
+            # Check if config file exists
+            if not os.path.exists(config_path):
+                if self.logger:
+                    self.logger.error(f"Box config file not found: {config_path}")
+                else:
+                    print(f"Box config file not found: {config_path}")
+                return None
+            
+            # Create JWT auth object from config file
+            auth = JWTAuth.from_settings_file(config_path)
+            
+            # Create client
+            client = Client(auth)
+            
+            # Test connection by getting current user info
+            user = client.user().get()
+            if self.logger:
+                self.logger.info(f"Authenticated with Box as {user.name} ({user.login})")
+            else:
+                print(f"Authenticated with Box as {user.name} ({user.login})")
+            
+            return client
+
+        except BoxAPIException as e:
+            error_message = str(e)
+            if self.logger:
+                self.logger.error(f"Box API error: {error_message}")
+            else:
+                print(f"Box API error: {error_message}")
+            return None
+
+        except Exception as e:
+            error_message = str(e)
+            if "private_key" in error_message.lower() or "jwt" in error_message.lower():
+                if self.logger:
+                    self.logger.error(f"Box JWT authentication error: Issue with JWT credentials in 0__config.json file.")
+                    self.logger.error(f"Original error: {error_message}")
+                else:
+                    print(f"Box JWT authentication error: Issue with JWT credentials in 0__config.json file.")
+                    print(f"Original error: {error_message}")
+            else:
+                if self.logger:
+                    self.logger.error(f"Error authenticating with Box: {error_message}")
+                else:
+                    print(f"Error authenticating with Box: {error_message}")
+            return None
+
+
+    def create_folder(self, folder_name: str, parent_folder_id: str = "0", 
+                   collaborator_email: str = "drab.dustin@athenamfg.com") -> Optional[Dict[str, Any]]:
+        """
+        Create a folder in Box and add a collaborator with editor access.
+
+        Args:
+            folder_name: Name of the folder to create
+            parent_folder_id: ID of the parent folder (default is "0", the root folder)
+            collaborator_email: Email of the user to add as a collaborator (default is the user's email)
+
+        Returns:
+            Folder object if successful, None otherwise
+        """
+        if not self.client:
+            if self.logger:
+                self.logger.error("Box client not initialized")
+            else:
+                print("Box client not initialized")
+            return None
+
+        try:
+            # Create folder
+            folder = self.client.folder(parent_folder_id).create_subfolder(folder_name)
+
+            if self.logger:
+                self.logger.info(f"Created Box folder: {folder_name} (ID: {folder.id})")
+            else:
+                print(f"Created Box folder: {folder_name} (ID: {folder.id})")
+                
+            # Add collaborator with editor role
+            try:
+                if collaborator_email:
+                    # Create a collaboration directly using the Box API
+                    url = f"https://api.box.com/2.0/collaborations"
+                    headers = {
+                        "Authorization": f"Bearer {self.client.auth.access_token}",
+                        "Content-Type": "application/json"
+                    }
+                    data = {
+                        "item": {
+                            "id": folder.id,
+                            "type": "folder"
+                        },
+                        "accessible_by": {
+                            "login": collaborator_email,
+                            "type": "user"
+                        },
+                        "role": "editor"
+                    }
+                    
+                    import requests
+                    response = requests.post(url, headers=headers, json=data)
+                    
+                    if response.status_code in (200, 201):
+                        collaboration = response.json()
+                    else:
+                        raise Exception(f"Failed to add collaborator: {response.text}")
+                    
+                    if self.logger:
+                        self.logger.info(f"Added {collaborator_email} as collaborator to folder {folder_name}")
+                    else:
+                        print(f"Added {collaborator_email} as collaborator to folder {folder_name}")
+            except Exception as collab_error:
+                if self.logger:
+                    self.logger.warning(f"Failed to add collaborator to folder: {str(collab_error)}")
+                else:
+                    print(f"Failed to add collaborator to folder: {str(collab_error)}")
+                # Continue even if adding collaborator fails - we still want to return the folder
+
+            return folder
+
+        except BoxAPIException as e:
+            # Check if the error is because the folder already exists
+            if "item_name_in_use" in str(e):
+                # Try to get the existing folder
+                items = self.client.folder(parent_folder_id).get_items()
+                for item in items:
+                    if item.name == folder_name and item.type == "folder":
+                        if self.logger:
+                            self.logger.info(f"Using existing Box folder: {folder_name} (ID: {item.id})")
+                        else:
+                            print(f"Using existing Box folder: {folder_name} (ID: {item.id})")
+                        
+                        # Add collaborator to existing folder
+                        try:
+                            if collaborator_email:
+                                # Create a collaboration directly using the Box API
+                                url = f"https://api.box.com/2.0/collaborations"
+                                headers = {
+                                    "Authorization": f"Bearer {self.client.auth.access_token}",
+                                    "Content-Type": "application/json"
+                                }
+                                data = {
+                                    "item": {
+                                        "id": item.id,
+                                        "type": "folder"
+                                    },
+                                    "accessible_by": {
+                                        "login": collaborator_email,
+                                        "type": "user"
+                                    },
+                                    "role": "editor"
+                                }
+                                
+                                import requests
+                                response = requests.post(url, headers=headers, json=data)
+                                
+                                if response.status_code in (200, 201):
+                                    collaboration = response.json()
+                                else:
+                                    raise Exception(f"Failed to add collaborator: {response.text}")
+                                
+                                if self.logger:
+                                    self.logger.info(f"Added {collaborator_email} as collaborator to existing folder {folder_name}")
+                                else:
+                                    print(f"Added {collaborator_email} as collaborator to existing folder {folder_name}")
+                        except Exception as collab_error:
+                            if self.logger:
+                                self.logger.warning(f"Failed to add collaborator to existing folder: {str(collab_error)}")
+                            else:
+                                print(f"Failed to add collaborator to existing folder: {str(collab_error)}")
+                            # Continue even if adding collaborator fails
+                            
+                        return item
+
+            if self.logger:
+                self.logger.error(f"Box API error creating folder: {str(e)}")
+            else:
+                print(f"Box API error creating folder: {str(e)}")
+            return None
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error creating Box folder: {str(e)}")
+            else:
+                print(f"Error creating Box folder: {str(e)}")
+            return None
+
+    def upload_file(self, file_path: str, folder: Dict[str, Any], 
+                  timeout: int = 300, max_retries: int = 3, 
+                  chunk_size: int = 8 * 1024 * 1024) -> Optional[Dict[str, Any]]:
+        """
+        Upload a file to a Box folder with retry logic and progress reporting.
+
+        Args:
+            file_path: Path to the file to upload
+            folder: Box folder object
+            timeout: Timeout in seconds for the upload operation (default: 300s/5min)
+            max_retries: Maximum number of retry attempts for failed uploads (default: 3)
+            chunk_size: Size of chunks for large file uploads in bytes (default: 8MB)
+
+        Returns:
+            File object if successful, None otherwise
+        """
+        if not self.client:
+            if self.logger:
+                self.logger.error("Box client not initialized")
+            else:
+                print("Box client not initialized")
+            return None
+
+        if not os.path.exists(file_path):
+            if self.logger:
+                self.logger.error(f"File not found: {file_path}")
+            else:
+                print(f"File not found: {file_path}")
+            return None
+
+        # Get file name and size
+        file_name = os.path.basename(file_path)
+        file_size = os.path.getsize(file_path)
+        file_size_mb = file_size / (1024 * 1024)
+        
+        # Log the upload attempt
+        if self.logger:
+            self.logger.info(f"Uploading file to Box: {file_name} ({file_size_mb:.2f} MB)")
+        else:
+            print(f"Uploading file to Box: {file_name} ({file_size_mb:.2f} MB)")
+        
+        # Determine if we should use chunked upload for large files
+        use_chunked_upload = file_size > chunk_size
+        
+        # Initialize retry counter
+        retry_count = 0
+        
+        while retry_count <= max_retries:
+            try:
+                # If this is a retry, log it
+                if retry_count > 0:
+                    if self.logger:
+                        self.logger.info(f"Retry attempt {retry_count}/{max_retries} for file: {file_name}")
+                    else:
+                        print(f"Retry attempt {retry_count}/{max_retries} for file: {file_name}")
+                
+                # For large files, use chunked upload with progress reporting
+                if use_chunked_upload:
+                    # Calculate number of chunks
+                    total_chunks = (file_size + chunk_size - 1) // chunk_size
+                    
+                    if self.logger:
+                        self.logger.info(f"Using chunked upload for {file_name} ({total_chunks} chunks)")
+                    else:
+                        print(f"Using chunked upload for {file_name} ({total_chunks} chunks)")
+                    
+                    # Create upload session
+                    upload_session = self.client.folder(folder.id).create_upload_session(
+                        file_size=file_size,
+                        file_name=file_name
+                    )
+                    
+                    # Upload chunks
+                    with open(file_path, 'rb') as file_content:
+                        for chunk_index in range(total_chunks):
+                            # Calculate chunk position
+                            start_byte = chunk_index * chunk_size
+                            end_byte = min(start_byte + chunk_size, file_size)
+                            chunk_length = end_byte - start_byte
+                            
+                            # Read chunk
+                            file_content.seek(start_byte)
+                            chunk_data = file_content.read(chunk_length)
+                            
+                            # Upload chunk with timeout
+                            upload_session.upload_part_bytes(
+                                chunk_data,
+                                start_byte,
+                                end_byte - 1,
+                                file_size
+                            )
+                            
+                            # Log progress
+                            progress_percent = (chunk_index + 1) / total_chunks * 100
+                            if self.logger:
+                                self.logger.debug(f"Uploaded chunk {chunk_index + 1}/{total_chunks} ({progress_percent:.1f}%) for {file_name}")
+                            else:
+                                print(f"Uploaded chunk {chunk_index + 1}/{total_chunks} ({progress_percent:.1f}%) for {file_name}")
+                    
+                    # Commit the upload session
+                    uploaded_file = upload_session.commit()
+                else:
+                    # For smaller files, use regular upload
+                    with open(file_path, 'rb') as file_content:
+                        uploaded_file = self.client.folder(folder.id).upload_stream(
+                            file_content,
+                            file_name
+                        )
+                
+                # Log success
+                if self.logger:
+                    self.logger.info(f"Successfully uploaded file to Box: {file_name} (ID: {uploaded_file.id})")
+                else:
+                    print(f"Successfully uploaded file to Box: {file_name} (ID: {uploaded_file.id})")
+                
+                return uploaded_file
+                
+            except BoxAPIException as e:
+                # Check if the error is because the file already exists
+                if "item_name_in_use" in str(e):
+                    # Try to get the existing file
+                    items = self.client.folder(folder.id).get_items()
+                    for item in items:
+                        if item.name == file_name and item.type == "file":
+                            if self.logger:
+                                self.logger.info(f"File already exists in Box: {file_name} (ID: {item.id})")
+                            else:
+                                print(f"File already exists in Box: {file_name} (ID: {item.id})")
+                            return item
+                
+                # For other API errors, check if we should retry
+                retry_count += 1
+                
+                if retry_count <= max_retries:
+                    # Log retry attempt
+                    if self.logger:
+                        self.logger.warning(f"Box API error uploading file (will retry): {str(e)}")
+                    else:
+                        print(f"Box API error uploading file (will retry): {str(e)}")
+                    
+                    # Wait before retrying (exponential backoff)
+                    import time
+                    wait_time = 2 ** retry_count  # 2, 4, 8 seconds
+                    time.sleep(wait_time)
+                else:
+                    # Log final failure
+                    if self.logger:
+                        self.logger.error(f"Box API error uploading file (max retries exceeded): {str(e)}")
+                    else:
+                        print(f"Box API error uploading file (max retries exceeded): {str(e)}")
+                    return None
+                    
+            except Exception as e:
+                # For general exceptions, check if we should retry
+                retry_count += 1
+                
+                if retry_count <= max_retries:
+                    # Log retry attempt
+                    if self.logger:
+                        self.logger.warning(f"Error uploading file to Box (will retry): {str(e)}")
+                    else:
+                        print(f"Error uploading file to Box (will retry): {str(e)}")
+                    
+                    # Wait before retrying (exponential backoff)
+                    import time
+                    wait_time = 2 ** retry_count  # 2, 4, 8 seconds
+                    time.sleep(wait_time)
+                else:
+                    # Log final failure
+                    if self.logger:
+                        self.logger.error(f"Error uploading file to Box (max retries exceeded): {str(e)}")
+                    else:
+                        print(f"Error uploading file to Box (max retries exceeded): {str(e)}")
+                    return None
+        
+        # This should not be reached, but just in case
+        return None
+
+    def upload_files(self, file_paths: List[str], folder: Dict[str, Any], 
+                   timeout: int = 300, max_retries: int = 3, 
+                   chunk_size: int = 8 * 1024 * 1024) -> List[Dict[str, Any]]:
+        """
+        Upload multiple files to a Box folder.
+
+        Args:
+            file_paths: List of paths to files to upload
+            folder: Box folder object
+            timeout: Timeout in seconds for each upload operation (default: 300s/5min)
+            max_retries: Maximum number of retry attempts for failed uploads (default: 3)
+            chunk_size: Size of chunks for large file uploads in bytes (default: 8MB)
+
+        Returns:
+            List of uploaded file objects
+        """
+        uploaded_files = []
+        total_files = len(file_paths)
+
+        if self.logger:
+            self.logger.info(f"Uploading {total_files} files to Box folder {folder.name} (ID: {folder.id})")
+        else:
+            print(f"Uploading {total_files} files to Box folder {folder.name} (ID: {folder.id})")
+
+        for index, file_path in enumerate(file_paths, 1):
+            if self.logger:
+                self.logger.info(f"Processing file {index}/{total_files}: {os.path.basename(file_path)}")
+            else:
+                print(f"Processing file {index}/{total_files}: {os.path.basename(file_path)}")
+                
+            uploaded_file = self.upload_file(
+                file_path, 
+                folder, 
+                timeout=timeout, 
+                max_retries=max_retries, 
+                chunk_size=chunk_size
+            )
+            
+            if uploaded_file:
+                uploaded_files.append(uploaded_file)
+
+        if self.logger:
+            self.logger.info(f"Completed uploading {len(uploaded_files)}/{total_files} files to Box folder {folder.name}")
+        else:
+            print(f"Completed uploading {len(uploaded_files)}/{total_files} files to Box folder {folder.name}")
+
+        return uploaded_files
+
+    def create_share_link(self, folder: Dict[str, Any], access: str = "open", password: str = None, expire_days: int = None) -> Optional[str]:
+        """
+        Create a share link for a Box folder.
+
+        Args:
+            folder: Box folder object
+            access: Access level for the shared link (open, company, collaborators)
+            password: Optional password protection for the shared link
+            expire_days: Optional number of days until the link expires
+
+        Returns:
+            Share link URL if successful, None otherwise
+        """
+        if not self.client:
+            if self.logger:
+                self.logger.error("Box client not initialized")
+            else:
+                print("Box client not initialized")
+            return None
+
+        try:
+            # Create shared link with enhanced options
+            updated_folder = self.client.folder(folder.id).get()
+            
+            # Set up shared link parameters
+            shared_link_params = {
+                'access': access,
+                'allow_download': True,
+                'allow_preview': True,
+            }
+            
+            # Add password if provided
+            if password:
+                shared_link_params['password'] = password
+                
+            # Add expiration if provided
+            if expire_days and expire_days > 0:
+                from datetime import datetime, timedelta
+                expire_date = datetime.now() + timedelta(days=expire_days)
+                shared_link_params['unshared_at'] = expire_date.isoformat()
+            
+            # Create the shared link
+            shared_link = updated_folder.get_shared_link(**shared_link_params)
+
+            if self.logger:
+                log_message = f"Created Box share link for folder: {folder.name}"
+                if password:
+                    log_message += " (password protected)"
+                if expire_days:
+                    log_message += f" (expires in {expire_days} days)"
+                self.logger.info(log_message)
+                self.logger.info(f"Share link: {shared_link}")
+            else:
+                log_message = f"Created Box share link for folder: {folder.name}"
+                if password:
+                    log_message += " (password protected)"
+                if expire_days:
+                    log_message += f" (expires in {expire_days} days)"
+                print(log_message)
+                print(f"Share link: {shared_link}")
+
+            return shared_link
+
+        except BoxAPIException as e:
+            if self.logger:
+                self.logger.error(f"Box API error creating share link: {str(e)}")
+            else:
+                print(f"Box API error creating share link: {str(e)}")
+            return None
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error creating Box share link: {str(e)}")
+            else:
+                print(f"Error creating Box share link: {str(e)}")
+            return None

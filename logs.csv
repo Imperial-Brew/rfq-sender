@@ -138,3 +138,159 @@ quote_id,vendor_id,sent_timestamp,status
 7833,"Brooks Industrial Coatings, Inc.",2025-06-18 22:39:47.103076,draft_saved_Anodize
 7833,Gleco Plating,2025-06-18 22:39:48.831261,draft_saved_Anodize
 7833,Nxedge Inc.,2025-06-18 22:39:50.532018,draft_saved_Anodize
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 11:50:42.728362,draft_saved_CLEAN
+7858,Harrison Electropolishing L.P.,2025-06-23 11:50:43.984928,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 11:50:45.719809,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 11:50:46.652404,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 11:50:47.923274,draft_saved_CLEAN
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 12:06:58.793238,draft_saved_CLEAN
+7858,Harrison Electropolishing L.P.,2025-06-23 12:07:03.129813,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 12:07:07.657301,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 12:07:12.317167,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 12:07:17.616460,draft_saved_CLEAN
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 12:19:53.518191,draft_saved_CLEAN
+7858,Harrison Electropolishing L.P.,2025-06-23 12:19:58.305529,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 12:20:02.955433,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 12:20:08.365851,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 12:20:13.621031,draft_saved_CLEAN
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 12:41:54.294495,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 12:41:59.537999,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 12:42:04.399121,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 12:42:09.871997,draft_saved_CLEAN
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 12:56:01.091173,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 12:56:05.258198,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 12:56:09.467477,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 12:56:12.941702,draft_saved_CLEAN
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 13:02:50.029330,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 13:02:54.551005,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 13:02:59.631867,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 13:03:05.700763,draft_saved_CLEAN
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 13:24:48.625642,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 13:24:54.212003,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 13:24:58.049035,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 13:25:02.970834,draft_saved_CLEAN
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 13:31:41.545685,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 13:31:45.895975,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 13:31:50.296659,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 13:31:54.727948,draft_saved_CLEAN
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 13:38:22.699089,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 13:38:27.518779,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 13:38:31.820286,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 13:38:38.888957,draft_saved_CLEAN
+7858,"Consolidated Metal Technologies, Inc.",2025-06-23 15:14:10.669027,draft_saved_CLEAN
+7858,Nxedge Inc.,2025-06-23 15:14:15.208022,draft_saved_CLEAN
+7858,Pentagon Technologies,2025-06-23 15:14:20.794532,draft_saved_CLEAN
+7858,AI Industries,2025-06-23 15:14:24.786818,draft_saved_CLEAN
+7969,NONE,2025-06-23 15:15:18.396321,skipped_no_vendor_ELECTROLESS NICKEL PLATE
+7969,NONE,2025-06-23 15:16:41.469946,skipped_no_vendor_ELECTROLESS NICKEL PLATE
+7969,"Consolidated Metal Technologies, Inc.",2025-06-23 15:18:24.893116,draft_saved_ELECTROLESS NICKEL
+7969,Gleco Plating,2025-06-23 15:18:27.917176,draft_saved_ELECTROLESS NICKEL
+7969,Nxedge Inc.,2025-06-23 15:18:30.638201,draft_saved_ELECTROLESS NICKEL
+7969,"Consolidated Metal Technologies, Inc.",2025-06-23 15:26:35.308119,draft_saved_ELECTROLESS NICKEL
+7969,Gleco Plating,2025-06-23 15:26:39.314644,draft_saved_ELECTROLESS NICKEL
+7969,Nxedge Inc.,2025-06-23 15:26:42.967585,draft_saved_ELECTROLESS NICKEL
+7969,"Consolidated Metal Technologies, Inc.",2025-07-01 12:20:55.830626,draft_saved_ELECTROLESS NICKEL
+7969,Gleco Plating,2025-07-01 12:20:58.942373,draft_saved_ELECTROLESS NICKEL
+7969,Nxedge Inc.,2025-07-01 12:21:01.947473,draft_saved_ELECTROLESS NICKEL
+7990,"Consolidated Metal Technologies, Inc.",2025-07-01 12:21:07.907208,draft_saved_CLEAN
+7990,Nxedge Inc.,2025-07-01 12:21:11.741327,draft_saved_CLEAN
+7990,Pentagon Technologies,2025-07-01 12:21:15.088021,draft_saved_CLEAN
+7990,AI Industries,2025-07-01 12:21:18.791675,draft_saved_CLEAN
+7990,NONE,2025-07-01 12:21:19.208559,skipped_no_vendor_SURFACE
+7990,"Consolidated Metal Technologies, Inc.",2025-07-01 12:59:37.612101,draft_saved_CLEAN
+7990,Nxedge Inc.,2025-07-01 12:59:42.386356,draft_saved_CLEAN
+7990,Pentagon Technologies,2025-07-01 12:59:47.728324,draft_saved_CLEAN
+7990,AI Industries,2025-07-01 12:59:54.038510,draft_saved_CLEAN
+7990,Nxedge Inc.,2025-07-01 13:00:03.019660,draft_saved_SURFACE
+7990,Pentagon Technologies,2025-07-01 13:00:11.907561,draft_saved_SURFACE
+7990,Nxedge Inc.,2025-07-01 13:03:00.995100,draft_saved_SURFACE
+7990,Pentagon Technologies,2025-07-01 13:03:08.054378,draft_saved_SURFACE
+7803,NONE,2025-07-01 15:33:29.531313,skipped_no_vendor_zinc
+7892,"Consolidated Metal Technologies, Inc.",2025-07-01 15:33:34.827516,draft_saved_Chromate Conversion
+7892,"Brooks Industrial Coatings, Inc.",2025-07-01 15:33:37.970832,draft_saved_Chromate Conversion
+7833,"Consolidated Metal Technologies, Inc.",2025-07-01 15:33:41.353699,draft_saved_ANODIZE
+7833,"Brooks Industrial Coatings, Inc.",2025-07-01 15:33:43.205744,draft_saved_ANODIZE
+7833,Gleco Plating,2025-07-01 15:33:45.950890,draft_saved_ANODIZE
+7833,Nxedge Inc.,2025-07-01 15:33:49.003542,draft_saved_ANODIZE
+7969,NONE,2025-07-01 15:33:49.670629,skipped_no_vendor_ZINC
+7803,NONE,2025-07-01 18:44:13.602373,skipped_no_vendor_zinc
+7892,"Consolidated Metal Technologies, Inc.",2025-07-01 18:44:17.822052,draft_saved_Chromate Conversion
+7892,"Brooks Industrial Coatings, Inc.",2025-07-01 18:44:20.842087,draft_saved_Chromate Conversion
+7833,"Consolidated Metal Technologies, Inc.",2025-07-01 18:44:23.659441,draft_saved_ANODIZE
+7833,"Brooks Industrial Coatings, Inc.",2025-07-01 18:44:25.922062,draft_saved_ANODIZE
+7833,Gleco Plating,2025-07-01 18:44:28.147883,draft_saved_ANODIZE
+7833,Nxedge Inc.,2025-07-01 18:44:30.579259,draft_saved_ANODIZE
+7969,NONE,2025-07-01 18:44:31.302864,skipped_no_vendor_ZINC
+7803,NONE,2025-07-01 19:47:49.294807,skipped_no_vendor_zinc
+7969,NONE,2025-07-01 19:47:52.733115,skipped_no_vendor_ZINC
+7803,"Consolidated Metal Technologies, Inc.",2025-07-01 20:28:47.788718,draft_saved_zinc
+7803,Gleco Plating,2025-07-01 20:28:57.992285,draft_saved_zinc
+7969,"Consolidated Metal Technologies, Inc.",2025-07-01 20:29:08.996626,draft_saved_ZINC
+7969,Gleco Plating,2025-07-01 20:29:12.226957,draft_saved_ZINC
+8137,"Consolidated Metal Technologies, Inc.",2025-07-14 17:03:01.197619,draft_saved_with_issues_Chromate Conversion
+8137,Gleco Plating,2025-07-14 17:03:16.364582,draft_saved_with_issues_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-14 17:03:36.199500,draft_saved_with_issues_Clean
+8137,Nxedge Inc.,2025-07-14 17:03:45.825517,draft_saved_with_issues_Clean
+8137,Pentagon Technologies,2025-07-14 17:03:55.605615,draft_saved_with_issues_Clean
+8137,AI Industries,2025-07-14 17:04:06.945630,draft_saved_with_issues_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 11:02:02.025568,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-16 11:02:21.847357,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 11:02:44.896486,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-16 11:03:03.074925,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-16 11:03:20.429561,draft_saved_Clean
+8137,AI Industries,2025-07-16 11:03:38.515847,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 11:59:14.195893,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-16 12:00:53.163761,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 12:02:39.395395,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-16 12:04:20.335772,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-16 12:05:58.776810,draft_saved_Clean
+8137,AI Industries,2025-07-16 12:07:38.618807,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 16:44:06.974926,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-16 16:44:31.522773,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 16:45:00.534874,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-16 16:45:25.905052,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-16 16:45:51.471827,draft_saved_Clean
+8137,AI Industries,2025-07-16 16:46:16.307313,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 16:57:12.302333,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-16 16:57:15.189596,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 16:57:23.511296,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-16 16:57:26.314204,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-16 16:57:29.289738,draft_saved_Clean
+8137,AI Industries,2025-07-16 16:57:32.177217,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 17:09:40.040944,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-16 17:09:42.969812,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 17:09:51.079380,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-16 17:09:53.610765,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-16 17:09:56.078610,draft_saved_Clean
+8137,AI Industries,2025-07-16 17:09:58.584955,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 17:22:02.298074,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-16 17:22:05.119371,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 17:22:12.785660,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-16 17:22:15.386181,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-16 17:22:18.445742,draft_saved_Clean
+8137,AI Industries,2025-07-16 17:22:21.040453,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 18:32:14.778531,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-16 18:32:19.138061,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 18:32:26.898464,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-16 18:32:30.324262,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-16 18:32:33.689244,draft_saved_Clean
+8137,AI Industries,2025-07-16 18:32:37.149634,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 18:53:47.945441,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-16 18:53:50.610980,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-16 18:53:58.277097,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-16 18:54:01.057455,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-16 18:54:03.683163,draft_saved_Clean
+8137,AI Industries,2025-07-16 18:54:06.451227,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-17 09:13:52.120407,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-17 09:13:55.131878,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-17 09:14:03.845369,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-17 09:14:07.386156,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-17 09:14:10.541350,draft_saved_Clean
+8137,AI Industries,2025-07-17 09:14:14.806553,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-17 14:21:30.909479,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-17 14:21:33.291214,draft_saved_Chromate Conversion
+8137,Nxedge Inc.,2025-07-17 14:21:35.706151,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-17 14:21:43.703960,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-17 14:21:46.231041,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-17 14:21:48.497685,draft_saved_Clean
+8137,AI Industries,2025-07-17 14:21:50.798911,draft_saved_Clean

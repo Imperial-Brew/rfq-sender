@@ -319,6 +319,10 @@ vendors:
   location: CA/NY/TX
   website: .nan
   processes:
+  - name: Surface
+    specs:
+    - number: 0251-02264
+      familiar: true
   - name: Clean
     specs:
     - number: 0250-70351
@@ -340,6 +344,12 @@ vendors:
     Boise, Idaho
   website: https://nxedge.com/
   processes:
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-C-5541
+      familiar: true
+    - number: MIL-DTL-5541
+      familiar: true
   - name: Clean
     specs:
     - number: 0250-70351
@@ -347,6 +357,10 @@ vendors:
     - number: 0250-20000
       familiar: true
     - number: 0250-30100
+      familiar: true
+  - name: Surface
+    specs:
+    - number: 0251-02264
       familiar: true
   - name: Anodize
     specs:

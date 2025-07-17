@@ -36,10 +36,16 @@ A guide for using the `email_from_list.py` script to process RFQs from CSV files
 ### [RFQ Sender Guide](rfq_sender_guide.md) (To Be Created)
 A guide for using the core `rfq_sender.py` script to send RFQ emails to vendors.
 
+### [Response Handling Guide](response_handling.md)
+A guide for parsing, storing, and analyzing vendor responses to RFQs using the response handling functionality.
+
 ## Technical Documentation
 
 ### [API Documentation](api_documentation.md) (To Be Created)
 Technical documentation of the system's API, including function signatures, parameters, and return values.
+
+### [Box Integration](BOX_INTEGRATION.md)
+Documentation of the Box integration for file sharing, including implementation details, credentials management, and workflow.
 
 ### [Database Schema](database_schema.md) (To Be Created)
 Documentation of the database schema used for tracking RFQs.
@@ -69,9 +75,10 @@ Based on the current state of the project and the development roadmap, the follo
 2. **RFQ Sender Guide**: A detailed guide for using the core `rfq_sender.py` script.
 3. **Configuration Guide**: Documentation on how to configure the system for different environments.
 4. **Database Schema**: Documentation of the database schema for developers and administrators.
+5. **Response Parser Guide**: A detailed guide for using the advanced features of the response parsing functionality.
 
 ## Maintenance
 
 This index should be updated whenever new documentation is added or existing documentation is significantly modified. The goal is to maintain a comprehensive and up-to-date reference for all aspects of the RFQ Sender System.
 
-Last Updated: October 2023
+Last Updated: July 17, 2025

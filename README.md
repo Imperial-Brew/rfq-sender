@@ -101,6 +101,25 @@ Security settings:
 - `ENABLE_CUI_PROTECTION`: Whether to enable CUI protection (true/false)
 - `CUI_WARNING_TEXT`: Warning text to include in emails with CUI data
 
+## Box Integration
+
+The RFQ Sender System uses Box for secure file sharing, allowing you to upload attachments to Box and include share links in emails instead of attaching files directly. This is especially useful for large files or when dealing with sensitive information.
+
+### Box Configuration
+
+Box integration uses JWT authentication for secure server-to-server communication. To set up Box integration:
+
+1. Create a Box developer account and create a Custom App with "Server Authentication (with JWT)" access type
+2. Download the JSON configuration file with your credentials
+3. Save the configuration file as `scripts/0__config.json`
+
+The configuration file should include:
+- Client ID and Client Secret
+- Public Key ID and Private Key
+- Enterprise ID
+
+No environment variables are needed for Box integration as all credentials are stored in the `0__config.json` file.
+
 ## Usage
 
 Basic usage:
@@ -122,12 +141,13 @@ To create a test email draft in Outlook without sending it:
 ```
 python scripts\create_test_email.py
 ```
+python scripts\email_from_list.py
 
 This will create a draft email in Outlook with a test subject and body, allowing you to verify your email configuration before sending actual RFQs.
 
 ## Development
 
-This project follows the style guidelines outlined in the [Project Style Guidelines](.junie/guidelines.md).
+This project follows the style guidelines outlined in the [Project Style Guidelines](docs/guidelines.md).
 
 ### Style Guidelines Overview
 
