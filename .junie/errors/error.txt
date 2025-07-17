@@ -1,0 +1,780 @@
+F:\Dustin Drab\PythonProjects\rfq-sender>python scripts/email_from_list.py
+2025-07-16 18:53:37,182 - email_from_list - INFO - Loaded environment variables from .env file
+2025-07-16 18:53:37,310 - email_from_list - INFO - Box client ID and client secret found in 0__config.json
+2025-07-16 18:53:37,337 - email_from_list - WARNING - Missing Box environment credentials: BOX_REFRESH_TOKEN
+2025-07-16 18:53:37,363 - email_from_list - WARNING - Box uploads may fail. Please check your 0__config.json file and .env file for Box credentials.
+Email From List - Interactive Mode
+This tool creates draft emails from a queue of RFQs.
+? Path to Queue.csv file: F:\Dustin Drab\PythonProjects\rfq-sender\data\Queue.csv
+? Path to contacts.csv file: F:\Dustin Drab\PythonProjects\rfq-sender\docs\OS\contacts.csv
+? Path to vendor_options.yaml file: F:\Dustin Drab\PythonProjects\rfq-sender\docs\OS\vendor_options.yaml
+? Path to logs.csv file: F:\Dustin Drab\PythonProjects\rfq-sender\logs.csv
+? Path to Vendor_Quotes.csv file: F:\Dustin Drab\PythonProjects\rfq-sender\data\Vendor_Quotes.csv
+? Path to email template file: F:\Dustin Drab\PythonProjects\rfq-sender\docs\templates\cover_letter.j2
+? Path to sample table template file: F:\Dustin Drab\PythonProjects\rfq-sender\docs\templates\Sample_Table(Empty)-OS.csv
+? Path to email signature file: F:\Dustin Drab\PythonProjects\rfq-sender\docs\templates\email_signature.html
+2025-07-16 18:53:39,295 - email_from_list - INFO - Using HTML signature from F:\Dustin Drab\PythonProjects\rfq-sender\docs\templates\email_signature.html
+⠋ Loading data... ---------------------------------------- 0:00:002025-07-16 18:53:39,331 - email_from_list - INFO - Loading queue data from F:\Dustin Drab\PythonProjects\rfq-sender\data\Queue.csv
+2025-07-16 18:53:39,358 - email_from_list - INFO - Loading contacts data from F:\Dustin Drab\PythonProjects\rfq-sender\docs\OS\contacts.csv
+⠙ Loading queue data... ---------------------------------------- 0:00:002025-07-16 18:53:39,462 - email_from_list - INFO - Loading vendor options from F:\Dustin Drab\PythonProjects\rfq-sender\docs\OS\vendor_options.yaml
+⠸ Loading queue data... ---------------------------------------- 0:00:002025-07-16 18:53:39,724 - email_from_list - INFO - Found 4 items where SENT=YES. Total items: 12
+2025-07-16 18:53:40,128 - email_from_list - INFO - Initializing Outlook0
+  Initializing Outlook... ---------------------------------------- 0:00:00
+
+Queue Summary:
+                   Items in Queue: 12
+┌──────────┬─────────────────────┬─────────────┬────────┐
+│ Quote ID │ Process             │ Part Number │ Status │
+├──────────┼─────────────────────┼─────────────┼────────┤
+│ 7803     │ zinc                │ 0023-44467  │ ✅     │
+│ 7892     │ Chromate Conversion │ 0041-81823  │ ✅     │
+│ 7833     │ ANODIZE             │ 0020-34828  │ ✅     │
+│ 7969     │ ZINC                │ 0022-38846  │ ✅     │
+│ 8137     │ Chromate Conversion │ 0041-12177  │ ⏳     │
+│ 8137     │ Chromate Conversion │ 0041-25104  │ ⏳     │
+│ 8137     │ Chromate Conversion │ 0042-98849  │ ⏳     │
+│ 8137     │ Chromate Conversion │ 0042-98851  │ ⏳     │
+│ 8137     │ Clean               │ 0041-12177  │ ⏳     │
+│ 8137     │ Clean               │ 0041-25104  │ ⏳     │
+│ 8137     │ Clean               │ 0042-98849  │ ⏳     │
+│ 8137     │ Clean               │ 0042-98851  │ ⏳     │
+└──────────┴─────────────────────┴─────────────┴────────┘
+? Process all quotes in the queue? Yes
+2025-07-16 18:53:40,661 - email_from_list - INFO - Filtered out items where SENT=YES for processing. Items to process: 8
+⠹ Processing queue... ---------------------------------------- 0:00:002025-07-16 18:53:40,690 - email_from_list - INFO - Searching for vendors that support spec: MIL-DTL-5541
+2025-07-16 18:53:40,717 - email_from_list - INFO - Normalized spec: mil-dtl-5541
+2025-07-16 18:53:40,744 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-09720' (0250-09720)
+⠼ Processing queue... ---------------------------------------- 0:00:002025-07-16 18:53:40,770 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-09720'
+2025-07-16 18:53:40,796 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-20000' (0250-20000)
+2025-07-16 18:53:40,821 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-20000'
+2025-07-16 18:53:40,849 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-29357' (0250-29357)
+2025-07-16 18:53:40,875 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-29357'
+⠴ Processing queue... ---------------------------------------- 0:00:002025-07-16 18:53:40,901 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-31176' (0250-31176)
+2025-07-16 18:53:40,928 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-31176'
+2025-07-16 18:53:40,954 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-70351' (0250-70351)
+2025-07-16 18:53:40,980 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-70351'
+⠧ Processing queue... ---------------------------------------- 0:00:002025-07-16 18:53:41,006 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-A-8625' (mil-a-8625)
+2025-07-16 18:53:41,033 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-a-8625'
+2025-07-16 18:53:41,061 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B 580' (astm b 580)
+2025-07-16 18:53:41,087 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb580'
+⠇ Processing queue... ---------------------------------------- 0:00:002025-07-16 18:53:41,112 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS-QQ-N-290' (ams-qq-n-290)
+2025-07-16 18:53:41,139 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams-qq-n-290'
+2025-07-16 18:53:41,167 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS 2423' (ams 2423)
+2025-07-16 18:53:41,193 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams2423'
+2025-07-16 18:53:41,222 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS 2403' (ams 2403)
+⠋ Processing queue... ---------------------------------------- 0:00:002025-07-16 18:53:41,248 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams2403'
+2025-07-16 18:53:41,274 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-C-5541' (mil-c-5541)
+2025-07-16 18:53:41,300 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-c-5541'
+2025-07-16 18:53:41,330 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-DTL-5541' (mil-dtl-5541)
+⠙ Processing queue... ---------------------------------------- 0:00:002025-07-16 18:53:41,356 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-dtl-5541'
+2025-07-16 18:53:41,383 - email_from_list - INFO - Found matching spec for vendor Consolidated Metal Technologies, Inc.
+2025-07-16 18:53:41,408 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B 733' (astm b 733)
+2025-07-16 18:53:41,435 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb733'
+⠹ Processing queue... ---------------------------------------- 0:00:012025-07-16 18:53:41,461 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-C-26074' (mil-c-26074)
+2025-07-16 18:53:41,488 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-c-26074'
+2025-07-16 18:53:41,515 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS 2404' (ams 2404)
+2025-07-16 18:53:41,542 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams2404'
+⠼ Processing queue... ---------------------------------------- 0:00:012025-07-16 18:53:41,568 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+2025-07-16 18:53:41,593 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams-qq-p-35'
+2025-07-16 18:53:41,618 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 380' (astm a 380)
+2025-07-16 18:53:41,643 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma380'
+⠴ Processing queue... ---------------------------------------- 0:00:012025-07-16 18:53:41,669 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 967' (astm a 967)
+2025-07-16 18:53:41,695 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma967'
+2025-07-16 18:53:41,721 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS 2700' (ams 2700)
+2025-07-16 18:53:41,748 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams2700'
+2025-07-16 18:53:41,775 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-T-10727' (mil-t-10727)
+⠦ Processing queue... ---------------------------------------- 0:00:012025-07-16 18:53:41,801 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-t-10727'
+2025-07-16 18:53:41,826 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B545' (astm b545)
+2025-07-16 18:53:41,852 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb545'
+2025-07-16 18:53:41,878 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'QQ-Z-325' (qq-z-325)
+⠇ Processing queue... ---------------------------------------- 0:00:012025-07-16 18:53:41,904 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'qq-z-325'
+2025-07-16 18:53:41,931 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B 633' (astm b 633)
+2025-07-16 18:53:41,961 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb633'
+2025-07-16 18:53:41,991 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B912' (astm b912)
+⠏ Processing queue... ---------------------------------------- 0:00:012025-07-16 18:53:42,020 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb912'
+2025-07-16 18:53:42,045 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'SEMI F17' (semi f17)
+2025-07-16 18:53:42,071 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'semif17'
+2025-07-16 18:53:42,098 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'SEMI F19' (semi f19)
+⠙ Processing queue... ---------------------------------------- 0:00:012025-07-16 18:53:42,124 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'semif19'
+2025-07-16 18:53:42,154 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASME BPE' (asme bpe)
+2025-07-16 18:53:42,180 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'asmebpe'
+2025-07-16 18:53:42,206 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 967' (astm a 967)
+⠹ Processing queue... ---------------------------------------- 0:00:012025-07-16 18:53:42,232 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma967'
+2025-07-16 18:53:42,259 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 380' (astm a 380)
+2025-07-16 18:53:42,281 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma380'
+2025-07-16 18:53:42,310 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+⠸ Processing queue... ---------------------------------------- 0:00:012025-07-16 18:53:42,336 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams-qq-p-35'
+2025-07-16 18:53:42,362 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B912' (astm b912)
+2025-07-16 18:53:42,387 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb912'
+2025-07-16 18:53:42,413 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B600' (astm b600)
+⠴ Processing queue... ---------------------------------------- 0:00:022025-07-16 18:53:42,440 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb600'
+2025-07-16 18:53:42,466 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-S-5002' (mil-s-5002)
+2025-07-16 18:53:42,499 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-s-5002'
+2025-07-16 18:53:42,527 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS 2700' (ams 2700)
+⠦ Processing queue... ---------------------------------------- 0:00:022025-07-16 18:53:42,555 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams2700'
+2025-07-16 18:53:42,581 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM G93' (astm g93)
+2025-07-16 18:53:42,608 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmg93'
+2025-07-16 18:53:42,637 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'CGA G-4.1' (cga g-4.1)
+⠧ Processing queue... ---------------------------------------- 0:00:022025-07-16 18:53:42,664 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'cgag-4.1'
+2025-07-16 18:53:42,690 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-A-8625' (mil-a-8625)
+2025-07-16 18:53:42,716 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-a-8625'
+2025-07-16 18:53:42,742 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-C-5541' (mil-c-5541)
+2025-07-16 18:53:42,774 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-c-5541'
+⠏ Processing queue... ---------------------------------------- 0:00:022025-07-16 18:53:42,802 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 967' (astm a 967)
+2025-07-16 18:53:42,828 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma967'
+2025-07-16 18:53:42,854 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 380' (astm a 380)
+2025-07-16 18:53:42,880 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma380'
+⠋ Processing queue... ---------------------------------------- 0:00:022025-07-16 18:53:42,907 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+2025-07-16 18:53:42,933 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams-qq-p-35'
+2025-07-16 18:53:42,959 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-A-8625' (mil-a-8625)
+2025-07-16 18:53:42,987 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-a-8625'
+⠹ Processing queue... ---------------------------------------- 0:00:022025-07-16 18:53:43,013 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS-QQ-N-290' (ams-qq-n-290)
+2025-07-16 18:53:43,038 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams-qq-n-290'
+2025-07-16 18:53:43,065 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B 689' (astm b 689)
+2025-07-16 18:53:43,090 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb689'
+⠸ Processing queue... ---------------------------------------- 0:00:022025-07-16 18:53:43,124 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-DTL-5541' (mil-dtl-5541)
+2025-07-16 18:53:43,151 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-dtl-5541'
+2025-07-16 18:53:43,177 - email_from_list - INFO - Found matching spec for vendor Gleco Plating
+2025-07-16 18:53:43,203 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-C-26074' (mil-c-26074)
+⠼ Processing queue... ---------------------------------------- 0:00:022025-07-16 18:53:43,228 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-c-26074'
+2025-07-16 18:53:43,254 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B 733' (astm b 733)
+2025-07-16 18:53:43,280 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb733'
+2025-07-16 18:53:43,305 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS 2404' (ams 2404)
+⠦ Processing queue... ---------------------------------------- 0:00:022025-07-16 18:53:43,329 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams2404'
+2025-07-16 18:53:43,356 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS 2700' (ams 2700)
+2025-07-16 18:53:43,381 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams2700'
+2025-07-16 18:53:43,410 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 380' (astm a 380)
+⠧ Processing queue... ---------------------------------------- 0:00:032025-07-16 18:53:43,436 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma380'
+2025-07-16 18:53:43,461 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 967' (astm a 967)
+2025-07-16 18:53:43,488 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma967'
+2025-07-16 18:53:43,515 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+2025-07-16 18:53:43,542 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams-qq-p-35'
+⠏ Processing queue... ---------------------------------------- 0:00:032025-07-16 18:53:43,574 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-T-10727' (mil-t-10727)
+2025-07-16 18:53:43,602 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-t-10727'
+2025-07-16 18:53:43,630 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B545' (astm b545)
+2025-07-16 18:53:43,657 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb545'
+⠋ Processing queue... ---------------------------------------- 0:00:032025-07-16 18:53:43,683 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B 633' (astm b 633)
+2025-07-16 18:53:43,709 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb633'
+2025-07-16 18:53:43,737 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B841' (astm b841)
+2025-07-16 18:53:43,765 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb841'
+2025-07-16 18:53:43,790 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS 2417' (ams 2417)
+⠹ Processing queue... ---------------------------------------- 0:00:032025-07-16 18:53:43,818 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams2417'
+2025-07-16 18:53:43,843 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-DTL-16232' (mil-dtl-16232)
+2025-07-16 18:53:43,868 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-dtl-16232'
+2025-07-16 18:53:43,895 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'QQ-S-365' (qq-s-365)
+⠸ Processing queue... ---------------------------------------- 0:00:032025-07-16 18:53:43,922 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'qq-s-365'
+2025-07-16 18:53:43,947 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B700' (astm b700)
+2025-07-16 18:53:43,973 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb700'
+2025-07-16 18:53:43,998 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B488' (astm b488)
+⠴ Processing queue... ---------------------------------------- 0:00:032025-07-16 18:53:44,024 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb488'
+2025-07-16 18:53:44,049 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-DTL-45204' (mil-dtl-45204)
+2025-07-16 18:53:44,085 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-dtl-45204'
+2025-07-16 18:53:44,111 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-PRF-16010' (mil-prf-16010)
+⠦ Processing queue... ---------------------------------------- 0:00:032025-07-16 18:53:44,137 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-prf-16010'
+2025-07-16 18:53:44,162 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-70351' (0250-70351)
+2025-07-16 18:53:44,181 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-70351'
+2025-07-16 18:53:44,215 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-20000' (0250-20000)
+2025-07-16 18:53:44,242 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-20000'
+⠧ Processing queue... ---------------------------------------- 0:00:032025-07-16 18:53:44,269 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-30100' (0250-30100)
+2025-07-16 18:53:44,295 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-30100'
+2025-07-16 18:53:44,320 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0251-02264' (0251-02264)
+2025-07-16 18:53:44,346 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0251-02264'
+⠏ Processing queue... ---------------------------------------- 0:00:032025-07-16 18:53:44,373 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-A-8625' (mil-a-8625)
+2025-07-16 18:53:44,399 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-a-8625'
+2025-07-16 18:53:44,425 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B 580' (astm b 580)
+2025-07-16 18:53:44,451 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb580'
+⠋ Processing queue... ---------------------------------------- 0:00:042025-07-16 18:53:44,475 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-C-26074' (mil-c-26074)
+2025-07-16 18:53:44,501 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-c-26074'
+2025-07-16 18:53:44,526 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS 2404' (ams 2404)
+2025-07-16 18:53:44,552 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams2404'
+⠙ Processing queue... ---------------------------------------- 0:00:042025-07-16 18:53:44,577 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B488' (astm b488)
+2025-07-16 18:53:44,603 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb488'
+2025-07-16 18:53:44,630 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'MIL-DTL-45204' (mil-dtl-45204)
+2025-07-16 18:53:44,655 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'mil-dtl-45204'
+2025-07-16 18:53:44,686 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'QQ-S-365' (qq-s-365)
+⠸ Processing queue... ---------------------------------------- 0:00:042025-07-16 18:53:44,714 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'qq-s-365'
+2025-07-16 18:53:44,741 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM B 700' (astm b 700)
+2025-07-16 18:53:44,768 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astmb700'
+2025-07-16 18:53:44,795 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 967' (astm a 967)
+⠼ Processing queue... ---------------------------------------- 0:00:042025-07-16 18:53:44,821 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma967'
+2025-07-16 18:53:44,849 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'ASTM A 380' (astm a 380)
+2025-07-16 18:53:44,875 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'astma380'
+2025-07-16 18:53:44,901 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+2025-07-16 18:53:44,927 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs 'ams-qq-p-35'
+⠦ Processing queue... ---------------------------------------- 0:00:042025-07-16 18:53:44,953 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0251-02264' (0251-02264)
+2025-07-16 18:53:44,978 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0251-02264'
+2025-07-16 18:53:45,004 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-70351' (0250-70351)
+2025-07-16 18:53:45,031 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-70351'
+⠧ Processing queue... ---------------------------------------- 0:00:042025-07-16 18:53:45,057 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-20000' (0250-20000)
+2025-07-16 18:53:45,082 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-20000'
+2025-07-16 18:53:45,109 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-70351' (0250-70351)
+2025-07-16 18:53:45,134 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-70351'
+⠏ Processing queue... ---------------------------------------- 0:00:042025-07-16 18:53:45,160 - email_from_list - INFO - Comparing spec 'MIL-DTL-5541' (mil-dtl-5541) with vendor spec '0250-20000' (0250-20000)
+2025-07-16 18:53:45,184 - email_from_list - INFO - Enhanced comparison: 'mil-dtl-5541' vs '0250-20000'
+2025-07-16 18:53:45,217 - email_from_list - INFO - Processing quote 8137, process Chromate Conversion for vendor Consolidated Metal Technologies, Inc.
+⠙ Processing queue... ---------------------------------------- 0:00:042025-07-16 18:53:45,411 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+⠸ Processing queue... ---------------------------------------- 0:00:052025-07-16 18:53:45,511 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf
+⠦ Processing queue... ---------------------------------------- 0:00:052025-07-16 18:53:45,700 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf
+2025-07-16 18:53:45,726 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp
+⠧ Processing queue... ---------------------------------------- 0:00:052025-07-16 18:53:45,832 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:53:45,865 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf
+2025-07-16 18:53:45,895 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf
+⠇ Processing queue... ---------------------------------------- 0:00:052025-07-16 18:53:45,922 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp
+2025-07-16 18:53:45,955 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:53:45,987 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf
+2025-07-16 18:53:46,014 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt
+⠋ Processing queue... ---------------------------------------- 0:00:052025-07-16 18:53:46,040 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf
+2025-07-16 18:53:46,066 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp
+2025-07-16 18:53:46,097 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:53:46,131 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf
+⠙ Processing queue... ---------------------------------------- 0:00:052025-07-16 18:53:46,169 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt
+2025-07-16 18:53:46,197 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf
+2025-07-16 18:53:46,225 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp
+⠇ Processing queue... ---------------------------------------- 0:00:062025-07-16 18:53:46,749 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:53:46,775 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:53:46,802 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp (0.67 MB)
+⠋ Processing queue... ---------------------------------------- 0:00:062025-07-16 18:53:46,827 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:53:46,856 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:53:46,894 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp (0.69 MB)
+2025-07-16 18:53:46,924 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+⠙ Processing queue... ---------------------------------------- 0:00:062025-07-16 18:53:46,955 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt (1.02 MB)
+2025-07-16 18:53:46,983 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+2025-07-16 18:53:47,013 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp (0.59 MB)
+2025-07-16 18:53:47,039 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+⠸ Processing queue... ---------------------------------------- 0:00:062025-07-16 18:53:47,065 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt (0.96 MB)
+2025-07-16 18:53:47,092 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+2025-07-16 18:53:47,117 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp (0.57 MB)
+⠼ Processing queue... ---------------------------------------- 0:00:062025-07-16 18:53:47,197 - boxsdk.network.default_network - INFO - ←[36mGET https://api.box.com/2.0/users/me {'headers': {'Authorization': '---EGRB',
+             'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2'},
+ 'params': None}←[0m
+⠴ Processing queue... ---------------------------------------- 0:00:062025-07-16 18:53:47,361 - boxsdk.network.default_network - WARNING - ←[31m"GET https://api.box.com/2.0/users/me" 401 0
+{'date': 'Wed, 16 Jul 2025 23:53:47 GMT', 'x-envoy-upstream-service-time': '12', 'strict-transport-security': 'max-age=31536000', 'www-authenticate': 'Bearer realm="Service", error="invalid_token", error_description="The access token provided is invalid."', 'box-request-id': '0a46056e2ae4d8973e790cfa3ed48bf2', 'via': '1.1 google', 'Content-Length': '0', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'}
+b''
+←[0m
+2025-07-16 18:53:47,381 - boxsdk.network.default_network - INFO - ←[36mPOST https://api.box.com/oauth2/token {'data': {'box_device_id': '0',
+          'client_id': '---aa8e',
+          'client_secret': '---N5fp',
+          'grant_type': 'refresh_token',
+          'refresh_token': '---'},
+ 'headers': {'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2',
+             'content-type': 'application/x-www-form-urlencoded'}}←[0m
+⠇ Processing queue... ---------------------------------------- 0:00:072025-07-16 18:53:47,587 - boxsdk.network.default_network - WARNING - ←[31m"POST https://api.box.com/oauth2/token" 400 103
+{'date': 'Wed, 16 Jul 2025 23:53:47 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b8b853e74.08334419; expires=Thu, 16 Jul 2026 23:53:47 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:53:47 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=54; expires=Thu, 16 Jul 2026 23:53:47 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+{'error': 'unauthorized_client',
+ 'error_description': 'The grant type is unauthorized for this client_id'}
+←[0m
+⠏ Processing queue... ---------------------------------------- 0:00:072025-07-16 18:53:47,614 - email_from_list - ERROR - Error authenticating with Box:
+Message: The grant type is unauthorized for this client_id
+Status: 400
+URL: https://api.box.com/oauth2/token
+Method: POST
+Headers: {'date': 'Wed, 16 Jul 2025 23:53:47 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b8b853e74.08334419; expires=Thu, 16 Jul 2026 23:53:47 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:53:47 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=54; expires=Thu, 16 Jul 2026 23:53:47 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+2025-07-16 18:53:47,641 - email_from_list - ERROR - Failed to initialize Box client. Check your Box credentials in environment variables.
+2025-07-16 18:53:47,677 - email_from_list - ERROR - Error using Box integration: Exception: Box authentication failed. Check credentials in environment variables.
+⠙ Processing queue... ---------------------------------------- 0:00:072025-07-16 18:53:47,729 - email_from_list - ERROR - Suggestion: Check Box credentials in environment variables.
+2025-07-16 18:53:47,798 - email_from_list - WARNING - Email saved but all 28 files could not be uploaded to Box. Check Box credentials and network connection.
+⠹ Processing queue... ---------------------------------------- 0:00:072025-07-16 18:53:47,848 - email_from_list - INFO - Draft saved for quote 8137, process Chromate Conversion -> dawn@cmtfinishing.com
+⠇ Processing queue... ---------------------------------------- 0:00:072025-07-16 18:53:48,340 - email_from_list - INFO - Added 4 items to Vendor_Quotes.csv for quote 8137
+2025-07-16 18:53:48,390 - email_from_list - INFO - Processing quote 8137, process Chromate Conversion for vendor Gleco Plating
+⠋ Processing queue... ---------------------------------------- 0:00:082025-07-16 18:53:48,507 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+⠙ Processing queue... ----------------------------------------2025-07-16 18:53:48,536 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf
+ 0:00:082025-07-16 18:53:48,566 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf
+2025-07-16 18:53:48,593 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp
+2025-07-16 18:53:48,621 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+⠹ Processing queue... 2025-07-16 18:53:48,649 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf
+---------------------------------------- 0:00:082025-07-16 18:53:48,675 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf
+2025-07-16 18:53:48,703 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp
+2025-07-16 18:53:48,736 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+⠼ Processing queue... ----------------------------------------2025-07-16 18:53:48,769 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf
+ 0:00:082025-07-16 18:53:48,800 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt
+2025-07-16 18:53:48,831 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf
+2025-07-16 18:53:48,860 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp
+⠴ Processing queue... ---------------------------------------- 0:00:082025-07-16 18:53:48,888 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:53:48,914 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf
+2025-07-16 18:53:48,941 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt
+2025-07-16 18:53:48,967 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf
+2025-07-16 18:53:48,995 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp
+⠼ Processing queue... ---------------------------------------- 0:00:092025-07-16 18:53:49,599 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:53:49,625 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:53:49,651 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp (0.67 MB)
+⠴ Processing queue... ---------------------------------------- 0:00:092025-07-16 18:53:49,677 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:53:49,706 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:53:49,736 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp (0.69 MB)
+2025-07-16 18:53:49,763 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+⠦ Processing queue... ---------------------------------------- 0:00:092025-07-16 18:53:49,790 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt (1.02 MB)
+2025-07-16 18:53:49,815 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+2025-07-16 18:53:49,845 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp (0.59 MB)
+2025-07-16 18:53:49,874 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+⠇ Processing queue... ---------------------------------------- 0:00:092025-07-16 18:53:49,901 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt (0.96 MB)
+2025-07-16 18:53:49,926 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+2025-07-16 18:53:49,955 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp (0.57 MB)
+⠏ Processing queue... ---------------------------------------- 0:00:092025-07-16 18:53:50,058 - boxsdk.network.default_network - INFO - ←[36mGET https://api.box.com/2.0/users/me {'headers': {'Authorization': '---EGRB',
+             'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2'},
+ 'params': None}←[0m
+⠙ Processing queue... ---------------------------------------- 0:00:092025-07-16 18:53:50,162 - boxsdk.network.default_network - WARNING - ←[31m"GET https://api.box.com/2.0/users/me" 401 0
+{'date': 'Wed, 16 Jul 2025 23:53:50 GMT', 'x-envoy-upstream-service-time': '10', 'strict-transport-security': 'max-age=31536000', 'www-authenticate': 'Bearer realm="Service", error="invalid_token", error_description="The access token provided is invalid."', 'box-request-id': '0f6e31af0c9146a7091a1115f47ae02e9', 'via': '1.1 google', 'Content-Length': '0', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'}
+b''
+←[0m
+2025-07-16 18:53:50,188 - boxsdk.network.default_network - INFO - ←[36mPOST https://api.box.com/oauth2/token {'data': {'box_device_id': '0',
+          'client_id': '---aa8e',
+          'client_secret': '---N5fp',
+          'grant_type': 'refresh_token',
+          'refresh_token': '---'},
+ 'headers': {'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2',
+             'content-type': 'application/x-www-form-urlencoded'}}←[0m
+⠸ Processing queue... ---------------------------------------- 0:00:092025-07-16 18:53:50,377 - boxsdk.network.default_network - WARNING - ←[31m"POST https://api.box.com/oauth2/token" 400 103
+{'date': 'Wed, 16 Jul 2025 23:53:50 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b8e524049.60292411; expires=Thu, 16 Jul 2026 23:53:50 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:53:50 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=91; expires=Thu, 16 Jul 2026 23:53:50 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+{'error': 'unauthorized_client',
+ 'error_description': 'The grant type is unauthorized for this client_id'}
+←[0m
+2025-07-16 18:53:50,403 - email_from_list - ERROR - Error authenticating with Box:
+Message: The grant type is unauthorized for this client_id
+Status: 400
+URL: https://api.box.com/oauth2/token
+Method: POST
+Headers: {'date': 'Wed, 16 Jul 2025 23:53:50 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b8e524049.60292411; expires=Thu, 16 Jul 2026 23:53:50 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:53:50 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=91; expires=Thu, 16 Jul 2026 23:53:50 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+2025-07-16 18:53:50,430 - email_from_list - ERROR - Failed to initialize Box client. Check your Box credentials in environment variables.
+⠴ Processing queue... ---------------------------------------- 0:00:102025-07-16 18:53:50,475 - email_from_list - ERROR - Error using Box integration: Exception: Box authentication failed. Check credentials in environment variables.
+2025-07-16 18:53:50,500 - email_from_list - ERROR - Suggestion: Check Box credentials in environment variables.
+⠦ Processing queue... ---------------------------------------- 0:00:102025-07-16 18:53:50,557 - email_from_list - WARNING - Email saved but all 28 files could not be uploaded to Box. Check Box credentials and network connection.
+2025-07-16 18:53:50,584 - email_from_list - INFO - Draft saved for quote 8137, process Chromate Conversion -> cory@glecoplating.com
+⠸ Processing queue... ---------------------------------------- 0:00:102025-07-16 18:53:51,104 - email_from_list - INFO - Added 4 items to Vendor_Quotes.csv for quote 8137
+2025-07-16 18:53:51,204 - email_from_list - INFO - Searching for vendors that support spec: 0250-20000
+⠼ Processing queue... ---------------------------------------- 0:00:102025-07-16 18:53:51,230 - email_from_list - INFO - Normalized spec: 0250-20000
+2025-07-16 18:53:51,256 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0250-09720' (0250-09720)
+2025-07-16 18:53:51,284 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0250-09720'
+2025-07-16 18:53:51,311 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0250-20000' (0250-20000)
+⠦ Processing queue... ---------------------------------------- 0:00:102025-07-16 18:53:51,343 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0250-20000'
+2025-07-16 18:53:51,369 - email_from_list - INFO - Found matching spec for vendor Consolidated Metal Technologies, Inc.
+2025-07-16 18:53:51,393 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-A-8625' (mil-a-8625)
+2025-07-16 18:53:51,420 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-a-8625'
+⠧ Processing queue... ---------------------------------------- 0:00:112025-07-16 18:53:51,445 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B 580' (astm b 580)
+2025-07-16 18:53:51,470 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb580'
+2025-07-16 18:53:51,496 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS-QQ-N-290' (ams-qq-n-290)
+2025-07-16 18:53:51,522 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams-qq-n-290'
+⠏ Processing queue... ---------------------------------------- 0:00:112025-07-16 18:53:51,549 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS 2423' (ams 2423)
+2025-07-16 18:53:51,574 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams2423'
+2025-07-16 18:53:51,601 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS 2403' (ams 2403)
+2025-07-16 18:53:51,627 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams2403'
+2025-07-16 18:53:51,653 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-C-5541' (mil-c-5541)
+⠋ Processing queue... ---------------------------------------- 0:00:112025-07-16 18:53:51,679 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-c-5541'
+2025-07-16 18:53:51,714 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-DTL-5541' (mil-dtl-5541)
+2025-07-16 18:53:51,741 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-dtl-5541'
+⠙ Processing queue... ---------------------------------------- 0:00:112025-07-16 18:53:51,791 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B449' (astm b449)
+2025-07-16 18:53:51,844 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb449'
+⠸ Processing queue... ---------------------------------------- 0:00:112025-07-16 18:53:51,942 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B 733' (astm b 733)
+2025-07-16 18:53:51,967 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb733'
+2025-07-16 18:53:51,997 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-C-26074' (mil-c-26074)
+⠼ Processing queue... ---------------------------------------- 0:00:112025-07-16 18:53:52,026 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-c-26074'
+2025-07-16 18:53:52,076 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS 2404' (ams 2404)
+⠦ Processing queue... ---------------------------------------- 0:00:112025-07-16 18:53:52,127 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams2404'
+2025-07-16 18:53:52,225 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+⠧ Processing queue... ---------------------------------------- 0:00:112025-07-16 18:53:52,250 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams-qq-p-35'
+2025-07-16 18:53:52,276 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 380' (astm a 380)
+2025-07-16 18:53:52,301 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma380'
+2025-07-16 18:53:52,328 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 967' (astm a 967)
+⠏ Processing queue... ---------------------------------------- 0:00:112025-07-16 18:53:52,356 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma967'
+2025-07-16 18:53:52,381 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS 2700' (ams 2700)
+2025-07-16 18:53:52,408 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams2700'
+2025-07-16 18:53:52,436 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-T-10727' (mil-t-10727)
+⠋ Processing queue... ---------------------------------------- 0:00:122025-07-16 18:53:52,461 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-t-10727'
+2025-07-16 18:53:52,485 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B545' (astm b545)
+2025-07-16 18:53:52,514 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb545'
+2025-07-16 18:53:52,543 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'QQ-Z-325' (qq-z-325)
+2025-07-16 18:53:52,571 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'qq-z-325'
+⠙ Processing queue... ---------------------------------------- 0:00:122025-07-16 18:53:52,597 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B 633' (astm b 633)
+2025-07-16 18:53:52,623 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb633'
+2025-07-16 18:53:52,648 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B912' (astm b912)
+2025-07-16 18:53:52,674 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb912'
+⠸ Processing queue... ---------------------------------------- 0:00:122025-07-16 18:53:52,699 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'SEMI F17' (semi f17)
+2025-07-16 18:53:52,725 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'semif17'
+2025-07-16 18:53:52,752 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'SEMI F19' (semi f19)
+2025-07-16 18:53:52,778 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'semif19'
+⠼ Processing queue... ---------------------------------------- 0:00:122025-07-16 18:53:52,804 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASME BPE' (asme bpe)
+2025-07-16 18:53:52,829 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'asmebpe'
+2025-07-16 18:53:52,860 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 967' (astm a 967)
+2025-07-16 18:53:52,886 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma967'
+2025-07-16 18:53:52,911 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 380' (astm a 380)
+⠦ Processing queue... ---------------------------------------- 0:00:122025-07-16 18:53:52,938 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma380'
+2025-07-16 18:53:52,968 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+2025-07-16 18:53:52,994 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams-qq-p-35'
+2025-07-16 18:53:53,019 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B912' (astm b912)
+2025-07-16 18:53:53,045 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb912'
+⠧ Processing queue... ---------------------------------------- 0:00:122025-07-16 18:53:53,100 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B600' (astm b600)
+2025-07-16 18:53:53,156 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb600'
+⠏ Processing queue... ---------------------------------------- 0:00:122025-07-16 18:53:53,208 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-S-5002' (mil-s-5002)
+⠋ Processing queue... ---------------------------------------- 0:00:122025-07-16 18:53:53,303 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-s-5002'
+2025-07-16 18:53:53,320 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS 2700' (ams 2700)
+2025-07-16 18:53:53,361 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams2700'
+⠹ Processing queue... ---------------------------------------- 0:00:122025-07-16 18:53:53,387 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM G93' (astm g93)
+2025-07-16 18:53:53,414 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmg93'
+2025-07-16 18:53:53,440 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'CGA G-4.1' (cga g-4.1)
+2025-07-16 18:53:53,460 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'cgag-4.1'
+⠸ Processing queue... ---------------------------------------- 0:00:132025-07-16 18:53:53,491 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-A-8625' (mil-a-8625)
+2025-07-16 18:53:53,516 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-a-8625'
+2025-07-16 18:53:53,544 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-C-5541' (mil-c-5541)
+2025-07-16 18:53:53,571 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-c-5541'
+2025-07-16 18:53:53,598 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 967' (astm a 967)
+⠼ Processing queue... ---------------------------------------- 0:00:132025-07-16 18:53:53,623 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma967'
+2025-07-16 18:53:53,651 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 380' (astm a 380)
+2025-07-16 18:53:53,678 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma380'
+2025-07-16 18:53:53,702 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+⠦ Processing queue... ---------------------------------------- 0:00:132025-07-16 18:53:53,730 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams-qq-p-35'
+2025-07-16 18:53:53,756 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-A-8625' (mil-a-8625)
+2025-07-16 18:53:53,781 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-a-8625'
+2025-07-16 18:53:53,807 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS-QQ-N-290' (ams-qq-n-290)
+⠧ Processing queue... ---------------------------------------- 0:00:132025-07-16 18:53:53,832 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams-qq-n-290'
+2025-07-16 18:53:53,860 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B 689' (astm b 689)
+2025-07-16 18:53:53,886 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb689'
+2025-07-16 18:53:53,912 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-DTL-5541' (mil-dtl-5541)
+⠇ Processing queue... ---------------------------------------- 0:00:132025-07-16 18:53:53,938 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-dtl-5541'
+2025-07-16 18:53:53,965 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-C-26074' (mil-c-26074)
+2025-07-16 18:53:53,990 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-c-26074'
+2025-07-16 18:53:54,020 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B 733' (astm b 733)
+⠋ Processing queue... ---------------------------------------- 0:00:132025-07-16 18:53:54,045 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb733'
+2025-07-16 18:53:54,072 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS 2404' (ams 2404)
+2025-07-16 18:53:54,090 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams2404'
+2025-07-16 18:53:54,122 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS 2700' (ams 2700)
+2025-07-16 18:53:54,150 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams2700'
+⠙ Processing queue... ---------------------------------------- 0:00:132025-07-16 18:53:54,176 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 380' (astm a 380)
+2025-07-16 18:53:54,202 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma380'
+2025-07-16 18:53:54,228 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 967' (astm a 967)
+2025-07-16 18:53:54,255 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma967'
+⠸ Processing queue... ---------------------------------------- 0:00:132025-07-16 18:53:54,282 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+2025-07-16 18:53:54,307 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams-qq-p-35'
+2025-07-16 18:53:54,334 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-T-10727' (mil-t-10727)
+2025-07-16 18:53:54,360 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-t-10727'
+⠼ Processing queue... ---------------------------------------- 0:00:132025-07-16 18:53:54,385 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B545' (astm b545)
+2025-07-16 18:53:54,410 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb545'
+2025-07-16 18:53:54,431 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B 633' (astm b 633)
+2025-07-16 18:53:54,460 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb633'
+2025-07-16 18:53:54,487 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B841' (astm b841)
+⠴ Processing queue... ---------------------------------------- 0:00:142025-07-16 18:53:54,513 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb841'
+2025-07-16 18:53:54,540 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS 2417' (ams 2417)
+2025-07-16 18:53:54,568 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams2417'
+2025-07-16 18:53:54,594 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-DTL-16232' (mil-dtl-16232)
+⠧ Processing queue... ---------------------------------------- 0:00:142025-07-16 18:53:54,624 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-dtl-16232'
+2025-07-16 18:53:54,649 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'QQ-S-365' (qq-s-365)
+2025-07-16 18:53:54,674 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'qq-s-365'
+2025-07-16 18:53:54,702 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B700' (astm b700)
+⠇ Processing queue... ---------------------------------------- 0:00:142025-07-16 18:53:54,729 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb700'
+2025-07-16 18:53:54,754 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B488' (astm b488)
+2025-07-16 18:53:54,781 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb488'
+2025-07-16 18:53:54,807 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-DTL-45204' (mil-dtl-45204)
+2025-07-16 18:53:54,835 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-dtl-45204'
+⠋ Processing queue... ---------------------------------------- 0:00:142025-07-16 18:53:54,860 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-PRF-16010' (mil-prf-16010)
+2025-07-16 18:53:54,885 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-prf-16010'
+2025-07-16 18:53:54,911 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0250-70351' (0250-70351)
+2025-07-16 18:53:54,937 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0250-70351'
+⠙ Processing queue... ---------------------------------------- 0:00:142025-07-16 18:53:54,960 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0250-20000' (0250-20000)
+2025-07-16 18:53:54,988 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0250-20000'
+2025-07-16 18:53:55,015 - email_from_list - INFO - Found matching spec for vendor Nxedge Inc.
+2025-07-16 18:53:55,040 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0251-02264' (0251-02264)
+⠸ Processing queue... ---------------------------------------- 0:00:142025-07-16 18:53:55,073 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0251-02264'
+2025-07-16 18:53:55,098 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-A-8625' (mil-a-8625)
+2025-07-16 18:53:55,130 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-a-8625'
+2025-07-16 18:53:55,155 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B 580' (astm b 580)
+⠼ Processing queue... ---------------------------------------- 0:00:142025-07-16 18:53:55,182 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb580'
+2025-07-16 18:53:55,206 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-C-26074' (mil-c-26074)
+2025-07-16 18:53:55,232 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-c-26074'
+2025-07-16 18:53:55,258 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS 2404' (ams 2404)
+2025-07-16 18:53:55,283 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams2404'
+⠴ Processing queue... ---------------------------------------- 0:00:142025-07-16 18:53:55,309 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B488' (astm b488)
+2025-07-16 18:53:55,334 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb488'
+2025-07-16 18:53:55,360 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'MIL-DTL-45204' (mil-dtl-45204)
+2025-07-16 18:53:55,385 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'mil-dtl-45204'
+⠧ Processing queue... ---------------------------------------- 0:00:142025-07-16 18:53:55,410 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'QQ-S-365' (qq-s-365)
+2025-07-16 18:53:55,436 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'qq-s-365'
+2025-07-16 18:53:55,462 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM B 700' (astm b 700)
+2025-07-16 18:53:55,488 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astmb700'
+⠇ Processing queue... ---------------------------------------- 0:00:152025-07-16 18:53:55,518 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 967' (astm a 967)
+2025-07-16 18:53:55,543 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma967'
+2025-07-16 18:53:55,576 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'ASTM A 380' (astm a 380)
+2025-07-16 18:53:55,602 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'astma380'
+⠋ Processing queue... ---------------------------------------- 0:00:152025-07-16 18:53:55,627 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec 'AMS-QQ-P-35' (ams-qq-p-35)
+2025-07-16 18:53:55,652 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs 'ams-qq-p-35'
+2025-07-16 18:53:55,678 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0251-02264' (0251-02264)
+2025-07-16 18:53:55,703 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0251-02264'
+⠙ Processing queue... ---------------------------------------- 0:00:152025-07-16 18:53:55,729 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0250-70351' (0250-70351)
+2025-07-16 18:53:55,755 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0250-70351'
+2025-07-16 18:53:55,781 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0250-20000' (0250-20000)
+2025-07-16 18:53:55,808 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0250-20000'
+2025-07-16 18:53:55,833 - email_from_list - INFO - Found matching spec for vendor Pentagon Technologies
+⠹ Processing queue... ---------------------------------------- 0:00:152025-07-16 18:53:55,865 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0250-70351' (0250-70351)
+2025-07-16 18:53:55,891 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0250-70351'
+2025-07-16 18:53:55,917 - email_from_list - INFO - Comparing spec '0250-20000' (0250-20000) with vendor spec '0250-20000' (0250-20000)
+2025-07-16 18:53:55,942 - email_from_list - INFO - Enhanced comparison: '0250-20000' vs '0250-20000'
+⠼ Processing queue... ---------------------------------------- 0:00:152025-07-16 18:53:55,968 - email_from_list - INFO - Found matching spec for vendor AI Industries
+2025-07-16 18:53:55,993 - email_from_list - INFO - Processing quote 8137, process Clean for vendor Consolidated Metal Technologies, Inc.
+⠴ Processing queue... ---------------------------------------- 0:00:152025-07-16 18:53:56,124 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+⠦ Processing queue... ---------------------------------------- 0:00:152025-07-16 18:53:56,203 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf
+2025-07-16 18:53:56,393 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf
+⠏ Processing queue... ---------------------------------------- 0:00:152025-07-16 18:53:56,421 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp
+2025-07-16 18:53:56,498 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+⠙ Processing queue... ---------------------------------------- 0:00:162025-07-16 18:53:56,525 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf
+2025-07-16 18:53:56,552 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf
+2025-07-16 18:53:56,580 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp
+2025-07-16 18:53:56,608 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+⠹ Processing queue... ---------------------------------------- 0:00:162025-07-16 18:53:56,643 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf
+2025-07-16 18:53:56,673 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt
+2025-07-16 18:53:56,702 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf
+⠸ Processing queue... ---------------------------------------- 0:00:162025-07-16 18:53:56,729 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp
+2025-07-16 18:53:56,756 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:53:56,785 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf
+2025-07-16 18:53:56,821 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt
+⠴ Processing queue... ---------------------------------------- 0:00:162025-07-16 18:53:56,848 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf
+2025-07-16 18:53:56,874 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp
+⠋ Processing queue... ---------------------------------------- 0:00:162025-07-16 18:53:57,294 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:53:57,320 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:53:57,345 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp (0.67 MB)
+2025-07-16 18:53:57,374 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+⠹ Processing queue... ---------------------------------------- 0:00:162025-07-16 18:53:57,403 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:53:57,428 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp (0.69 MB)
+2025-07-16 18:53:57,454 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+2025-07-16 18:53:57,480 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt (1.02 MB)
+2025-07-16 18:53:57,513 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+⠸ Processing queue... ---------------------------------------- 0:00:172025-07-16 18:53:57,542 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp (0.59 MB)
+2025-07-16 18:53:57,571 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+2025-07-16 18:53:57,599 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt (0.96 MB)
+2025-07-16 18:53:57,625 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+⠴ Processing queue... ---------------------------------------- 0:00:172025-07-16 18:53:57,652 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp (0.57 MB)
+2025-07-16 18:53:57,744 - boxsdk.network.default_network - INFO - ←[36mGET https://api.box.com/2.0/users/me {'headers': {'Authorization': '---EGRB',
+             'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2'},
+ 'params': None}←[0m
+⠦ Processing queue... ---------------------------------------- 0:00:172025-07-16 18:53:57,856 - boxsdk.network.default_network - WARNING - ←[31m"GET https://api.box.com/2.0/users/me" 401 0
+{'date': 'Wed, 16 Jul 2025 23:53:57 GMT', 'x-envoy-upstream-service-time': '11', 'strict-transport-security': 'max-age=31536000', 'www-authenticate': 'Bearer realm="Service", error="invalid_token", error_description="The access token provided is invalid."', 'box-request-id': '069946b66b3af0cbf72d952c97b66556f', 'via': '1.1 google', 'Content-Length': '0', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'}
+b''
+←[0m
+⠇ Processing queue... ---------------------------------------- 0:00:172025-07-16 18:53:57,882 - boxsdk.network.default_network - INFO - ←[36mPOST https://api.box.com/oauth2/token {'data': {'box_device_id': '0',
+          'client_id': '---aa8e',
+          'client_secret': '---N5fp',
+          'grant_type': 'refresh_token',
+          'refresh_token': '---'},
+ 'headers': {'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2',
+             'content-type': 'application/x-www-form-urlencoded'}}←[0m
+⠏ Processing queue... ---------------------------------------- 0:00:172025-07-16 18:53:58,076 - boxsdk.network.default_network - WARNING - ←[31m"POST https://api.box.com/oauth2/token" 400 103
+{'date': 'Wed, 16 Jul 2025 23:53:58 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b9607ebd3.19388695; expires=Thu, 16 Jul 2026 23:53:58 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:53:58 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=53; expires=Thu, 16 Jul 2026 23:53:58 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+{'error': 'unauthorized_client',
+ 'error_description': 'The grant type is unauthorized for this client_id'}
+←[0m
+⠋ Processing queue... ---------------------------------------- 0:00:172025-07-16 18:53:58,101 - email_from_list - ERROR - Error authenticating with Box:
+Message: The grant type is unauthorized for this client_id
+Status: 400
+URL: https://api.box.com/oauth2/token
+Method: POST
+Headers: {'date': 'Wed, 16 Jul 2025 23:53:58 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b9607ebd3.19388695; expires=Thu, 16 Jul 2026 23:53:58 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:53:58 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=53; expires=Thu, 16 Jul 2026 23:53:58 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+2025-07-16 18:53:58,127 - email_from_list - ERROR - Failed to initialize Box client. Check your Box credentials in environment variables.
+2025-07-16 18:53:58,160 - email_from_list - ERROR - Error using Box integration: Exception: Box authentication failed. Check credentials in environment variables.
+2025-07-16 18:53:58,186 - email_from_list - ERROR - Suggestion: Check Box credentials in environment variables.
+⠹ Processing queue... ---------------------------------------- 0:00:172025-07-16 18:53:58,222 - email_from_list - WARNING - Email saved but all 28 files could not be uploaded to Box. Check Box credentials and network connection.
+2025-07-16 18:53:58,251 - email_from_list - INFO - Draft saved for quote 8137, process Clean -> dawn@cmtfinishing.com
+⠏ Processing queue... ---------------------------------------- 0:00:182025-07-16 18:53:58,799 - email_from_list - INFO - Added 4 items to Vendor_Quotes.csv for quote 8137
+⠋ Processing queue... ---------------------------------------- 0:00:182025-07-16 18:53:58,891 - email_from_list - INFO - Processing quote 8137, process Clean for vendor Nxedge Inc.
+2025-07-16 18:53:58,918 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:53:58,945 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf
+2025-07-16 18:53:58,978 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf
+⠹ Processing queue... ---------------------------------------- 0:00:182025-07-16 18:53:59,004 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp
+2025-07-16 18:53:59,031 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:53:59,058 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf
+2025-07-16 18:53:59,085 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf
+⠸ Processing queue... ---------------------------------------- 0:00:182025-07-16 18:53:59,110 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp
+2025-07-16 18:53:59,143 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:53:59,173 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf
+2025-07-16 18:53:59,204 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt
+⠼ Processing queue... ---------------------------------------- 0:00:182025-07-16 18:53:59,230 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf
+2025-07-16 18:53:59,258 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp
+2025-07-16 18:53:59,292 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:53:59,322 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf
+⠦ Processing queue... ---------------------------------------- 0:00:182025-07-16 18:53:59,355 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt
+2025-07-16 18:53:59,384 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf
+2025-07-16 18:53:59,412 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp
+⠸ Processing queue... ---------------------------------------- 0:00:192025-07-16 18:53:59,980 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+⠼ Processing queue... ---------------------------------------- 0:00:192025-07-16 18:54:00,006 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:54:00,033 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp (0.67 MB)
+2025-07-16 18:54:00,062 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:54:00,091 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+⠦ Processing queue... ---------------------------------------- 0:00:192025-07-16 18:54:00,118 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp (0.69 MB)
+2025-07-16 18:54:00,146 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+2025-07-16 18:54:00,176 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt (1.02 MB)
+2025-07-16 18:54:00,206 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+⠧ Processing queue... ---------------------------------------- 0:00:192025-07-16 18:54:00,235 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp (0.59 MB)
+2025-07-16 18:54:00,263 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+2025-07-16 18:54:00,292 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt (0.96 MB)
+2025-07-16 18:54:00,320 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+⠏ Processing queue... ---------------------------------------- 0:00:192025-07-16 18:54:00,346 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp (0.57 MB)
+2025-07-16 18:54:00,453 - boxsdk.network.default_network - INFO - ←[36mGET https://api.box.com/2.0/users/me {'headers': {'Authorization': '---EGRB',
+             'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2'},
+ 'params': None}←[0m
+⠋ Processing queue... ---------------------------------------- 0:00:202025-07-16 18:54:00,568 - boxsdk.network.default_network - WARNING - ←[31m"GET https://api.box.com/2.0/users/me" 401 0
+{'date': 'Wed, 16 Jul 2025 23:54:00 GMT', 'x-envoy-upstream-service-time': '11', 'strict-transport-security': 'max-age=31536000', 'www-authenticate': 'Bearer realm="Service", error="invalid_token", error_description="The access token provided is invalid."', 'box-request-id': '0c8f736c8d0603937b7a437d2d3e343d8', 'via': '1.1 google', 'Content-Length': '0', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'}
+b''
+←[0m
+⠙ Processing queue... ---------------------------------------- 0:00:202025-07-16 18:54:00,595 - boxsdk.network.default_network - INFO - ←[36mPOST https://api.box.com/oauth2/token {'data': {'box_device_id': '0',
+          'client_id': '---aa8e',
+          'client_secret': '---N5fp',
+          'grant_type': 'refresh_token',
+          'refresh_token': '---'},
+ 'headers': {'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2',
+             'content-type': 'application/x-www-form-urlencoded'}}←[0m
+⠸ Processing queue... ---------------------------------------- 0:00:202025-07-16 18:54:00,812 - boxsdk.network.default_network - WARNING - ←[31m"POST https://api.box.com/oauth2/token" 400 103
+{'date': 'Wed, 16 Jul 2025 23:54:00 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b98b8e4a6.06040204; expires=Thu, 16 Jul 2026 23:54:00 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:54:00 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=32; expires=Thu, 16 Jul 2026 23:54:00 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+{'error': 'unauthorized_client',
+ 'error_description': 'The grant type is unauthorized for this client_id'}
+←[0m
+⠴ Processing queue... ---------------------------------------- 0:00:202025-07-16 18:54:00,842 - email_from_list - ERROR - Error authenticating with Box:
+Message: The grant type is unauthorized for this client_id
+Status: 400
+URL: https://api.box.com/oauth2/token
+Method: POST
+Headers: {'date': 'Wed, 16 Jul 2025 23:54:00 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b98b8e4a6.06040204; expires=Thu, 16 Jul 2026 23:54:00 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:54:00 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=32; expires=Thu, 16 Jul 2026 23:54:00 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+2025-07-16 18:54:00,879 - email_from_list - ERROR - Failed to initialize Box client. Check your Box credentials in environment variables.
+2025-07-16 18:54:00,926 - email_from_list - ERROR - Error using Box integration: Exception: Box authentication failed. Check credentials in environment variables.
+⠦ Processing queue... ---------------------------------------- 0:00:202025-07-16 18:54:00,952 - email_from_list - ERROR - Suggestion: Check Box credentials in environment variables.
+2025-07-16 18:54:01,005 - email_from_list - WARNING - Email saved but all 28 files could not be uploaded to Box. Check Box credentials and network connection.
+2025-07-16 18:54:01,032 - email_from_list - INFO - Draft saved for quote 8137, process Clean -> Nxe-APC.Quotes@nxedge.com
+⠸ Processing queue... ---------------------------------------- 0:00:212025-07-16 18:54:01,507 - email_from_list - INFO - Added 4 items to Vendor_Quotes.csv for quote 8137
+2025-07-16 18:54:01,557 - email_from_list - INFO - Processing quote 8137, process Clean for vendor Pentagon Technologies
+⠼ Processing queue... ---------------------------------------- 0:00:212025-07-16 18:54:01,619 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:54:01,648 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf
+2025-07-16 18:54:01,676 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf
+2025-07-16 18:54:01,704 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp
+⠦ Processing queue... ---------------------------------------- 0:00:212025-07-16 18:54:01,731 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:54:01,758 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf
+2025-07-16 18:54:01,785 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf
+2025-07-16 18:54:01,813 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp
+2025-07-16 18:54:01,841 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+⠧ Processing queue... ---------------------------------------- 0:00:212025-07-16 18:54:01,871 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf
+2025-07-16 18:54:01,907 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt
+2025-07-16 18:54:01,939 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf
+⠏ Processing queue... ---------------------------------------- 0:00:212025-07-16 18:54:01,965 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp
+2025-07-16 18:54:01,999 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:54:02,028 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf
+2025-07-16 18:54:02,058 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt
+⠋ Processing queue... ---------------------------------------- 0:00:212025-07-16 18:54:02,083 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf
+2025-07-16 18:54:02,111 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp
+⠧ Processing queue... ---------------------------------------- 0:00:222025-07-16 18:54:02,674 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:54:02,701 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:54:02,729 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp (0.67 MB)
+⠏ Processing queue... ---------------------------------------- 0:00:222025-07-16 18:54:02,759 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:54:02,788 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:54:02,817 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp (0.69 MB)
+2025-07-16 18:54:02,847 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+⠋ Processing queue... ---------------------------------------- 0:00:222025-07-16 18:54:02,874 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt (1.02 MB)
+2025-07-16 18:54:02,900 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+2025-07-16 18:54:02,933 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp (0.59 MB)
+2025-07-16 18:54:02,959 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+⠹ Processing queue... ---------------------------------------- 0:00:222025-07-16 18:54:02,986 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt (0.96 MB)
+2025-07-16 18:54:03,020 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+2025-07-16 18:54:03,048 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp (0.57 MB)
+⠸ Processing queue... ---------------------------------------- 0:00:222025-07-16 18:54:03,127 - boxsdk.network.default_network - INFO - ←[36mGET https://api.box.com/2.0/users/me {'headers': {'Authorization': '---EGRB',
+             'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2'},
+ 'params': None}←[0m
+⠼ Processing queue... ---------------------------------------- 0:00:222025-07-16 18:54:03,237 - boxsdk.network.default_network - WARNING - ←[31m"GET https://api.box.com/2.0/users/me" 401 0
+{'date': 'Wed, 16 Jul 2025 23:54:03 GMT', 'x-envoy-upstream-service-time': '13', 'strict-transport-security': 'max-age=31536000', 'www-authenticate': 'Bearer realm="Service", error="invalid_token", error_description="The access token provided is invalid."', 'box-request-id': '04a23b27dd3dfd6430b7a7fe447a1df8c', 'via': '1.1 google', 'Content-Length': '0', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'}
+b''
+←[0m
+2025-07-16 18:54:03,263 - boxsdk.network.default_network - INFO - ←[36mPOST https://api.box.com/oauth2/token {'data': {'box_device_id': '0',
+          'client_id': '---aa8e',
+          'client_secret': '---N5fp',
+          'grant_type': 'refresh_token',
+          'refresh_token': '---'},
+ 'headers': {'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2',
+             'content-type': 'application/x-www-form-urlencoded'}}←[0m
+⠧ Processing queue... ---------------------------------------- 0:00:232025-07-16 18:54:03,470 - boxsdk.network.default_network - WARNING - ←[31m"POST https://api.box.com/oauth2/token" 400 103
+{'date': 'Wed, 16 Jul 2025 23:54:03 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b9b65cba4.50817789; expires=Thu, 16 Jul 2026 23:54:03 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:54:03 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=34; expires=Thu, 16 Jul 2026 23:54:03 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+{'error': 'unauthorized_client',
+ 'error_description': 'The grant type is unauthorized for this client_id'}
+←[0m
+2025-07-16 18:54:03,497 - email_from_list - ERROR - Error authenticating with Box:
+Message: The grant type is unauthorized for this client_id
+Status: 400
+URL: https://api.box.com/oauth2/token
+Method: POST
+Headers: {'date': 'Wed, 16 Jul 2025 23:54:03 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b9b65cba4.50817789; expires=Thu, 16 Jul 2026 23:54:03 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:54:03 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=34; expires=Thu, 16 Jul 2026 23:54:03 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+2025-07-16 18:54:03,523 - email_from_list - ERROR - Failed to initialize Box client. Check your Box credentials in environment variables.
+⠇ Processing queue... ---------------------------------------- 0:00:232025-07-16 18:54:03,560 - email_from_list - ERROR - Error using Box integration: Exception: Box authentication failed. Check credentials in environment variables.
+2025-07-16 18:54:03,586 - email_from_list - ERROR - Suggestion: Check Box credentials in environment variables.
+2025-07-16 18:54:03,623 - email_from_list - WARNING - Email saved but all 28 files could not be uploaded to Box. Check Box credentials and network connection.
+⠋ Processing queue... ---------------------------------------- 0:00:232025-07-16 18:54:03,650 - email_from_list - INFO - Draft saved for quote 8137, process Clean -> quotecreate@pen-tec.com
+⠧ Processing queue... ---------------------------------------- 0:00:232025-07-16 18:54:04,194 - email_from_list - INFO - Added 4 items to Vendor_Quotes.csv for quote 8137
+2025-07-16 18:54:04,291 - email_from_list - INFO - Processing quote 8137, process Clean for vendor AI Industries
+⠇ Processing queue... ---------------------------------------- 0:00:232025-07-16 18:54:04,319 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:54:04,344 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf
+2025-07-16 18:54:04,372 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf
+2025-07-16 18:54:04,397 - email_from_list - INFO - Found file for part 0041-12177: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp
+⠋ Processing queue... ---------------------------------------- 0:00:242025-07-16 18:54:04,426 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:54:04,464 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf
+2025-07-16 18:54:04,498 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf
+2025-07-16 18:54:04,525 - email_from_list - INFO - Found file for part 0041-25104: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp
+⠙ Processing queue... ---------------------------------------- 0:00:242025-07-16 18:54:04,553 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:54:04,588 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf
+2025-07-16 18:54:04,614 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt
+⠹ Processing queue... ---------------------------------------- 0:00:242025-07-16 18:54:04,640 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf
+2025-07-16 18:54:04,666 - email_from_list - INFO - Found file for part 0042-98849: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp
+2025-07-16 18:54:04,699 - email_from_list - INFO - Ignoring Excel/Word file: G:\Applied Materials\20250707 - 427075\0041-12177 0041-25104 0042-98849 0042-98851.xls
+2025-07-16 18:54:04,728 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf
+⠼ Processing queue... ---------------------------------------- 0:00:242025-07-16 18:54:04,756 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt
+2025-07-16 18:54:04,784 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf
+2025-07-16 18:54:04,811 - email_from_list - INFO - Found file for part 0042-98851: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp
+⠙ Processing queue... ---------------------------------------- 0:00:242025-07-16 18:54:05,397 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+2025-07-16 18:54:05,426 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F1.pdf (2.40 MB)
+⠹ Processing queue... ---------------------------------------- 0:00:252025-07-16 18:54:05,455 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0041-12177_04_Green_Enhanced_F2.stp (0.67 MB)
+2025-07-16 18:54:05,483 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:54:05,510 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F1.pdf (2.21 MB)
+2025-07-16 18:54:05,537 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0041-25104_07_Green_Advanced_F2.stp (0.69 MB)
+⠼ Processing queue... ---------------------------------------- 0:00:252025-07-16 18:54:05,566 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+2025-07-16 18:54:05,593 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F1.jt (1.02 MB)
+2025-07-16 18:54:05,623 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F2.pdf (38.31 MB)
+2025-07-16 18:54:05,650 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_01\0042-98849_03_Green_Advanced_F3.stp (0.59 MB)
+⠴ Processing queue... ---------------------------------------- 0:00:252025-07-16 18:54:05,675 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\pdf 8137\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+2025-07-16 18:54:05,702 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F1.jt (0.96 MB)
+2025-07-16 18:54:05,728 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F2.pdf (38.23 MB)
+2025-07-16 18:54:05,754 - email_from_list - INFO - File will be uploaded to Box: G:\Applied Materials\20250707 - 427075\TCE_4070_1411786_02\0042-98851_03_Green_Enhanced_F3.stp (0.57 MB)
+⠦ Processing queue... ---------------------------------------- 0:00:252025-07-16 18:54:05,835 - boxsdk.network.default_network - INFO - ←[36mGET https://api.box.com/2.0/users/me {'headers': {'Authorization': '---EGRB',
+             'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2'},
+ 'params': None}←[0m
+⠇ Processing queue... ---------------------------------------- 0:00:252025-07-16 18:54:05,940 - boxsdk.network.default_network - WARNING - ←[31m"GET https://api.box.com/2.0/users/me" 401 0
+{'date': 'Wed, 16 Jul 2025 23:54:05 GMT', 'x-envoy-upstream-service-time': '10', 'strict-transport-security': 'max-age=31536000', 'www-authenticate': 'Bearer realm="Service", error="invalid_token", error_description="The access token provided is invalid."', 'box-request-id': '0725a9ad5f83a1731f4cce37701c729ae', 'via': '1.1 google', 'Content-Length': '0', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'}
+b''
+←[0m
+2025-07-16 18:54:05,973 - boxsdk.network.default_network - INFO - ←[36mPOST https://api.box.com/oauth2/token {'data': {'box_device_id': '0',
+          'client_id': '---aa8e',
+          'client_secret': '---N5fp',
+          'grant_type': 'refresh_token',
+          'refresh_token': '---'},
+ 'headers': {'User-Agent': 'box-python-sdk-3.14.0',
+             'X-Box-UA': 'agent=box-python-sdk/3.14.0; env=python/3.10.2',
+             'content-type': 'application/x-www-form-urlencoded'}}←[0m
+⠙ Processing queue... ---------------------------------------- 0:00:252025-07-16 18:54:06,188 - boxsdk.network.default_network - WARNING - ←[31m"POST https://api.box.com/oauth2/token" 400 103
+{'date': 'Wed, 16 Jul 2025 23:54:06 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b9e201c45.10991070; expires=Thu, 16 Jul 2026 23:54:06 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:54:06 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=51; expires=Thu, 16 Jul 2026 23:54:06 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+{'error': 'unauthorized_client',
+ 'error_description': 'The grant type is unauthorized for this client_id'}
+←[0m
+⠹ Processing queue... ---------------------------------------- 0:00:252025-07-16 18:54:06,214 - email_from_list - ERROR - Error authenticating with Box:
+Message: The grant type is unauthorized for this client_id
+Status: 400
+URL: https://api.box.com/oauth2/token
+Method: POST
+Headers: {'date': 'Wed, 16 Jul 2025 23:54:06 GMT', 'content-type': 'application/json', 'strict-transport-security': 'max-age=31536000', 'set-cookie': 'box_visitor_id=68783b9e201c45.10991070; expires=Thu, 16 Jul 2026 23:54:06 GMT; Max-Age=31536000; path=/; domain=.box.com; secure; SameSite=None, bv=MDP-3404; expires=Wed, 23 Jul 2025 23:54:06 GMT; Max-Age=604800; path=/; domain=.app.box.com; secure, cn=51; expires=Thu, 16 Jul 2026 23:54:06 GMT; Max-Age=31536000; path=/; domain=.app.box.com; secure, site_preference=desktop; path=/; domain=.box.com; secure', 'cache-control': 'no-store', 'via': '1.1 google', 'Alt-Svc': 'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000', 'Transfer-Encoding': 'chunked'}
+2025-07-16 18:54:06,242 - email_from_list - ERROR - Failed to initialize Box client. Check your Box credentials in environment variables.
+⠸ Processing queue... ---------------------------------------- 0:00:252025-07-16 18:54:06,333 - email_from_list - ERROR - Error using Box integration: Exception: Box authentication failed. Check credentials in environment variables.
+2025-07-16 18:54:06,359 - email_from_list - ERROR - Suggestion: Check Box credentials in environment variables.
+2025-07-16 18:54:06,399 - email_from_list - WARNING - Email saved but all 28 files could not be uploaded to Box. Check Box credentials and network connection.
+2025-07-16 18:54:06,426 - email_from_list - INFO - Draft saved for quote 8137, process Clean -> slanouette@aiindustries.com
+⠋ Processing queue... ---------------------------------------- 0:00:262025-07-16 18:54:06,902 - email_from_list - INFO - Added 4 items to Vendor_Quotes.csv for quote 8137
+⠹ Processing queue... ---------------------------------------- 0:00:262025-07-16 18:54:07,007 - email_from_list - INFO - Saving updated queue data to F:\Dustin Drab\PythonProjects\rfq-sender\data\Queue.csv
+⠦ Processing queue... ---------------------------------------- 0:00:262025-07-16 18:54:07,400 - email_from_list - INFO - Queue data saved successfully
+  Processing queue... ---------------------------------------- 0:00:27
+
+Processing complete! Success: 6/2
