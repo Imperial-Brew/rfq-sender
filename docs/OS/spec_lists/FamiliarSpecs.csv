@@ -1,17 +1,80 @@
-Electropolish,Clean,Anodize,Bright Nickel,Chromate Conversion,Electroless Nickel,Passivation,Tin Plating,Zinc Plating,Zinc Nickel Plate,Phosphate,Silver Plating,Copper Plating,Nickel Plating,Gold Plating,Dry Film Lube,Oxygen Cleaning,Penetrant Inspection
-PRC-5009,BPS 4138,AMS 2469 ,AMS-QQ-N-290,AMS 2473,AMS 2404,AMS 2700,AMS-P-81728,QQ-Z-325,BAC 5680,MIL-DTL-16232,AMS 2411,AMS 2418,AMS 2424,ASTM B 488,MIL-PRF-16010,CGA G-4.1,GT23A
-ASTM B912,MDP9-5,AMS 2471,AMS-2423,AMS-C-5541,AMS 2405,AMS-QQ-P-35,MIL-P-81728,ASTM B 633,AMS 2417,,AMS 2410, MIL-C-14550,AMS 2403,MIL-DTL-45204,,ASTM G93,ASTM E1417
-SEMI F17,ACS-PRS-2203 ,AMS 2472,AMS-2403 ,ASTM B 449,AMS-C-26074,ASTM A 380,ASTM-B-545,,BAC 5637,,AMS 2412,ASTM B 734,AMS-QQ-N-290,AMS 2422,,,STP53-201/LCP72-1068
-SEMI F19,0250-09720,AMS-C-5541,PRC-5004,BAC 5719,ASTM B 733,ASTM A 967,MIL-T-10727,,ASTM B841,,ASTM B 700,,FED-QQ-N-290,,,,MDP6-13
-ASME BPE,0250-20000,ASTM B 449,ASTM B 689,BPS 4182,MIL-C-26074,ASTM B 600,,,,,QQ-S-365,,ASTM B 733,,,,BPS 4089
-,0250-29357,ASTM B 580,,HP4-57,PRC-5007 (NASA),ASTM B912,,,,,,,,,,,NDTS-1101
-,0250-31176,BAC 5632,,MDP4-57,,ASTM F86,,,,,,,,,,,LMA-PC201
-,0250-70351,BPS 4555,,MIL-C-5541,,BPS 4007,,,,,,,,,,,BAC 5423
-,0250-30100,HP4-2,,MIL-C-81706,,FED-QQ-P-35,,,,,,,,,,,ACS-PRS-7005
-,,MDP4-2,,MIL-DTL-14072,,MDP4-8,,,,,,,,,,,GP17G
-,,MIL-A-8625,,MIL-DTL-5541,,MIL-S-5002,,,,,,,,,,,HP6-13
-,,MIL-C-5541,,MIL-DTL-81706,,SS8435,,,,,,,,,,,NE07-001
-,,NE40-016,,MIL-F-14072,,,,,,,,,,,,,MIL-STD-6866
-,,PRC-5005,,NE40-0026,,,,,,,,,,,,,BSS 7039
-,,PRC-5006,,PRC-5005,,,,,,,,,,,,,
-,,STP58-208,,STP58-405,,,,,,,,,,,,,
+Process,Spec,Issuer
+Anodize,AMS 2469,SAE
+Anodize,AMS 2471,SAE
+Anodize,AMS 2472,SAE
+Anodize,ASTM B 580,ASTM
+Anodize,BAC 5019,BOEING
+Anodize,BAC 5632,BOEING
+Anodize,BPS 4555,BELL
+Anodize,MIL-PRF-8625/MIL-A-8625,DOD
+Bright Nickel,AMS-2403 ,SAE
+Bright Nickel,AMS-2423,SAE
+Bright Nickel,PRC-5004,NASA
+Bright Nickel,QQ-N-290,SAE
+Chromate Conversion,AMS 2473,SAE
+Chromate Conversion,ASTM B 449,ASTM
+Chromate Conversion,BAC 5719,BOEING
+Chromate Conversion,BPS 4182,BELL
+Chromate Conversion,MIL-DTL-14072,DOD
+Chromate Conversion,MIL-DTL-5541,DOD
+Chromate Conversion,MIL-DTL-81706,DOD
+Cleaning,0250-20000,AMAT
+Cleaning,0250-70351,AMAT
+Cleaning,ASTM B 600,ASTM
+Cleaning,BPS 4138,BELL
+Copper Plating,AMS 2418,SAE
+Copper Plating,ASTM B 734,ASTM
+Copper Plating,MIL-C-14550,DOD
+Dry Film Lubricant,MIL-PRF-16010,DOD
+Dry Film Lubricant,PS18021,BOEING
+Electroless Nickel,AMS 2404,SAE
+Electroless Nickel,AMS 2405,SAE
+Electroless Nickel,AMS-C-26074,SAE
+Electroless Nickel,ASTM B 733,ASTM
+Electroless Nickel,MIL-C-26074,DOD
+Electroless Nickel,PRC-5007,NASA
+Electropolish,0250-13605,AMAT
+Electropolish,ASTM B 912,ASTM
+Electropolish,PRC-5009,NASA
+Gold Plating,AMS 2422,SAE
+Gold Plating,ASTM B 488,ASTM
+Gold Plating,MIL-DTL-45204,DOD
+Heat Treat,BPS 4140,BELL
+Heat Treat,PS15634,BOEING
+Heat Treat,BAC 5613,BOEING
+Heat Treat,MIL-H-6875,DOD
+Nickel Plating,AMS 2403,SAE
+Nickel Plating,AMS 2424,SAE
+Nickel Plating,ASTM B 689,ASTM
+Nickel Plating,QQ-N-290,SAE
+Oxygen Cleaning,ASTM G93,ASTM
+Oxygen Cleaning,CGA G-4.1,CGA
+Passivation,AMS 2700,SAE
+Passivation,ASTM A 380,ASTM
+Passivation,ASTM A 967,ASTM
+Passivation,BPS 4007,BELL
+Passivation,QQ-P-35,SAE
+Penetrant Inspect,ASTM E1417,ASTM
+Penetrant Inspect,BAC 5423,BOEING
+Penetrant Inspect,BPS 4089,BELL
+Penetrant Inspect,BSS 7039,BOEING
+Penetrant Inspect,MIL-STD-6866,DOD
+Penetrant Inspect,PS21202,BOEING
+Phosphate,MIL-DTL-16232,DOD
+Shot Peen,AMS 2430,SAE
+Silver Plating,AMS 2410,SAE
+Silver Plating,AMS 2411,SAE
+Silver Plating,AMS 2412,SAE
+Silver Plating,ASTM B 700,ASTM
+Silver Plating,BAC 5715,BOEING
+Silver Plating,QQ-S-365,SAE
+Tin Plating,AMS-P-81728,SAE
+Tin Plating,ASTM-B-545,ASTM
+Tin Plating,MIL-P-81728,DOD
+Tin Plating,MIL-T-10727,DOD
+Zinc Nickel Plate,AMS 2417,SAE
+Zinc Nickel Plate,ASTM B841,ASTM
+Zinc Nickel Plate,BAC 5637,BOEING
+Zinc Nickel Plate,BAC 5680,BOEING
+Zinc Plating,ASTM B 633,ASTM
+Zinc Plating,QQ-Z-325,SAE

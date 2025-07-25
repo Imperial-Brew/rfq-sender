@@ -95,7 +95,7 @@ vendors:
     specs:
     - number: ASTM B488
     - number: MIL-DTL-45204
-  - name: Dry Film Lubricant
+  - name: Dry Film Lube
     specs:
     - number: MIL-PRF-16010
 - name: Turn-key Coatings, Inc.
@@ -264,7 +264,7 @@ vendors:
     - number: MDP4-8
   - name: SOL-EPOXY
     specs: null
-  - name: Penetrant Inspect
+  - name: Penetrant Inspection
     specs:
     - number: ASTM E1417
     - number: GT23A
@@ -291,9 +291,6 @@ vendors:
     specs:
     - number: MIL-C-26074
     - number: AMS 2404
-  - name: Dry Film Lubricant
-    specs:
-    - number: PS18021
 - name: Har-Conn Aerospace, Inc.
   location: West Hartford, CT
   website: http://www.har-conn.com/
@@ -350,9 +347,6 @@ vendors:
   location: Wichita, Kansas
   website: https://www.3pprocessing.com/
   processes:
-  - name: Dry Film Lubricant
-    specs:
-    - number: PS18021
   - name: Epoxy
     specs:
     - number: MIL-PRF-22750
@@ -369,7 +363,7 @@ vendors:
   - name: Chromate Conversion
     specs:
     - number: MIL-DTL-5541
-  - name: Penetrant Inspect
+  - name: Penetrant Inspection
     specs:    
     - number: BAC 5423
     - number: PS21202

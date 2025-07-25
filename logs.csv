@@ -294,3 +294,32 @@ quote_id,vendor_id,sent_timestamp,status
 8137,Nxedge Inc.,2025-07-17 14:21:46.231041,draft_saved_Clean
 8137,Pentagon Technologies,2025-07-17 14:21:48.497685,draft_saved_Clean
 8137,AI Industries,2025-07-17 14:21:50.798911,draft_saved_Clean
+8137,"Consolidated Metal Technologies, Inc.",2025-07-17 18:00:51.222196,draft_saved_Chromate Conversion
+8137,Gleco Plating,2025-07-17 18:05:20.804298,draft_saved_Chromate Conversion
+8137,Nxedge Inc.,2025-07-17 18:09:49.007632,draft_saved_Chromate Conversion
+8137,"Consolidated Metal Technologies, Inc.",2025-07-17 18:14:19.063562,draft_saved_Clean
+8137,Nxedge Inc.,2025-07-17 18:18:47.255071,draft_saved_Clean
+8137,Pentagon Technologies,2025-07-17 18:23:32.820244,draft_saved_Clean
+8137,AI Industries,2025-07-17 18:27:59.857685,draft_saved_Clean
+8070,"Consolidated Metal Technologies, Inc.",2025-07-18 09:33:12.484694,draft_saved_Tin Plating
+8070,Gleco Plating,2025-07-18 09:34:23.407902,draft_saved_Tin Plating
+8070,"Consolidated Metal Technologies, Inc.",2025-07-21 13:53:52.544571,draft_saved_Tin Plating
+8070,Gleco Plating,2025-07-21 13:55:34.194115,draft_saved_Tin Plating
+7892,"Consolidated Metal Technologies, Inc.",2025-07-21 13:56:10.107026,draft_saved_Cleaning
+7892,Nxedge Inc.,2025-07-21 13:56:40.057255,draft_saved_Cleaning
+7892,Pentagon Technologies,2025-07-21 13:57:09.178298,draft_saved_Cleaning
+7892,AI Industries,2025-07-21 13:57:38.546646,draft_saved_Cleaning
+7892,"Consolidated Metal Technologies, Inc.",2025-07-21 13:58:19.986770,draft_saved_Chromate Conversion
+7892,Gleco Plating,2025-07-21 13:59:00.986090,draft_saved_Chromate Conversion
+7892,Nxedge Inc.,2025-07-21 13:59:36.336155,draft_saved_Chromate Conversion
+7900,NONE,2025-07-24 16:55:05.958167,skipped_no_vendor_Penetrant Inspect
+7900,Bodycote,2025-07-24 16:55:15.948015,draft_saved_Heat Treat
+7900,NONE,2025-07-24 16:55:26.171316,skipped_no_vendor_Dry Film Lubricant
+7900,NONE,2025-07-24 16:56:44.226377,skipped_no_vendor_Penetrant Inspect
+7900,Bodycote,2025-07-24 16:56:54.450645,draft_saved_Heat Treat
+7900,NONE,2025-07-24 16:57:04.385307,skipped_no_vendor_Dry Film Lubricant
+7900,NONE,2025-07-24 17:07:41.635039,skipped_no_vendor_Penetrant Inspect
+7900,Bodycote,2025-07-24 17:08:07.822778,draft_saved_Heat Treat
+7900,Embee Processing,2025-07-24 17:08:33.114424,draft_saved_Dry Film Lubricant
+7900,NONE,2025-07-25 09:11:45.309628,skipped_no_vendor_Penetrant Inspect
+7900,3P Processing Inc,2025-07-25 09:45:11.472353,draft_saved_Penetrant Inspect
