@@ -1,0 +1,443 @@
+{
+  "vendors": [
+    {
+      "id": "v001",
+      "name": "Tech Metals",
+      "processes": [
+        "electropolish",
+        "anodize",
+        "chromate conversion",
+        "passivation",
+        "tin plating",
+        "zinc plating",
+        "zinc nickel plate",
+        "silver plating",
+        "copper plating",
+        "electroless nickel"
+      ],
+      "contacts": [],
+      "address": {
+        "street": "",
+        "city": "Dayton, Ohio",
+        "state": "",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v002",
+      "name": "Gleco Plating",
+      "processes": [
+        "anodize",
+        "bright nickel",
+        "chromate conversion",
+        "electroless nickel",
+        "passivation",
+        "tin plating",
+        "zinc plating",
+        "zinc nickel plate",
+        "phosphate",
+        "silver plating",
+        "gold plating",
+        "dry film lubricant"
+      ],
+      "contacts": [
+        {
+          "name": "Cory Mouser",
+          "email": "cory@glecoplating.com\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0 ",
+          "phone": "(972) 475-4300",
+          "primary": true
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "Rowlett, Texas",
+        "state": "Texas",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v003",
+      "name": "Turn-key Coatings, Inc.",
+      "processes": [
+        "electropolish",
+        "anodize",
+        "bright nickel",
+        "chromate conversion",
+        "electroless nickel",
+        "passivation",
+        "zinc plating",
+        "phosphate",
+        "silver plating",
+        "gold plating"
+      ],
+      "contacts": [],
+      "address": {
+        "street": "",
+        "city": "Houston, Texas",
+        "state": "",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v004",
+      "name": "Consolidated Metal Technologies, Inc.",
+      "processes": [
+        "cleaning",
+        "anodize",
+        "bright nickel",
+        "chromate conversion",
+        "electroless nickel",
+        "passivation",
+        "tin plating",
+        "zinc plating"
+      ],
+      "contacts": [
+        {
+          "name": "Dawn Carpenter",
+          "email": "dawn@cmtfinishing.com",
+          "phone": "(512) 255-9296",
+          "primary": true
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "Round Rock, Texas",
+        "state": "Texas",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v005",
+      "name": "Pentagon Technologies",
+      "processes": [
+        "surface",
+        "cleaning"
+      ],
+      "contacts": [
+        {
+          "name": "Pentagon Technologies",
+          "email": "quotecreate@pen-tec.com",
+          "phone": "",
+          "primary": true
+        },
+        {
+          "name": "Rogelio Sanchez",
+          "email": "rsanchez@pen-tec.com",
+          "phone": "(512) 790-2019",
+          "primary": false
+        },
+        {
+          "name": "Aaron R. Hill",
+          "email": "ahill@pen-tec.com",
+          "phone": "(512) 971-8970",
+          "primary": false
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "CA/NY/TX",
+        "state": "",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v006",
+      "name": "AI Industries",
+      "processes": [
+        "cleaning"
+      ],
+      "contacts": [
+        {
+          "name": "Steve Lanouette",
+          "email": "slanouette@aiindustries.com",
+          "phone": "(512) 990-3999",
+          "primary": true
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": NaN,
+        "state": "",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v007",
+      "name": "Nxedge Inc.",
+      "processes": [
+        "chromate conversion",
+        "cleaning",
+        "surface",
+        "anodize",
+        "electroless nickel",
+        "gold plating",
+        "silver plating"
+      ],
+      "contacts": [
+        {
+          "name": "Nxedge Inc.",
+          "email": "Nxe-APC.Quotes@nxedge.com",
+          "phone": "(408) 727-0933",
+          "primary": true
+        },
+        {
+          "name": "Chandrika Shah",
+          "email": "chandrika.shah@nxedgeinc.com",
+          "phone": "(408) 727-0933",
+          "primary": false
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "Morgan Hill, California; Santa Clara, California; San Carlos, California; Boise, Idaho",
+        "state": "California",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v008",
+      "name": "Advanced Aero Coatings, LLC",
+      "processes": [
+        "cleaning",
+        "anodize",
+        "chromate conversion",
+        "passivation",
+        "sol-epoxy",
+        "penetrant inspect"
+      ],
+      "contacts": [],
+      "address": {
+        "street": "",
+        "city": "Fort Worth, Texas",
+        "state": "",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v009",
+      "name": "Embee Processing",
+      "processes": [
+        "electroless nickel",
+        "dry film lubricant"
+      ],
+      "contacts": [
+        {
+          "name": "Embee Processing",
+          "email": "Quotes@embee.com. ",
+          "phone": "",
+          "primary": true
+        },
+        {
+          "name": "Blanca Vallejo",
+          "email": "blancav@embee.com",
+          "phone": "",
+          "primary": false
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "Santa Ana, CA",
+        "state": "California",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v010",
+      "name": "Har-Conn Aerospace, Inc.",
+      "processes": [
+        "electroless nickel"
+      ],
+      "contacts": [],
+      "address": {
+        "street": "",
+        "city": "West Hartford, CT",
+        "state": "",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v011",
+      "name": "Hytek Finishes",
+      "processes": [
+        "electroless nickel"
+      ],
+      "contacts": [
+        {
+          "name": "Hytek Finishes",
+          "email": "quotes@hytekfinishes.com",
+          "phone": "",
+          "primary": true
+        },
+        {
+          "name": "Joshua Schaaf",
+          "email": "joshua.schaaf@hytekfinishes.com",
+          "phone": "(253) 796-4584",
+          "primary": false
+        },
+        {
+          "name": "Lissa Garay",
+          "email": " lissa.garay@hytekfinishes.com",
+          "phone": "(253) 796-4584",
+          "primary": false
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "Kent, WA",
+        "state": "Washington",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v012",
+      "name": "Brooks Industrial Coatings, Inc.",
+      "processes": [
+        "anodize",
+        "chromate conversion",
+        "passivation"
+      ],
+      "contacts": [
+        {
+          "name": "Selisa Powell",
+          "email": "spowell@bic-texas.com",
+          "phone": "(512) 990-5333",
+          "primary": true
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "Austin, Texas",
+        "state": "Texas",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v013",
+      "name": "Harrison Electropolishing L.P.",
+      "processes": [
+        "electropolish",
+        "passivation",
+        "oxygen cleaning"
+      ],
+      "contacts": [
+        {
+          "name": "Harrison Electropolishing L.P.",
+          "email": "sales@harrisonep.com",
+          "phone": "(832) 467-3099",
+          "primary": true
+        },
+        {
+          "name": "Matthew Buck",
+          "email": "matthewb@harrisonep.com",
+          "phone": "(832) 467-3100",
+          "primary": false
+        },
+        {
+          "name": "Lenny Gonzalez",
+          "email": "lennyg@harrisonep.com",
+          "phone": "(832) 467-3100",
+          "primary": false
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "Houston, Texas",
+        "state": "Texas",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v014",
+      "name": "3P Processing Inc",
+      "processes": [
+        "dry film lubricant",
+        "epoxy",
+        "anodize",
+        "passivation",
+        "passivation",
+        "chromate conversion",
+        "penetrant inspect"
+      ],
+      "contacts": [
+        {
+          "name": "Robert Pepper",
+          "email": "Quotes@3p-p.com",
+          "phone": "(316) 529-0828",
+          "primary": true
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "Wichita, Kansas",
+        "state": "Kansas",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v015",
+      "name": "Bodycote",
+      "processes": [
+        "heat treat"
+      ],
+      "contacts": [
+        {
+          "name": "Paul Dymond",
+          "email": "paul.dymond@bodycote.com",
+          "phone": "(817) 253-9906",
+          "primary": true
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "California",
+        "state": "Texas",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    }
+  ]
+}

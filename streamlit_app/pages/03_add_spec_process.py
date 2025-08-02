@@ -1,0 +1,180 @@
+import streamlit as st
+import pandas as pd
+from pathlib import Path
+import sys
+import logging
+
+# Add the parent directory to the path so we can import from other modules
+parent_dir = Path(__file__).parent.parent.parent
+sys.path.append(str(parent_dir))
+
+# Import utility functions
+from utils.specs import (
+    load_process_list, 
+    load_issuers, 
+    add_spec_entry, 
+    spec_exists,
+    SPECS_PATH
+)
+from utils.auth import get_user_role
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(parent_dir / "logs" / "add_spec_process.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def setup_page():
+    """Configure the page settings."""
+    st.title("Add Spec/Process")
+    st.markdown("""
+    Use this form to add new specifications and processes to the database.
+    This helps maintain a comprehensive list of familiar specs for future RFQs.
+    """)
+
+def display_add_spec_form(user, role):
+    """Display the form for adding a new spec/process."""
+    # Check if user has admin privileges
+    if role != "admin":
+        st.warning("You need admin privileges to add new specs and processes.")
+        return
+    
+    # Get existing processes and issuers for dropdowns
+    processes = load_process_list()
+    issuers = load_issuers()
+    
+    with st.form("add_spec_form"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Process field with option to add new
+            process_options = [""] + sorted(processes) + ["+ Add New Process"]
+            selected_process_option = st.selectbox(
+                "Process", 
+                options=process_options,
+                help="Select an existing process or add a new one"
+            )
+            
+            # Show text input if "Add New Process" is selected
+            if selected_process_option == "+ Add New Process":
+                new_process = st.text_input(
+                    "New Process Name",
+                    help="Enter the name of the new process"
+                )
+                process = new_process.strip() if new_process else ""
+            else:
+                process = selected_process_option
+        
+        with col2:
+            # Spec field
+            spec = st.text_input(
+                "Specification", 
+                help="Enter the specification identifier (e.g., AMS2759)"
+            )
+            
+            # Issuer field with option to add new
+            issuer_options = [""] + sorted(issuers) + ["+ Add New Issuer"]
+            selected_issuer_option = st.selectbox(
+                "Issuer", 
+                options=issuer_options,
+                help="Select an existing issuer or add a new one"
+            )
+            
+            # Show text input if "Add New Issuer" is selected
+            if selected_issuer_option == "+ Add New Issuer":
+                new_issuer = st.text_input(
+                    "New Issuer Name",
+                    help="Enter the name of the new issuer (e.g., SAE, ASTM)"
+                )
+                issuer = new_issuer.strip() if new_issuer else ""
+            else:
+                issuer = selected_issuer_option
+        
+        # Notes field
+        notes = st.text_area(
+            "Notes", 
+            help="Enter any additional information about this specification"
+        )
+        
+        # Submit button
+        submitted = st.form_submit_button("Add Specification", use_container_width=True)
+        
+        if submitted:
+            # Validate inputs
+            if not process or not spec:
+                st.warning("Process and Specification are required fields.")
+                logger.warning(f"Submission failed: missing required fields")
+                return
+            
+            # Check if spec already exists for this process
+            if spec_exists(process, spec):
+                st.warning(f"Specification '{spec}' already exists for process '{process}'.")
+                logger.warning(f"Duplicate spec submission: {process} - {spec}")
+                return
+            
+            try:
+                # Add the new spec entry
+                add_spec_entry(process, spec, issuer, notes)
+                
+                # Show success message
+                st.success(f"✅ Added {spec} for {process} successfully!")
+                logger.info(f"New spec added: {process} - {spec} by {user['name']}")
+                
+                # Clear form (requires rerun)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error adding specification: {str(e)}")
+                logger.error(f"Error adding specification: {str(e)}")
+
+def display_current_specs():
+    """Display a preview of recently added specs."""
+    try:
+        # Load the specs dataframe
+        df = pd.read_csv(SPECS_PATH)
+        
+        if not df.empty:
+            st.subheader("Recently Added Specifications")
+            
+            # Sort by most recently added (assuming the CSV is appended to)
+            df = df.tail(5).sort_index(ascending=False)
+            
+            # Display the dataframe
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True
+            )
+        
+    except Exception as e:
+        st.error(f"Error loading specifications: {str(e)}")
+        logger.error(f"Error loading specifications: {str(e)}")
+
+def main():
+    """Main function to run the page."""
+    setup_page()
+    
+    # Get user from session state (set in main app)
+    if "user" not in st.session_state:
+        st.warning("Please select a user in the sidebar of the main page.")
+        return
+    
+    user = st.session_state.user
+    role = get_user_role(user)
+    
+    # Display user info
+    st.sidebar.markdown(f"**User:** {user['name']}")
+    st.sidebar.markdown(f"**Role:** {role}")
+    
+    # Display form for adding specs
+    display_add_spec_form(user, role)
+    
+    # Display recently added specs
+    display_current_specs()
+
+if __name__ == "__main__":
+    main()

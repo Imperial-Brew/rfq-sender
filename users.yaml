@@ -1,0 +1,16 @@
+users:
+  - name: Dustin Drab
+    email: drab.dustin@athenamfg.com
+    role: admin
+
+  - name: Alex Enriquez
+    email: enriquez.alex@athenamfg.com
+    role: estimator
+
+  - name: Bill Bolling
+    email: bolling.bill@athenamfg.com
+    role: estimator
+  
+  - name: Will Johnson
+    email: johnson.will@athenamfg.com
+    role: estimator

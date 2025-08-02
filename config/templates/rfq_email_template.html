@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request for Quote</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f8f8;
+            padding: 20px;
+            border-bottom: 3px solid #007bff;
+        }
+        .logo {
+            max-height: 60px;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #777;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .highlight {
+            background-color: #ffffcc;
+            padding: 2px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{company_logo_url}}" alt="{{company_name}} Logo" class="logo">
+            <h2>Request for Quote</h2>
+        </div>
+        
+        <div class="content">
+            <p>Hello {{contact_name}},</p>
+            
+            <p>We would like to request a quote for the following part:</p>
+            
+            <table>
+                <tr>
+                    <th>Part Number</th>
+                    <td>{{part_number}}</td>
+                </tr>
+                <tr>
+                    <th>Process</th>
+                    <td>{{process}}</td>
+                </tr>
+                {% if spec %}
+                <tr>
+                    <th>Specification</th>
+                    <td>{{spec}}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <th>Quantities</th>
+                    <td>{{quantities}}</td>
+                </tr>
+                {% if material %}
+                <tr>
+                    <th>Material</th>
+                    <td>{{material}}</td>
+                </tr>
+                {% endif %}
+                {% if due_date %}
+                <tr>
+                    <th>Quote Due Date</th>
+                    <td>{{due_date}}</td>
+                </tr>
+                {% endif %}
+            </table>
+            
+            {% if notes %}
+            <p><strong>Additional Notes:</strong></p>
+            <p>{{notes}}</p>
+            {% endif %}
+            
+            {% if file_links %}
+            <p><strong>Files:</strong></p>
+            <ul>
+                {% for file in file_links %}
+                <li><a href="{{file.url}}">{{file.name}}</a></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            
+            {% if expedited %}
+            <div class="warning">
+                <strong>Expedited Request:</strong> Please provide your best lead time for this order.
+            </div>
+            {% endif %}
+            
+            <p>Please provide pricing and lead time information for the quantities listed above.</p>
+            
+            {% if quote_form_url %}
+            <p>
+                <a href="{{quote_form_url}}" class="button">Submit Quote Online</a>
+            </p>
+            {% endif %}
+            
+            <p>Thank you for your assistance. We look forward to your response.</p>
+            
+            <p>Best regards,<br>
+            {{sender_name}}<br>
+            {{sender_title}}<br>
+            {{company_name}}<br>
+            {{sender_email}}<br>
+            {{sender_phone}}</p>
+        </div>
+        
+        <div class="footer">
+            <p>{{company_name}} | {{company_address}}</p>
+            {% if cui_warning %}
+            <p class="warning">{{cui_warning}}</p>
+            {% endif %}
+            <p>This email was sent using the RFQ Sender System.</p>
+        </div>
+    </div>
+</body>
+</html>

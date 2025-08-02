@@ -45,6 +45,15 @@ rfq-sender/
 ├── docs/             # Documentation
 │   └── templates/    # Jinja2 templates for emails and forms
 ├── scripts/          # Python scripts
+├── streamlit_app/    # Streamlit web application
+│   ├── app.py        # Main Streamlit application
+│   └── pages/        # Multi-page Streamlit app pages
+│       ├── 01_add_to_queue.py
+│       ├── 02_view_queue.py
+│       ├── 03_add_spec_process.py
+│       ├── 04_view_familiar_specs.py
+│       └── 05_send_rfq_emails.py
+├── utils/            # Utility modules (specs, queue, email, auth)
 └── tests/            # Test files
 ```
 
@@ -122,7 +131,25 @@ No environment variables are needed for Box integration as all credentials are s
 
 ## Usage
 
-Basic usage:
+### Streamlit Web Interface
+
+The recommended way to use the RFQ Sender System is through the Streamlit web interface:
+
+```
+streamlit run streamlit_app\app.py
+```
+
+This will start the Streamlit server and open the application in your default web browser. The web interface provides the following features:
+
+1. **Add to Queue**: Add new parts to the RFQ queue
+2. **View Queue**: View and filter the current queue
+3. **Add Spec/Process**: Add new specifications and processes to the database
+4. **View Familiar Specs**: View and search familiar specifications
+5. **Send RFQ Emails**: Send RFQ emails to vendors for parts in the queue
+
+### Command Line Scripts
+
+For automation and batch processing, you can also use the command line scripts:
 
 ```
 python scripts\rfq_sender.py --part_no "0250-20000" --process "cleaning" --quantities "1,2,5,10" --file_location "path\to\files"
@@ -134,6 +161,14 @@ For more options:
 python scripts\rfq_sender.py --help
 ```
 
+### Email Processing
+
+To process the queue and send emails from the command line:
+
+```
+python scripts\email_from_list.py
+```
+
 ### Test Email
 
 To create a test email draft in Outlook without sending it:
@@ -141,7 +176,6 @@ To create a test email draft in Outlook without sending it:
 ```
 python scripts\create_test_email.py
 ```
-python scripts\email_from_list.py
 
 This will create a draft email in Outlook with a test subject and body, allowing you to verify your email configuration before sending actual RFQs.
 

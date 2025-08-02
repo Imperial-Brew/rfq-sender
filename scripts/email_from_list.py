@@ -219,16 +219,24 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, log
 
         # Rename queue columns to match expected names
         queue_column_mapping = {
-            'Quote#': 'quote_id',
-            'Line': 'line',
-            'Part Number': 'part_number',
-            'Callout': 'callout',
-            'Process': 'process',
-            'Spec': 'spec',
-            'PriceBreak': 'qty',
-            'File_location': 'file_path'
+            'RFQ #': 'RFQ #',
+            'Part_Number': 'part_number',
+            'Rev': 'Rev',
+            'Print Callout': 'callout',
+            'process': 'process',
+            'spec': 'spec',
+            'material': 'material',
+            'quantities': 'quantities',
+            'file_location': 'file_location',
+            'submitted_by': 'submitted_by',
+            'qt/so #': 'qt/so #'
         }
+        
+        # Rename columns
         queue = queue.rename(columns=queue_column_mapping)
+        
+        # Add part_number as quote_id since it doesn't exist in the queue.csv
+        queue['quote_id'] = queue['part_number']
 
         # Process contacts data
         # Filter to primary contacts only
@@ -284,7 +292,7 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, log
         raise
 
     # Validate required columns in queue
-    required_queue_columns = ['quote_id', 'part_number', 'process', 'file_path']
+    required_queue_columns = ['part_number', 'process', 'file_location']
     missing_queue_columns = [col for col in required_queue_columns if col not in queue.columns]
 
     if missing_queue_columns:
@@ -1063,8 +1071,8 @@ def update_vendor_quotes(
             }
 
             # Add any file path if available
-            if hasattr(item, 'file_path') and pd.notna(item.file_path):
-                row_data['file location'] = item.file_path
+            if hasattr(item, 'file_location') and pd.notna(item.file_location):
+                row_data['file location'] = item.file_location
 
             rows_to_add.append(row_data)
 
@@ -1326,9 +1334,9 @@ def process_queue(
                 # Get attachment paths
                 attachments = []
                 for r in process_items.itertuples():
-                    if hasattr(r, 'file_path') and pd.notna(r.file_path):
+                    if hasattr(r, 'file_location') and pd.notna(r.file_location):
                         # Handle file paths from the CSV
-                        file_path = r.file_path.strip()
+                        file_path = r.file_location.strip()
                         # Convert to raw string to handle special characters
                         file_path = rf"{file_path}"
                         part_number = r.part_number.strip()

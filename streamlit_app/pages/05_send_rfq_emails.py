@@ -1,0 +1,442 @@
+import streamlit as st
+import pandas as pd
+from pathlib import Path
+import sys
+import logging
+import os
+from datetime import datetime
+
+# Add the parent directory to the path so we can import from other modules
+parent_dir = Path(__file__).parent.parent.parent
+sys.path.append(str(parent_dir))
+
+# Import utility functions
+from utils.queue import load_queue, QUEUE_PATH
+from utils.email import (
+    load_vendors,
+    find_vendors_for_process,
+    get_primary_contact,
+    create_rfq_email,
+    send_email,
+    process_queue_and_send_emails
+)
+from utils.auth import get_user_role
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(parent_dir / "logs" / "send_rfq_emails.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def setup_page():
+    """Configure the page settings."""
+    st.title("Send RFQ Emails")
+    st.markdown("""
+    This page allows you to create RFQ email drafts in Outlook for vendors based on parts in the queue.
+    You can create drafts for individual parts or process the entire queue.
+    
+    > **Note:** This tool creates draft emails in your Outlook client. No emails are sent automatically.
+    > You will need to review and manually send each draft from Outlook.
+    """)
+
+def display_queue_for_emails(user, role):
+    """Display the queue with options to send emails."""
+    try:
+        # Load queue data
+        df = load_queue(QUEUE_PATH)
+        
+        if df.empty:
+            st.info("The queue is currently empty. Add parts using the 'Add to Queue' page.")
+            return
+        
+        # Display the queue
+        st.subheader("RFQ Queue")
+        
+        # Format the dataframe for display
+        display_df = df.copy()
+        
+        # Convert date columns to datetime if they exist
+        if "due_date" in display_df.columns:
+            display_df["due_date"] = pd.to_datetime(display_df["due_date"], errors="coerce")
+            display_df["due_date"] = display_df["due_date"].dt.strftime("%Y-%m-%d")
+        
+        # Add a status column based on due date if it exists
+        if "due_date" in display_df.columns:
+            today = datetime.now().date()
+            display_df["status"] = display_df["due_date"].apply(
+                lambda x: "Overdue" if pd.to_datetime(x).date() < today else "Active"
+            )
+        
+        # Highlight expedited items
+        if "expedited" in display_df.columns:
+            display_df["priority"] = display_df["expedited"].apply(
+                lambda x: "⚠️ Expedited" if x else "Standard"
+            )
+        
+        # Reorder and select columns for display
+        columns_to_display = ["part_number", "process", "spec", "quantities"]
+        if "priority" in display_df.columns:
+            columns_to_display.append("priority")
+        if "due_date" in display_df.columns:
+            columns_to_display.append("due_date")
+        if "status" in display_df.columns:
+            columns_to_display.append("status")
+        
+        # Only include columns that actually exist in the dataframe
+        columns_to_display = [col for col in columns_to_display if col in display_df.columns]
+        
+        # Add a selection column
+        display_df_with_selection = display_df.copy()
+        
+        # Display the dataframe with selection
+        selected_indices = st.multiselect(
+            "Select parts to send RFQ emails for:",
+            options=list(range(len(display_df_with_selection))),
+            format_func=lambda i: f"{display_df_with_selection.iloc[i]['part_number']} - {display_df_with_selection.iloc[i]['process']}"
+        )
+        
+        if selected_indices:
+            selected_parts = display_df_with_selection.iloc[selected_indices]
+            st.write("Selected parts:")
+            st.dataframe(
+                selected_parts[columns_to_display],
+                use_container_width=True,
+                hide_index=True
+            )
+        
+        # Process selected parts
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("Create Draft Emails for Selected Parts", disabled=len(selected_indices) == 0):
+                if role not in ["admin", "editor"]:
+                    st.warning("You need admin or editor privileges to send emails.")
+                    return
+                
+                try:
+                    with st.spinner("Sending emails..."):
+                        # Set up required parameters
+                        vendor_file = str(parent_dir / "config" / "vendors.json")
+                        template_path = str(parent_dir / "config" / "templates" / "email_signature.html")
+                        
+                        # Read .env file for SMTP settings
+                        env_path = parent_dir / ".env"
+                        smtp_settings = {
+                            "server": "",
+                            "port": 587,
+                            "username": "",
+                            "password": "",
+                            "use_tls": True,
+                            "from_email": "",
+                            "cc": ""
+                        }
+                        
+                        # Read settings from .env if it exists
+                        if os.path.exists(env_path):
+                            with open(env_path, "r") as f:
+                                for line in f:
+                                    line = line.strip()
+                                    if line and not line.startswith("#") and "=" in line:
+                                        key, value = line.split("=", 1)
+                                        key = key.strip()
+                                        value = value.strip()
+                                        if key == 'SMTP_SERVER':
+                                            smtp_settings["server"] = value
+                                        elif key == 'SMTP_PORT':
+                                            smtp_settings["port"] = int(value)
+                                        elif key == 'SMTP_USERNAME':
+                                            smtp_settings["username"] = value
+                                        elif key == 'SMTP_PASSWORD':
+                                            smtp_settings["password"] = value
+                                        elif key == 'SMTP_USE_TLS':
+                                            smtp_settings["use_tls"] = value.lower() == 'true'
+                                        elif key == 'SMTP_FROM_EMAIL':
+                                            smtp_settings["from_email"] = value
+                                        elif key == 'CC_EMAILS':
+                                            smtp_settings["cc"] = value
+                        
+                        # Company info
+                        company_info = {
+                            "name": "Athena Manufacturing",
+                            "sender_name": user["name"],
+                            "sender_title": user.get("title", "Estimator"),
+                            "sender_email": user.get("email", smtp_settings["from_email"]),
+                            "sender_phone": user.get("phone", "(123) 456-7890"),
+                            "address": "5750 N. Molina Rd., Austin, TX 78728"
+                        }
+                        
+                        # Load vendors
+                        vendors_data = load_vendors(vendor_file)
+                        
+                        # Process only selected parts
+                        selected_parts_df = df.iloc[selected_indices]
+                        results = []
+                        
+                        for _, row in selected_parts_df.iterrows():
+                            part_number = row["part_number"]
+                            process = row["process"]
+                            
+                            # Find vendors for this process
+                            process_vendors = find_vendors_for_process(vendors_data, process)
+                            
+                            if not process_vendors:
+                                results.append({
+                                    "part_number": part_number,
+                                    "process": process,
+                                    "status": "No vendors found",
+                                    "emails_sent": 0
+                                })
+                                continue
+                            
+                            # Send emails to each vendor
+                            emails_sent = 0
+                            for vendor in process_vendors:
+                                try:
+                                    # Get primary contact
+                                    contact = get_primary_contact(vendor)
+                                    
+                                    if not contact or not contact.get('email'):
+                                        logger.warning(f"No valid contact found for vendor: {vendor.get('name', 'Unknown')}")
+                                        continue
+                                    
+                                    # Create email content
+                                    recipient, subject, body = create_rfq_email(
+                                        queue_items=pd.DataFrame([row]), 
+                                        vendor=vendor, 
+                                        contact=contact, 
+                                        template_path=template_path, 
+                                        company_info=company_info
+                                    )
+                                    
+                                    if not recipient or not subject or not body:
+                                        logger.warning(f"Failed to create email for vendor: {vendor.get('name', 'Unknown')}")
+                                        continue
+                                    
+                                    # Send the email
+                                    if send_email(
+                                        recipient=recipient,
+                                        subject=subject,
+                                        body=body,
+                                        smtp_settings=smtp_settings
+                                    ):
+                                        emails_sent += 1
+                                        logger.info(f"Draft email created successfully for {recipient} for {part_number}")
+                                    else:
+                                        logger.warning(f"Failed to create draft email for {recipient} for {part_number}")
+                                except Exception as e:
+                                    logger.error(f"Error creating draft email for {vendor.get('name', 'Unknown')} for {part_number}: {str(e)}")
+                            
+                            results.append({
+                                "part_number": part_number,
+                                "process": process,
+                                "status": "Success" if emails_sent > 0 else "Failed",
+                                "emails_sent": emails_sent
+                            })
+                        
+                        # Display results
+                        results_df = pd.DataFrame(results)
+                        st.success(f"Processed {len(results)} parts. Created {results_df['emails_sent'].sum()} draft emails in Outlook.")
+                        st.dataframe(results_df, use_container_width=True, hide_index=True)
+                        
+                        # Log the action
+                        logger.info(f"RFQ draft emails created by {user['name']} for {len(results)} parts")
+                        
+                except Exception as e:
+                    st.error(f"Error creating RFQ email drafts: {str(e)}")
+                    logger.error(f"Error creating RFQ email drafts: {str(e)}")
+        
+        with col2:
+            if st.button("Create Drafts for Entire Queue"):
+                if role not in ["admin", "editor"]:
+                    st.warning("You need admin or editor privileges to send emails.")
+                    return
+                
+                try:
+                    with st.spinner("Processing entire queue..."):
+                        # Set up required parameters
+                        vendor_file = str(parent_dir / "config" / "vendors.json")
+                        template_path = str(parent_dir / "config" / "templates" / "email_signature.html")
+                        
+                        # Read .env file for SMTP settings
+                        env_path = parent_dir / ".env"
+                        smtp_settings = {
+                            "server": "",
+                            "port": 587,
+                            "username": "",
+                            "password": "",
+                            "use_tls": True,
+                            "from_email": "",
+                            "cc": ""
+                        }
+                        
+                        # Read settings from .env if it exists
+                        if os.path.exists(env_path):
+                            with open(env_path, "r") as f:
+                                for line in f:
+                                    line = line.strip()
+                                    if line and not line.startswith("#") and "=" in line:
+                                        key, value = line.split("=", 1)
+                                        key = key.strip()
+                                        value = value.strip()
+                                        if key == 'SMTP_SERVER':
+                                            smtp_settings["server"] = value
+                                        elif key == 'SMTP_PORT':
+                                            smtp_settings["port"] = int(value)
+                                        elif key == 'SMTP_USERNAME':
+                                            smtp_settings["username"] = value
+                                        elif key == 'SMTP_PASSWORD':
+                                            smtp_settings["password"] = value
+                                        elif key == 'SMTP_USE_TLS':
+                                            smtp_settings["use_tls"] = value.lower() == 'true'
+                                        elif key == 'SMTP_FROM_EMAIL':
+                                            smtp_settings["from_email"] = value
+                                        elif key == 'CC_EMAILS':
+                                            smtp_settings["cc"] = value
+                        
+                        # Company info
+                        company_info = {
+                            "name": "Athena Manufacturing",
+                            "sender_name": user["name"],
+                            "sender_title": user.get("title", "Estimator"),
+                            "sender_email": user.get("email", smtp_settings["from_email"]),
+                            "sender_phone": user.get("phone", "(123) 456-7890"),
+                            "address": "5750 N. Molina Rd., Austin, TX 78728"
+                        }
+                        
+                        # Process the entire queue
+                        results = process_queue_and_send_emails(
+                            queue_file=str(QUEUE_PATH),
+                            vendor_file=vendor_file,
+                            template_path=template_path,
+                            smtp_settings=smtp_settings,
+                            company_info=company_info
+                        )
+                        
+                        # Display results
+                        if isinstance(results, tuple) and len(results) == 2:
+                            successful, total = results
+                            st.success(f"Processed entire queue. Created {successful} of {total} draft emails in Outlook.")
+                        else:
+                            results_df = pd.DataFrame(results)
+                            st.success(f"Processed {len(results)} parts. Created {results_df['emails_sent'].sum()} draft emails in Outlook.")
+                            st.dataframe(results_df, use_container_width=True, hide_index=True)
+                        
+                        # Log the action
+                        logger.info(f"Entire queue processed by {user['name']}, draft emails created")
+                        
+                except Exception as e:
+                    st.error(f"Error creating draft emails for queue: {str(e)}")
+                    logger.error(f"Error creating draft emails for queue: {str(e)}")
+        
+    except Exception as e:
+        st.error(f"Error loading queue data: {str(e)}")
+        logger.error(f"Error loading queue data: {str(e)}")
+
+def display_email_settings():
+    """Display and allow editing of email settings."""
+    st.subheader("Email Settings")
+    
+    # Check if .env file exists
+    env_path = parent_dir / ".env"
+    if not os.path.exists(env_path):
+        st.warning("No .env file found. Email settings are not configured.")
+        return
+    
+    # Display current settings
+    st.info("""
+    Email settings are configured in the .env file. 
+    Current configuration is displayed below for reference only.
+    To change these settings, edit the .env file directly.
+    """)
+    
+    # Read .env file
+    env_vars = {}
+    with open(env_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, value = line.split("=", 1)
+                env_vars[key.strip()] = value.strip()
+    
+    # Display settings in expandable section
+    with st.expander("View Current Email Settings"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**SMTP Settings**")
+            st.text(f"SMTP Server: {env_vars.get('SMTP_SERVER', 'Not set')}")
+            st.text(f"SMTP Port: {env_vars.get('SMTP_PORT', 'Not set')}")
+            st.text(f"SMTP Username: {env_vars.get('SMTP_USERNAME', 'Not set')}")
+            st.text(f"From Email: {env_vars.get('SMTP_FROM_EMAIL', 'Not set')}")
+            st.text(f"From Name: {env_vars.get('SMTP_FROM_NAME', 'Not set')}")
+        
+        with col2:
+            st.markdown("**Application Settings**")
+            st.text(f"Subject Prefix: {env_vars.get('SUBJECT_PREFIX', 'Not set')}")
+            st.text(f"CC Emails: {env_vars.get('CC_EMAILS', 'Not set')}")
+    
+    # Test email button
+    if st.button("Create Test Email Draft"):
+        try:
+            # Create a test email
+            test_email = {
+                "to": env_vars.get('SMTP_FROM_EMAIL', ''),
+                "subject": "Test RFQ Email",
+                "body": "This is a test email from the RFQ Sender application.",
+                "cc": [],
+                "attachments": []
+            }
+            
+            # Send the test email
+            smtp_settings = {
+                "server": env_vars.get('SMTP_SERVER', ''),
+                "port": int(env_vars.get('SMTP_PORT', '587')),
+                "username": env_vars.get('SMTP_USERNAME', ''),
+                "password": env_vars.get('SMTP_PASSWORD', ''),
+                "use_tls": env_vars.get('SMTP_USE_TLS', 'true').lower() == 'true',
+                "from_email": env_vars.get('SMTP_FROM_EMAIL', '')
+            }
+            
+            send_email(
+                recipient=test_email["to"],
+                subject=test_email["subject"],
+                body=test_email["body"],
+                smtp_settings=smtp_settings,
+                attachments=test_email.get("attachments", [])
+            )
+            st.success("Test email draft created successfully in Outlook!")
+            logger.info("Test email draft created successfully in Outlook")
+            
+        except Exception as e:
+            st.error(f"Error creating test email draft: {str(e)}")
+            logger.error(f"Error creating test email draft: {str(e)}")
+
+def main():
+    """Main function to run the page."""
+    setup_page()
+    
+    # Get user from session state (set in main app)
+    if "user" not in st.session_state:
+        st.warning("Please select a user in the sidebar of the main page.")
+        return
+    
+    user = st.session_state.user
+    role = get_user_role(user)
+    
+    # Display user info
+    st.sidebar.markdown(f"**User:** {user['name']}")
+    st.sidebar.markdown(f"**Role:** {role}")
+    
+    # Display email settings
+    display_email_settings()
+    
+    # Display queue for sending emails
+    display_queue_for_emails(user, role)
+
+if __name__ == "__main__":
+    main()

@@ -1,29 +1,214 @@
 vendors:
-- name: Tech Metals
-  location: Dayton, Ohio
-  website: https://techmetals.com/
+- name: 3P Processing Inc
+  location: Wichita, Kansas
+  website: https://www.3pprocessing.com/
   processes:
-  - name: Electropolish
-    specs:
-    - number: ASTM B912
   - name: Anodize
     specs:
     - number: MIL-PRF-8625/MIL-A-8625
-    - number: ASTM B 580
+    - number: BAC 5019
+    - number: AMS 2469
+    - number: BAC 5632
+  - name: Cleaning
+    specs:
+    - number: BAC 5753
+  - name: Dry Film Lubricant
+    specs:
+    - number: PS18021
+  - name: Epoxy
+    specs:
+    - number: MIL-PRF-22750
+  - name: Passivation
+    specs:
+    - number: AMS 2700
+    - number: ASTM A 967
   - name: Chromate Conversion
     specs:
     - number: MIL-DTL-5541
     - number: BAC 5719
+  - name: Penetrant Inspect
+    specs:    
+    - number: BAC 5423
+    - number: PS21202
+  - name: Shot Peen
+    specs:    
+    - number: AMS 2430
+- name: Hytek Finishes
+  location: Kent, WA
+  website: http://hytekfinishes.com/
+  processes:
+  - name: Anodize
+    specs:
+    - number: AMS 2469
+    - number: BAC 5019
+    - number: BAC 5632
+    - number: MIL-PRF-8625/MIL-A-8625
+  - name: Cadmium Plating
+    specs:
+    - number: BPS 4312
+    - number: BPS 4006
+    - number: BAC 5701
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-DTL-5541
+    - number: BAC 5719
+    - number: BPS 4182
+  - name: Cleaning
+    specs:
+    - number: BPS 4138
+    - number: BAC 5753
+  - name: Electropolish
+    specs:
+    - number: ASTM B 912
+  - name: Magnetic Inspection
+    specs:
+    - number: BPS 4075
+  - name: Nickel Plating
+    specs:
+    - number: MIL-C-26074
+    - number: AMS 2404
+  - name: Passivation
+    specs:
+    - number: AMS-QQ-P-35
+    - number: AMS 2700
+    - number: ASTM A 380
+    - number: BPS 4007
+  - name: Penetrant Inspect
+    specs:
+    - number: BAC 5423
+    - number: BPS 4089
+    - number: BSS 7039
+    - number: MIL-STD-6866
+    - number: PS21202
+  - name: Shot Peen
+    specs:
+    - number: AMS 2430
+  - name: Zinc Nickel Plate
+    specs:
+    - number: BAC 5637
+    - number: BAC 5680
+    - number: AMS 2417
+- name: Mayday Manufacturing
+  location: Denton, Tx
+  website: https://www.maydaymfg.com/
+  processes:
+  - name: Anodize
+    specs:
+    - number: BAC 5632
+    - number: BPS 4001
+    - number: BAC 5019
+    - number: AMS 2470
+    - number: BAC 5632
+    - number: MIL-PRF-8625/MIL-A-8625
+  - name: Cadmium Plating
+    specs:
+    - number: BPS 4312
+    - number: BPS 4006
+    - number: BAC 5701
+  - name: Cleaning
+    specs:
+    - number: BPS 4138
+    - number: BPS 4462
+    - number: BAC 5753
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-DTL-5541
+    - number: BAC 5719
+    - number: BPS 4182
+  - name: Magnetic Inspection
+    specs:
+    - number: BPS 4075
+  - name: Passivation
+    specs:
+    - number: AMS-QQ-P-35
+    - number: AMS 2700
+    - number: ASTM A 380
+    - number: ASTM A 967
+    - number: BPS 4007
+  - name: Penetrant Inspect
+    specs:
+    - number: ASTM E 1417
+    - number: BAC 5423
+    - number: BSS 7039
+    - number: BPS 4089
+    - number: MIL-STD-6866
+  - name: Zinc Nickel Plate
+    specs:
+    - number: BPS 4554
+    - number: BAC 5637
+    - number: AMS 2417
+    - number: MIL-DTL-32648
+- name: Anoplate Corporation
+  location: Kent, WA
+  website: https://www.anoplate.com/
+  processes:
+  - name: Zinc Nickel Plate
+    specs:
+    - number: BPS 4554
+    - number: AMS 2417
   - name: Passivation
     specs:
     - number: AMS QQ P 35
     - number: AMS 2700
     - number: ASTM A 380
     - number: ASTM A 967
-    - number: FED-QQ-P-35
+  - name: Dry Film Lubricant
+    specs:
+  - name: Anodize
+    specs:
+    - number: MIL-PRF-8625/MIL-A-8625
+    - number: ASTM B 580
+    - number: BAC 5632
+  - name: tin plating
+    specs:
+    - number: AMS 2408
+    - number: ASTM B 545
+    - number: AMS P 81728
+- name: Tech Metals
+  location: Dayton, Ohio
+  website: https://techmetals.com/
+  processes:
+  - name: Anodize
+    specs:
+    - number: MIL-PRF-8625/MIL-A-8625
+    - number: ASTM B 580
+    - number: AMS 2469
+    - number: AMS 2471
+    - number: AMS 2472
+  - name: Electropolish
+    specs:
+    - number: ASTM B 912
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-DTL-5541
+    - number: BAC 5719
+    - number: AMS 2473
+  - name: Copper Plating
+    specs:
+    - number: AMS 2418
+  - name: Nickel Plating
+    specs:
+    - number: ASTM B 733
+    - number: AMS-QQ-N-290
+    - number: AMS 2403
+    - number: AMS 2424
+  - name: Passivation
+    specs:
+    - number: AMS-QQ-P-35
+    - number: AMS 2700
+    - number: ASTM A 380
+    - number: ASTM A 967
+    - number: AMS-QQ-P-35
+  - name: Silver Plating
+    specs:
+    - number: AMS 2410
+    - number: AMS 2411
+    - number: AMS 2412
+    - number: ASTM B 700
+    - number: QQ-S-365
   - name: Tin Plating
     specs:
-    - number: ASTM B545
+    - number: ASTM B 545
   - name: Zinc Plating
     specs:
     - number: ASTM B 633
@@ -32,23 +217,6 @@ vendors:
     - number: AMS 2417
     - number: BAC 5680
     - number: BAC 5637
-  - name: Silver Plating
-    specs:
-    - number: AMS 2410
-    - number: AMS 2411
-    - number: AMS 2412
-    - number: ASTM B 700
-    - number: QQ-S-365
-  - name: Copper Plating
-    specs:
-    - number: AMS 2418
-  - name: Electroless Nickel
-    specs:
-    - number: ASTM B 733
-    - number: AMS 2403
-    - number: AMS 2424
-    - number: AMS-QQ-N-290
-    - number: FED-QQ-N-290
 - name: Gleco Plating
   location: Rowlett, Texas
   website: 'http://www.glecoplating.com/'
@@ -56,17 +224,15 @@ vendors:
   - name: Anodize
     specs:
     - number: MIL-PRF-8625/MIL-A-8625
-  - name: Bright Nickel
+  - name: Nickel Plating
     specs:
     - number: AMS-QQ-N-290
-  - name: Chromate Conversion
-    specs:
-    - number: MIL-DTL-5541
-  - name: Electroless Nickel
-    specs:
     - number: MIL-C-26074
     - number: ASTM B 733
     - number: AMS 2404
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-DTL-5541
   - name: Passivation
     specs:
     - number: AMS 2700
@@ -75,14 +241,13 @@ vendors:
     - number: AMS-QQ-P-35
   - name: Tin Plating
     specs:
-    - number: MIL-T-10727
-    - number: ASTM B545
+    - number: ASTM B 545
   - name: Zinc Plating
     specs:
     - number: ASTM B 633
   - name: Zinc Nickel Plate
     specs:
-    - number: ASTM B841
+    - number: ASTM B 841
     - number: AMS 2417
   - name: Phosphate
     specs:
@@ -109,19 +274,16 @@ vendors:
     specs:
     - number: MIL-PRF-8625/MIL-A-8625
     - number: ASTM B 580
-  - name: Bright Nickel
-    specs:
-    - number: AMS-QQ-N-290
   - name: Chromate Conversion
     specs:
     - number: MIL-DTL-5541
     - number: PRC-5005
-    - number: ASTM B449
-  - name: Electroless Nickel
+    - number: ASTM B 449
+  - name: Nickel Plating
     specs:
+    - number: AMS-QQ-N-290
     - number: MIL-C-26074
     - number: PRC-5007
-      familiar: false
     - number: ASTM B 733
     - number: AMS 2404
   - name: Passivation
@@ -159,18 +321,17 @@ vendors:
     specs:
     - number: MIL-PRF-8625/MIL-A-8625
     - number: ASTM B 580
-  - name: Bright Nickel
-    specs:
-    - number: AMS-QQ-N-290
   - name: Chromate Conversion
     specs:
     - number: MIL-DTL-5541
-    - number: ASTM B449
-  - name: Electroless Nickel
+    - number: ASTM B 449
+  - name: Nickel Plating
     specs:
+    - number: AMS-QQ-N-290
     - number: ASTM B 733
     - number: MIL-C-26074
     - number: AMS 2404
+    - number: AMS 2423
   - name: Passivation
     specs:
     - number: AMS-QQ-P-35
@@ -179,8 +340,7 @@ vendors:
     - number: AMS 2700
   - name: Tin Plating
     specs:
-    - number: MIL-T-10727
-    - number: ASTM B545
+    - number: ASTM B 545
   - name: Zinc Plating
     specs:
     - number: QQ-Z-325
@@ -224,7 +384,7 @@ vendors:
     specs:
     - number: MIL-PRF-8625/MIL-A-8625
     - number: ASTM B 580
-  - name: Electroless Nickel
+  - name: Nickel Plating
     specs:
     - number: MIL-C-26074
     - number: AMS 2404
@@ -251,7 +411,7 @@ vendors:
   - name: Chromate Conversion
     specs:
     - number: MIL-DTL-5541
-    - number: BAC5719
+    - number: BAC 5719
     - number: STP58-405
     - number: MDP4-57
     - number: BPS 4182
@@ -260,53 +420,89 @@ vendors:
     - number: AMS 2700
     - number: AMS-QQ-P-35
     - number: BPS 4007
-    - number: SS8435
-    - number: MDP4-8
-  - name: SOL-EPOXY
+  - name: Sol-Epoxy
     specs: null
   - name: Penetrant Inspect
     specs:
-    - number: ASTM E1417
-    - number: GT23A
-    - number: STP53-201
-      familiar: false
-    - number: LCP72-1068
-      familiar: false
-    - number: MDP6-13
+    - number: ASTM E 1417
     - number: BAC 5423
-    - number: GP17G
-    - number: NE07-001
-    - number: ACS-PRS-7005
+    - number: PRS-7005
     - number: BSS 7039
-    - number: HP6-13
-    - number: NDTS-1101
     - number: BPS 4089
     - number: MIL-STD-6866
-    - number: LMA-PC201
 - name: Embee Processing
   location: Santa Ana, CA
   website: https://www.embee.com/
   processes:
-  - name: Electroless Nickel
+  - name: Anodize
+    specs:
+    - number: MIL-C-26074
+    - number: BAC 5019
+    - number: AMS 2469
+    - number: AMS 2471
+    - number: AMS 2472
+    - number: ASTM B 580
+  - name: Cadmium Plating
+    specs:
+    - number: BAC 5701
+    - number: BPS 4006
+  - name: Chromate Conversion
+    specs:
+    - number: BAC 5719
+    - number: AMS 2473
+    - number: ASTM B 449
+    - number: MIL-DTL-14072
+    - number: MIL-DTL-5541
+    - number: MIL-DTL-81706
+  - name: Cleaning
+    specs:
+    - number: BPS 4138
+    - number: ASTM B 600
+  - name: Nickel Plating
     specs:
     - number: MIL-C-26074
     - number: AMS 2404
+    - number: AMS 2403
+    - number: AMS 2424
+    - number: AMS-C-26074
+    - number: ASTM B 689
+    - number: ASTM B 733
   - name: Dry Film Lubricant
     specs:
     - number: PS18021
+  - name: Magnetic Inspection
+    specs:
+    - number: BPS 4075
+  - name: Passivation
+    specs:
+    - number: BPS 4007
+    - number: AMS 2700
+    - number: ASTM A 380
+    - number: ASTM A 967
+  - name: Penetrant Inspect
+    specs:
+    - number: BSS 7039
+    - number: PS21202
+    - number: BPS 4089
+    - number: ASTM E 1417
+  - name: Shot Peen
+    specs:
+    - number: AMS 2430
+  - name: Silver Plating
+    specs:
+    - number: BAC 5715
+    - number: AMS 2410
+    - number: AMS 2411
+    - number: AMS 2412
+    - number: ASTM B 700
+  - name: Tin Plating
+    specs:
+    - number: ASTM B 545
 - name: Har-Conn Aerospace, Inc.
   location: West Hartford, CT
   website: http://www.har-conn.com/
   processes:
-  - name: Electroless Nickel
-    specs:
-    - number: MIL-C-26074
-    - number: AMS 2404
-- name: Hytek Finishes
-  location: Kent, WA
-  website: http://hytekfinishes.com/
-  processes:
-  - name: Electroless Nickel
+  - name: Nickel Plating
     specs:
     - number: MIL-C-26074
     - number: AMS 2404
@@ -331,48 +527,19 @@ vendors:
   processes:
   - name: Electropolish
     specs:
-    - number: ASTM B912
+    - number: ASTM B 912
     - number: SEMI F17
+    - number: 0250-13605
   - name: Passivation
     specs:
     - number: ASTM A 967
     - number: ASTM A 380
     - number: AMS-QQ-P-35
-    - number: ASTM B912
-    - number: ASTM B600
-    - number: MIL-S-5002
     - number: AMS 2700
   - name: Oxygen Cleaning
     specs:
     - number: ASTM G93
     - number: CGA G-4.1
-- name: 3P Processing Inc
-  location: Wichita, Kansas
-  website: https://www.3pprocessing.com/
-  processes:
-  - name: Dry Film Lubricant
-    specs:
-    - number: PS18021
-  - name: Epoxy
-    specs:
-    - number: MIL-PRF-22750
-  - name: Anodize
-    specs:
-    - number: MIL-PRF-8625/MIL-A-8625
-    - number: BAC 5019
-  - name: Passivation
-    specs:
-    - number: AMS 2700
-  - name: Passivation
-    specs:
-    - number: ASTM A 967
-  - name: Chromate Conversion
-    specs:
-    - number: MIL-DTL-5541
-  - name: Penetrant Inspect
-    specs:    
-    - number: BAC 5423
-    - number: PS21202
 - name: Bodycote
   location: California
   website: https://www.bodycote.com/services/
@@ -383,6 +550,7 @@ vendors:
   - number: PS15634
   - number: MIL-H-6875
   - number: BAC 5613
+  - number: BPS 4139
 
 
 

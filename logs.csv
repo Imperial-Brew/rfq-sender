@@ -323,3 +323,9 @@ quote_id,vendor_id,sent_timestamp,status
 7900,Embee Processing,2025-07-24 17:08:33.114424,draft_saved_Dry Film Lubricant
 7900,NONE,2025-07-25 09:11:45.309628,skipped_no_vendor_Penetrant Inspect
 7900,3P Processing Inc,2025-07-25 09:45:11.472353,draft_saved_Penetrant Inspect
+1,3P Processing Inc,2025-07-31 17:23:17.765441,draft_saved_Passivate
+1,"Brooks Industrial Coatings, Inc.",2025-07-31 17:23:58.875624,draft_saved_Passivate
+1,"Consolidated Metal Technologies, Inc.",2025-07-31 17:24:41.420568,draft_saved_Passivate
+1,Gleco Plating,2025-07-31 17:25:22.744210,draft_saved_Passivate
+1,Harrison Electropolishing L.P.,2025-07-31 17:26:06.992874,draft_saved_Passivate
+2,3P Processing Inc,2025-07-31 17:27:15.685232,draft_saved_Passivate
