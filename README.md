@@ -41,10 +41,15 @@ The RFQ Sender System provides:
 ```
 rfq-sender/
 ├── config/           # Configuration files (vendors, email settings)
-├── data/             # Database and data files
+├── data_raw/         # Raw data files (CSV, input files)
+├── data_cleaned/     # Processed data files (databases, cleaned data)
 ├── docs/             # Documentation
 │   └── templates/    # Jinja2 templates for emails and forms
 ├── scripts/          # Python scripts
+│   ├── email/        # Email-related scripts
+│   ├── box/          # Box integration scripts
+│   ├── vendor/       # Vendor-related scripts
+│   └── utils/        # Utility scripts
 ├── streamlit_app/    # Streamlit web application
 │   ├── app.py        # Main Streamlit application
 │   └── pages/        # Multi-page Streamlit app pages

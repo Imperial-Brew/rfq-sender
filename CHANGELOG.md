@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Reorganized project structure to match guidelines
+  - Created data_raw/ and data_cleaned/ directories to replace data/
+  - Organized scripts into functional subdirectories (email/, box/, vendor/, utils/)
+- Created tasks.md in .junie directory for tracking project tasks
 - Initial project structure
 - Core functionality for sending RFQ emails to vendors
 - Command-line interface for managing RFQs
