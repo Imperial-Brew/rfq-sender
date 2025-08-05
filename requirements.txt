@@ -6,7 +6,7 @@ python-dotenv>=1.0.0  # For loading environment variables
 
 # Email handling
 exchangelib>=5.0.0  # For Exchange integration, if needed
-pywin32>=305  # For Outlook integration
+# pywin32>=305  # For Outlook integration
 
 # Optional but recommended
 black>=23.3.0  # Code formatting
