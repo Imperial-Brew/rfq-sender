@@ -68,9 +68,36 @@ def display_queue_for_emails(user, role):
         # Add a status column based on due date if it exists
         if "due_date" in display_df.columns:
             today = datetime.now().date()
-            display_df["status"] = display_df["due_date"].apply(
-                lambda x: "Overdue" if pd.to_datetime(x).date() < today else "Active"
-            )
+            
+            # Define a safe date comparison function
+            def safe_date_compare(x):
+                try:
+                    # Handle NaN, NaT, None, or any non-datetime value
+                    if pd.isna(x) or x is pd.NaT or x is None:
+                        return "No Date"
+                    
+                    # Convert to datetime if it's a string
+                    if isinstance(x, str):
+                        try:
+                            date_val = pd.to_datetime(x).date()
+                        except:
+                            return "No Date"
+                    # Ensure x is a datetime object
+                    elif not isinstance(x, (pd.Timestamp, datetime)):
+                        return "No Date"
+                    else:
+                        date_val = x.date() if hasattr(x, 'date') else None
+                    
+                    if date_val is None:
+                        return "No Date"
+                        
+                    return "Overdue" if date_val < today else "Active"
+                except Exception as e:
+                    logger.debug(f"Error comparing date value {x} of type {type(x)}: {str(e)}")
+                    return "No Date"
+            
+            # Apply the safe comparison function
+            display_df["status"] = display_df["due_date"].apply(safe_date_compare)
         
         # Highlight expedited items
         if "expedited" in display_df.columns:

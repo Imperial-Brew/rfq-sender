@@ -19,7 +19,13 @@ def test_safe_date_compare():
     # Define the safe date comparison function (copied from 02_view_queue.py)
     def safe_date_compare(x):
         try:
-            if pd.isna(x) or x is pd.NaT:
+            # Handle NaN, NaT, None, or any non-datetime value
+            if pd.isna(x) or x is pd.NaT or x is None:
+                return "No Date"
+            
+            # Ensure x is a datetime object
+            if not isinstance(x, (pd.Timestamp, datetime)):
+                # If it's a string or other type, return "No Date"
                 return "No Date"
             
             date_val = x.date() if hasattr(x, 'date') else None
@@ -28,7 +34,7 @@ def test_safe_date_compare():
                 
             return "Overdue" if date_val < today else "Active"
         except Exception as e:
-            logger.debug(f"Error comparing date value {x}: {str(e)}")
+            logger.debug(f"Error comparing date value {x} of type {type(x)}: {str(e)}")
             return "No Date"
     
     # Test cases
@@ -99,7 +105,13 @@ def test_dataframe_processing():
         # Define safe date comparison function
         def safe_date_compare(x):
             try:
-                if pd.isna(x) or x is pd.NaT:
+                # Handle NaN, NaT, None, or any non-datetime value
+                if pd.isna(x) or x is pd.NaT or x is None:
+                    return "No Date"
+                
+                # Ensure x is a datetime object
+                if not isinstance(x, (pd.Timestamp, datetime)):
+                    # If it's a string or other type, return "No Date"
                     return "No Date"
                 
                 date_val = x.date() if hasattr(x, 'date') else None
@@ -108,7 +120,7 @@ def test_dataframe_processing():
                     
                 return "Overdue" if date_val < today else "Active"
             except Exception as e:
-                logger.debug(f"Error comparing date value {x}: {str(e)}")
+                logger.debug(f"Error comparing date value {x} of type {type(x)}: {str(e)}")
                 return "No Date"
         
         # Apply the function

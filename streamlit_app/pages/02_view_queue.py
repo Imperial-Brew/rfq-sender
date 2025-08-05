@@ -49,6 +49,14 @@ def display_queue_data(user, role):
         if not df.empty:
             st.sidebar.write(f"Queue data loaded: {len(df)} rows")
             st.sidebar.write(f"Columns: {df.columns.tolist()}")
+            
+            # Standardize the 'sent' column if it exists to prevent type comparison issues
+            if 'sent' in df.columns:
+                # Convert to string
+                df['sent'] = df['sent'].astype(str)
+                # Replace 'nan' with empty string
+                df['sent'] = df['sent'].replace('nan', '')
+                logger.info("Standardized 'sent' column to string type")
         else:
             st.sidebar.write("Queue dataframe is empty")
             st.info("The queue is currently empty. Add parts using the 'Add to Queue' page.")
@@ -119,7 +127,13 @@ def display_queue_data(user, role):
                     # Define a safe date comparison function
                     def safe_date_compare(x):
                         try:
-                            if pd.isna(x) or x is pd.NaT:
+                            # Handle NaN, NaT, None, or any non-datetime value
+                            if pd.isna(x) or x is pd.NaT or x is None:
+                                return "No Date"
+                            
+                            # Ensure x is a datetime object
+                            if not isinstance(x, (pd.Timestamp, datetime)):
+                                # If it's a string or other type, return "No Date"
                                 return "No Date"
                             
                             date_val = x.date() if hasattr(x, 'date') else None
@@ -128,7 +142,7 @@ def display_queue_data(user, role):
                                 
                             return "Overdue" if date_val < today else "Active"
                         except Exception as e:
-                            logger.debug(f"Error comparing date value {x}: {str(e)}")
+                            logger.debug(f"Error comparing date value {x} of type {type(x)}: {str(e)}")
                             return "No Date"
                     
                     # Apply the safe comparison function
