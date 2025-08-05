@@ -118,6 +118,14 @@ def test_dataframe_processing():
                 if date_val is None:
                     return "No Date"
                     
+                # Ensure both values are of the same type before comparison
+                if not isinstance(date_val, type(today)):
+                    # Convert date_val to the same type as today if possible
+                    try:
+                        date_val = type(today)(date_val)
+                    except:
+                        return "No Date"
+                
                 return "Overdue" if date_val < today else "Active"
             except Exception as e:
                 logger.debug(f"Error comparing date value {x} of type {type(x)}: {str(e)}")

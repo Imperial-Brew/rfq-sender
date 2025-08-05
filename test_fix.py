@@ -67,6 +67,14 @@ def test_view_queue():
                     return "No Date"
                     
                 today = datetime.now().date()
+                # Ensure both values are of the same type before comparison
+                if not isinstance(date_val, type(today)):
+                    # Convert date_val to the same type as today if possible
+                    try:
+                        date_val = type(today)(date_val)
+                    except:
+                        return "No Date"
+                
                 return "Overdue" if date_val < today else "Active"
             except Exception as e:
                 logger.error(f"Error comparing date value {x} of type {type(x)}: {str(e)}")

@@ -13,17 +13,35 @@ def load_queue(path=QUEUE_PATH):
     # Load the CSV file
     df = pd.read_csv(path)
     
-    # Standardize data types for all columns that might cause comparison issues
+    # Standardize data types for all columns to prevent comparison issues
     for col in df.columns:
-        # For columns that should be strings but might have mixed types
-        if col in ['sent', 'quantities', 'qt/so #', 'Rev']:
+        # First, clean any line breaks or extra whitespace in all columns
+        if df[col].dtype == 'object':  # Only process string/object columns
+            # Replace line breaks and normalize whitespace
+            df[col] = df[col].astype(str).str.replace('\n', ' ').str.strip()
+        
+        # For columns that should be strings
+        if col in ['sent', 'quantities', 'qt/so #', 'Rev', 'process', 'spec', 
+                  'material', 'Part_Number', 'Print Callout', 'file_location', 
+                  'submitted_by', 'RFQ #']:
             df[col] = df[col].astype(str)
             df[col] = df[col].replace('nan', '')
         
-        # For columns that should be numeric but might have strings
-        # (Uncomment if needed)
-        # elif col in ['numeric_column1', 'numeric_column2']:
-        #     df[col] = pd.to_numeric(df[col], errors='coerce')
+        # For columns that might contain dates
+        elif col in ['due_date']:
+            # Convert to datetime with error handling
+            df[col] = pd.to_datetime(df[col], errors='coerce')
+        
+        # For columns that should be numeric
+        elif col in ['RFQ #']:
+            # Try to convert to numeric, but keep as string if it fails
+            try:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+                # Fill NaN values with empty string
+                df[col] = df[col].fillna('')
+            except:
+                # If conversion fails, ensure it's a clean string
+                df[col] = df[col].astype(str).replace('nan', '')
     
     return df
 

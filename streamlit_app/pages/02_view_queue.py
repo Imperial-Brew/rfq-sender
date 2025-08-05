@@ -139,6 +139,14 @@ def display_queue_data(user, role):
                             date_val = x.date() if hasattr(x, 'date') else None
                             if date_val is None:
                                 return "No Date"
+                            
+                            # Ensure both values are of the same type before comparison
+                            if not isinstance(date_val, type(today)):
+                                # Convert date_val to the same type as today if possible
+                                try:
+                                    date_val = type(today)(date_val)
+                                except:
+                                    return "No Date"
                                 
                             return "Overdue" if date_val < today else "Active"
                         except Exception as e:
@@ -167,19 +175,16 @@ def display_queue_data(user, role):
                 lambda x: "⚠️ Expedited" if x else "Standard"
             )
         
-        # Reorder and select columns for display
-        columns_to_display = ["part_number", "process", "spec", "quantities"]
-        if "priority" in display_df.columns:
-            columns_to_display.append("priority")
-        if "due_date" in display_df.columns:
-            columns_to_display.append("due_date")
-        if "status" in display_df.columns:
-            columns_to_display.append("status")
-        if "submitted_by" in display_df.columns:
-            columns_to_display.append("submitted_by")
+        # Use all columns from the dataframe
+        columns_to_display = display_df.columns.tolist()
         
-        # Only include columns that actually exist in the dataframe
-        columns_to_display = [col for col in columns_to_display if col in display_df.columns]
+        # Ensure important columns appear first if they exist
+        preferred_order = ["part_number", "process", "spec", "quantities", "priority", "due_date", "status", "submitted_by"]
+        for col in reversed(preferred_order):
+            if col in columns_to_display:
+                # Move to front of list
+                columns_to_display.remove(col)
+                columns_to_display.insert(0, col)
         
         # Display the dataframe
         st.dataframe(

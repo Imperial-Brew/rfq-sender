@@ -63,10 +63,11 @@ def display_queue_for_emails(user, role):
         # Convert date columns to datetime if they exist
         if "due_date" in display_df.columns:
             display_df["due_date"] = pd.to_datetime(display_df["due_date"], errors="coerce")
-            display_df["due_date"] = display_df["due_date"].dt.strftime("%Y-%m-%d")
+            # Store datetime objects for comparison
+            display_df["due_date_dt"] = display_df["due_date"]
         
         # Add a status column based on due date if it exists
-        if "due_date" in display_df.columns:
+        if "due_date_dt" in display_df.columns:
             today = datetime.now().date()
             
             # Define a safe date comparison function
@@ -91,13 +92,25 @@ def display_queue_for_emails(user, role):
                     if date_val is None:
                         return "No Date"
                         
+                    # Ensure both values are of the same type before comparison
+                    if not isinstance(date_val, type(today)):
+                        # Convert date_val to the same type as today if possible
+                        try:
+                            date_val = type(today)(date_val)
+                        except:
+                            return "No Date"
+                    
                     return "Overdue" if date_val < today else "Active"
                 except Exception as e:
                     logger.debug(f"Error comparing date value {x} of type {type(x)}: {str(e)}")
                     return "No Date"
             
             # Apply the safe comparison function
-            display_df["status"] = display_df["due_date"].apply(safe_date_compare)
+            display_df["status"] = display_df["due_date_dt"].apply(safe_date_compare)
+            
+            # Format dates for display after comparison is done
+            if "due_date" in display_df.columns:
+                display_df["due_date"] = display_df["due_date"].dt.strftime("%Y-%m-%d")
         
         # Highlight expedited items
         if "expedited" in display_df.columns:
