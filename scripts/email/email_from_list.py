@@ -2,8 +2,8 @@
 Email From List Script
 
 This script reads a queue of RFQ items from a CSV file, matches them with suitable vendors
-based on process capabilities, creates draft emails in Outlook for each quote, attaches
-files, and logs the actions.
+based on process capabilities, creates draft emails using Exchange Web Services for each quote, 
+attaches files, and logs the actions.
 
 The script uses the following data sources:
 - Queue.csv: Contains the RFQ items with part numbers, processes, and file paths
@@ -15,9 +15,9 @@ Usage:
 
 Requirements:
     - pandas package must be installed
-    - pywin32 package must be installed
+    - exchangelib package must be installed
     - pyyaml package must be installed
-    - Outlook must be installed and configured
+    - Exchange account credentials must be configured in .env file
     - Required files must exist at the specified paths
 """
 
@@ -30,7 +30,6 @@ from box_integration import BoxIntegration
 from typing import Dict, List, Optional, Tuple, Any, Union
 
 import pandas as pd
-import win32com.client as win32
 import yaml
 import jinja2
 import questionary
@@ -38,6 +37,16 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 from rich.table import Table
 from pandas import DataFrame
+from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
+from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
+import urllib3
+from dotenv import load_dotenv
+
+# Disable insecure request warnings if needed
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Optional: Add this for self-signed certificates
+BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 # Import SpecProcessValidator from spec_check.py
 from spec_check import SpecProcessValidator
@@ -312,29 +321,65 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, log
     return queue, vendor_info
 
 
-def initialize_outlook(logger: logging.Logger = None) -> Any:
+def initialize_exchange(logger: logging.Logger = None) -> Account:
     """
-    Initialize the Outlook application.
-
+    Initialize connection to Exchange server.
+    
     Returns:
-        Outlook application object
-
+        Exchange account object
+        
     Raises:
-        RuntimeError: If Outlook cannot be initialized
+        RuntimeError: If Exchange connection cannot be initialized
     """
     if logger:
-        logger.info("Initializing Outlook")
+        logger.info("Initializing Exchange connection")
     else:
-        print("Initializing Outlook")
+        print("Initializing Exchange connection")
+    
     try:
-        outlook = win32.Dispatch('outlook.application')
-        return outlook
-    except Exception as e:
+        # Load environment variables if not already loaded
+        load_dotenv()
+        
+        # Get credentials from environment variables
+        username = os.environ.get('EXCHANGE_USERNAME', '')
+        password = os.environ.get('EXCHANGE_PASSWORD', '')
+        server = os.environ.get('EXCHANGE_SERVER', 'outlook.office365.com')
+        
+        if not username or not password:
+            error_msg = "Exchange credentials not found in environment variables"
+            if logger:
+                logger.error(error_msg)
+            else:
+                print(error_msg)
+            raise ValueError(error_msg)
+        
+        # Create credentials object
+        credentials = Credentials(username=username, password=password)
+        
+        # Create configuration
+        config = Configuration(server=server, credentials=credentials)
+        
+        # Connect to the account
+        account = Account(
+            primary_smtp_address=username,
+            config=config,
+            autodiscover=False,
+            access_type=DELEGATE
+        )
+        
         if logger:
-            logger.error(f"Failed to initialize Outlook: {str(e)}")
+            logger.info("Exchange connection initialized successfully")
         else:
-            print(f"Failed to initialize Outlook: {str(e)}")
-        raise RuntimeError(f"Failed to initialize Outlook: {str(e)}")
+            print("Exchange connection initialized successfully")
+            
+        return account
+    except Exception as e:
+        error_msg = f"Failed to initialize Exchange connection: {str(e)}"
+        if logger:
+            logger.error(error_msg)
+        else:
+            print(error_msg)
+        raise RuntimeError(error_msg)
 
 
 def render_template(template_path: str, context: Dict[str, Any]) -> str:
@@ -1709,9 +1754,9 @@ Phone: (123) 456-7890
         queue, vendor_info = load_data(queue_file, contacts_file, vendor_options_file, logger)
         progress.advance(task)
 
-        # Initialize Outlook
-        progress.update(task, description="Initializing Outlook...")
-        outlook = initialize_outlook(logger)
+        # Initialize Exchange
+        progress.update(task, description="Initializing Exchange connection...")
+        account = initialize_exchange(logger)
         progress.advance(task)
 
     # Show queue summary

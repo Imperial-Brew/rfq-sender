@@ -1,29 +1,40 @@
 """
 Create Test Email Script
 
-This script creates a draft email in Outlook with a test subject and body.
-It does not send the email, but displays it for review.
+This script creates a draft email using Exchange Web Services with a test subject and body.
+It creates a draft email in the user's drafts folder.
 
 Usage:
     python scripts\create_test_email.py
 
 Requirements:
-    - pywin32 package must be installed (pip install pywin32)
-    - Outlook must be installed and configured on the system
+    - exchangelib package must be installed (pip install exchangelib)
     - .env file with email configuration (see .env.example)
 
 Environment Variables:
     - SMTP_FROM_EMAIL: Email address to use as sender
     - SMTP_FROM_NAME: Name to use as sender
+    - EXCHANGE_USERNAME: Username for Exchange account
+    - EXCHANGE_PASSWORD: Password for Exchange account
+    - EXCHANGE_SERVER: Exchange server address (default: outlook.office365.com)
 """
 
 import logging
 import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from dotenv import load_dotenv
+from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox
+from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
+import urllib3
+
+# Disable insecure request warnings if needed
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Optional: Add this for self-signed certificates
+BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 
 def setup_logging(logs_dir: str) -> logging.Logger:
@@ -51,11 +62,49 @@ def setup_logging(logs_dir: str) -> logging.Logger:
     return logging.getLogger("create_test_email")
 
 
-def create_outlook_draft(to_email: str, subject: str, body: str, logger: logging.Logger) -> bool:
+def initialize_exchange(username: str, password: str, server: str, logger: logging.Logger) -> Optional[Account]:
     """
-    Create a draft email in Outlook.
+    Initialize connection to Exchange server.
+    
+    Args:
+        username: Exchange username (email address)
+        password: Exchange password
+        server: Exchange server address
+        logger: Logger object for logging messages
+        
+    Returns:
+        Exchange account object or None if initialization fails
+    """
+    try:
+        logger.info("Initializing Exchange connection")
+        
+        # Create credentials object
+        credentials = Credentials(username=username, password=password)
+        
+        # Create configuration
+        config = Configuration(server=server, credentials=credentials)
+        
+        # Connect to the account
+        account = Account(
+            primary_smtp_address=username,
+            config=config,
+            autodiscover=False,
+            access_type=DELEGATE
+        )
+        
+        logger.info("Exchange connection initialized successfully")
+        return account
+    except Exception as e:
+        logger.error(f"Failed to initialize Exchange connection: {str(e)}")
+        return None
+
+
+def create_exchange_draft(account: Account, to_email: str, subject: str, body: str, logger: logging.Logger) -> bool:
+    """
+    Create a draft email using Exchange Web Services.
 
     Args:
+        account: Exchange account object
         to_email: Recipient email address
         subject: Email subject
         body: Email body
@@ -65,29 +114,22 @@ def create_outlook_draft(to_email: str, subject: str, body: str, logger: logging
         bool: True if successful, False otherwise
     """
     try:
-        # Import win32com here to avoid issues if it's not installed
-        import win32com.client
-
-        # Create Outlook application object
-        outlook = win32com.client.Dispatch("Outlook.Application")
-
-        # Create a new email
-        mail = outlook.CreateItem(0)  # 0 = olMailItem
-
-        # Set email properties
-        mail.To = to_email
-        mail.Subject = subject
-        mail.Body = body
-
-        # Display the email without sending it
-        mail.Display(True)  # True = modal window
-
+        # Create message
+        m = Message(
+            account=account,
+            folder=account.drafts,
+            subject=subject,
+            body=body,
+            body_type='Text',
+            to_recipients=[Mailbox(email_address=to_email)]
+        )
+        
+        # Save the draft
+        m.save()
+        
         logger.info(f"Created draft email to {to_email}")
         return True
 
-    except ImportError:
-        logger.error("win32com is not installed. Please install it with: pip install pywin32")
-        return False
     except Exception as e:
         logger.error(f"Failed to create draft email: {str(e)}")
         return False
@@ -137,6 +179,11 @@ def main() -> None:
         try:
             from_email = get_env_variable("SMTP_FROM_EMAIL", "your_email@example.com", logger)
             from_name = get_env_variable("SMTP_FROM_NAME", "RFQ System", logger)
+            
+            # Get Exchange credentials
+            exchange_username = get_env_variable("EXCHANGE_USERNAME", from_email, logger)
+            exchange_password = get_env_variable("EXCHANGE_PASSWORD", "", logger)
+            exchange_server = get_env_variable("EXCHANGE_SERVER", "outlook.office365.com", logger)
         except ValueError as e:
             logger.error(f"Configuration error: {str(e)}")
             sys.exit(1)
@@ -144,6 +191,13 @@ def main() -> None:
         # Log environment variable values
         logger.info(f"Using sender email: {from_email}")
         logger.info(f"Using sender name: {from_name}")
+        logger.info(f"Using Exchange server: {exchange_server}")
+
+        # Initialize Exchange connection
+        account = initialize_exchange(exchange_username, exchange_password, exchange_server, logger)
+        if not account:
+            logger.error("Failed to initialize Exchange connection")
+            sys.exit(1)
 
         # Create test email
         to_email = "example@example.com"
@@ -158,12 +212,12 @@ No action is required.
 
         logger.info(f"Creating test email from {from_email} to {to_email}")
 
-        success = create_outlook_draft(to_email, subject, body, logger)
+        success = create_exchange_draft(account, to_email, subject, body, logger)
 
         if success:
-            logger.info("Test email created successfully. Please review it in Outlook.")
+            logger.info("Test email draft created successfully in your Exchange drafts folder.")
         else:
-            logger.error("Failed to create test email.")
+            logger.error("Failed to create test email draft.")
             sys.exit(1)
 
     except Exception as e:

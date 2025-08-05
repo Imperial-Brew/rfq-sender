@@ -9,7 +9,15 @@ from email.mime.application import MIMEApplication
 from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 import logging
-import win32com.client as win32
+from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
+from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
+import urllib3
+
+# Disable insecure request warnings if needed
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Optional: Add this for self-signed certificates
+BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -64,24 +72,45 @@ def get_primary_contact(vendor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             return contact
     return contacts[0] if contacts else None
 
-# Initialize Outlook
-def initialize_outlook() -> Any:
+# Initialize Exchange connection
+def initialize_exchange(smtp_settings: Dict[str, Any]) -> Account:
     """
-    Initialize the Outlook application.
+    Initialize connection to Exchange server.
     
+    Args:
+        smtp_settings: Dictionary with Exchange settings
+        
     Returns:
-        Outlook application object
+        Exchange account object
         
     Raises:
-        RuntimeError: If Outlook cannot be initialized
+        RuntimeError: If Exchange connection cannot be initialized
     """
-    logger.info("Initializing Outlook")
+    logger.info("Initializing Exchange connection")
     try:
-        outlook = win32.Dispatch('outlook.application')
-        return outlook
+        # Get credentials from settings
+        username = smtp_settings.get('username', '')
+        password = smtp_settings.get('password', '')
+        server = smtp_settings.get('server', 'outlook.office365.com')
+        
+        # Create credentials object
+        credentials = Credentials(username=username, password=password)
+        
+        # Create configuration
+        config = Configuration(server=server, credentials=credentials)
+        
+        # Connect to the account
+        account = Account(
+            primary_smtp_address=username,
+            config=config,
+            autodiscover=False,
+            access_type=DELEGATE
+        )
+        
+        return account
     except Exception as e:
-        logger.error(f"Failed to initialize Outlook: {str(e)}")
-        raise RuntimeError(f"Failed to initialize Outlook: {str(e)}")
+        logger.error(f"Failed to initialize Exchange connection: {str(e)}")
+        raise RuntimeError(f"Failed to initialize Exchange connection: {str(e)}")
 
 # Render email template
 def render_template(template_path: str, context: Dict[str, Any]) -> str:
@@ -172,84 +201,72 @@ def create_rfq_email(
         logger.error(f"Error creating RFQ email: {str(e)}")
         return '', '', ''
 
-# Create draft email in Outlook
+# Create draft email using Exchange Web Services
 def create_draft_email(
-    outlook: Any,
+    account: Account,
     recipient: str,
     subject: str,
     body: str,
     attachments: List[str] = None,
     html_format: bool = True,
-    use_outlook_signature: bool = True,
+    use_outlook_signature: bool = False,  # This will be ignored
     cc_email: str = None
 ) -> bool:
     """
-    Create a draft email in Outlook.
+    Create a draft email using Exchange Web Services.
     
     Args:
-        outlook: Outlook application object
+        account: Exchange account object
         recipient: Email address of the recipient
         subject: Email subject
         body: Email body (HTML or plain text)
         attachments: List of file paths to attach
         html_format: Whether the body is HTML (True) or plain text (False)
-        use_outlook_signature: Whether to use Outlook's general signature
+        use_outlook_signature: Ignored in Exchange implementation
         cc_email: Optional CC email address
         
     Returns:
         True if successful, False otherwise
     """
     try:
-        # Create draft
-        mail = outlook.CreateItem(0)  # 0 = olMailItem
-        mail.To = recipient
-        mail.Subject = subject
+        # Create message
+        m = Message(
+            account=account,
+            folder=account.drafts,
+            subject=subject,
+            body=body,
+            body_type='HTML' if html_format else 'Text',
+            to_recipients=[Mailbox(email_address=recipient)]
+        )
         
         # Add CC if specified
         if cc_email:
-            mail.CC = cc_email
-        
-        # Set the body format to HTML or plain text
-        if html_format:
-            mail.BodyFormat = 2  # 2 = olFormatHTML
-            
-            # If using Outlook's signature, we need to get the inspector first
-            if use_outlook_signature:
-                # Get the inspector to access the editor
-                inspector = mail.GetInspector
-                # Force the editor to initialize
-                editor = inspector.WordEditor
-                
-                # Set the HTML body (this will include the signature)
-                mail.HTMLBody = body
-            else:
-                # Just set the HTML body without signature
-                mail.HTMLBody = body
-        else:
-            # Use plain text format
-            mail.BodyFormat = 1  # 1 = olFormatPlain
-            mail.Body = body
+            m.cc_recipients = [Mailbox(email_address=cc_email)]
         
         # Add attachments
         if attachments:
             for file_path in attachments:
                 if os.path.exists(file_path):
-                    mail.Attachments.Add(file_path)
+                    with open(file_path, 'rb') as f:
+                        content = f.read()
+                    
+                    file_attachment = FileAttachment(
+                        name=os.path.basename(file_path),
+                        content=content
+                    )
+                    m.attach(file_attachment)
                 else:
                     logger.warning(f"Missing attachment: {file_path}")
         
         # Save the draft
-        mail.Save()
-        
-        # Display the email (optional)
-        # mail.Display()
+        m.save()
         
         return True
     except Exception as e:
         logger.error(f"Error creating draft email to {recipient}: {str(e)}")
         return False
 
-# Create draft email (renamed from send_email for clarity)
+# Create draft email using Exchange Web Services
 def send_email(
     recipient: str,
     subject: str,
@@ -258,35 +275,34 @@ def send_email(
     attachments: List[str] = None
 ) -> bool:
     """
-    Create a draft email in Outlook instead of sending directly.
+    Create a draft email using Exchange Web Services.
     
     Args:
         recipient: Email address of the recipient
         subject: Email subject
         body: Email body (HTML)
-        smtp_settings: Dictionary with SMTP settings (used for CC and from_email)
+        smtp_settings: Dictionary with Exchange settings
         attachments: List of file paths to attach
         
     Returns:
         True if draft created successfully, False otherwise
     """
     try:
-        # Initialize Outlook
-        outlook = initialize_outlook()
+        # Initialize Exchange connection
+        account = initialize_exchange(smtp_settings)
         
         # Get CC email if specified
         cc_email = smtp_settings.get('cc', None)
         
-        # Create draft email in Outlook
+        # Create draft email
         success = create_draft_email(
-            outlook=outlook,
+            account=account,
             recipient=recipient,
             subject=subject,
             body=body,
             attachments=attachments,
             cc_email=cc_email,
-            html_format=True,
-            use_outlook_signature=True
+            html_format=True
         )
         
         if success:
@@ -308,13 +324,13 @@ def process_queue_and_send_emails(
     company_info: Dict[str, Any]
 ) -> Tuple[int, int]:
     """
-    Process the queue and create draft emails in Outlook.
+    Process the queue and create draft emails using Exchange Web Services.
     
     Args:
         queue_file: Path to the queue CSV file
         vendor_file: Path to the vendor JSON file
         template_path: Path to the email template
-        smtp_settings: Dictionary with SMTP settings (used only for CC email)
+        smtp_settings: Dictionary with Exchange settings
         company_info: Dictionary with company information
         
     Returns:
@@ -327,8 +343,8 @@ def process_queue_and_send_emails(
         # Load vendor data
         vendors = load_vendors(vendor_file)
         
-        # Initialize Outlook
-        outlook = initialize_outlook()
+        # Initialize Exchange connection
+        account = initialize_exchange(smtp_settings)
         
         # Track success/total
         successful_emails = 0
@@ -371,18 +387,17 @@ def process_queue_and_send_emails(
                     logger.warning(f"Failed to create email for vendor: {vendor.get('name', 'Unknown')}")
                     continue
                 
-                # Create draft email in Outlook
+                # Create draft email
                 total_emails += 1
                 cc_email = smtp_settings.get('cc', None)
                 
                 if create_draft_email(
-                    outlook=outlook,
+                    account=account,
                     recipient=recipient,
                     subject=subject,
                     body=body,
                     cc_email=cc_email,
-                    html_format=True,
-                    use_outlook_signature=True
+                    html_format=True
                 ):
                     successful_emails += 1
                     logger.info(f"Draft email created successfully for {recipient}")

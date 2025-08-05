@@ -5,8 +5,8 @@ pytest>=7.3.1
 python-dotenv>=1.0.0  # For loading environment variables
 
 # Email handling
-exchangelib>=5.0.0  # For Exchange integration, if needed
-# pywin32>=305  # For Outlook integration
+exchangelib==4.6.2  # For Exchange integration (specific version to avoid compatibility issues)
+# pywin32>=305  # For Outlook integration (Windows only, no longer used)
 
 # Optional but recommended
 black>=23.3.0  # Code formatting
