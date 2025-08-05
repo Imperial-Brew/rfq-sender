@@ -125,7 +125,7 @@ Box integration uses JWT authentication for secure server-to-server communicatio
 
 1. Create a Box developer account and create a Custom App with "Server Authentication (with JWT)" access type
 2. Download the JSON configuration file with your credentials
-3. Save the configuration file as `scripts/0__config.json`
+3. Save the configuration file as `scripts/box/0__config.json`
 
 The configuration file should include:
 - Client ID and Client Secret
@@ -133,6 +133,31 @@ The configuration file should include:
 - Enterprise ID
 
 No environment variables are needed for Box integration as all credentials are stored in the `0__config.json` file.
+
+### Hybrid Folder Structure
+
+The RFQ Sender System uses a hybrid folder structure in Box to organize RFQ documentation:
+
+```
+/Box/FinishingRFQs/QT57267/
+├── PN-001/
+├── PN-002/
+├── PN-003/
+├── PN-004/
+├── PN-005/
+└── vendor_links/
+    ├── HeatTreatCo/
+    ├── AnodizePro/
+    └── NickelWorks/
+```
+
+This structure:
+- Organizes files first by quote/order number, then by part number
+- Creates vendor-specific folders in a subfolder
+- Shares only relevant parts with each vendor via Box links
+- Minimizes file duplication while maintaining security
+
+For more details on the hybrid folder structure, see [Box Hybrid Structure](docs/box_hybrid_structure.md).
 
 ## Usage
 

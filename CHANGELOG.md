@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Implemented Box hybrid folder structure for RFQ documentation organization
+  - Added create_rfq_structure method to create master/part/vendor folders
+  - Added upload_part_files method to organize files by part number
+  - Added link_files_to_vendor method to create links in vendor folders
+  - Added test scripts for hybrid folder structure verification
+  - Added comprehensive documentation in docs/box_hybrid_structure.md
 - Reorganized project structure to match guidelines
   - Created data_raw/ and data_cleaned/ directories to replace data/
   - Organized scripts into functional subdirectories (email/, box/, vendor/, utils/)
@@ -60,6 +66,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test scripts for Box integration (test_box_integration.py, test_email_with_box.py)
 
 ### Changed
+- Updated Box integration to use hybrid folder structure for better organization
+  - Modified create_draft_email function to use the new folder structure
+  - Enhanced file organization by part number in Box folders
+  - Improved vendor-specific sharing with dedicated folders
 - Enhanced security measures for handling sensitive data
 - Improved environment variable handling with dotenv
 - Updated documentation with security best practices

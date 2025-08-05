@@ -754,18 +754,103 @@ def create_draft_email(
                     # Skip the rest of the Box operations
                     raise Exception("Box authentication failed. Check credentials in environment variables.")
                 
-                # Create folder name based on quote ID and process
+                # Extract part numbers from file paths (assuming files are named with part numbers)
+                # This is a simple implementation - you may need to adjust based on your actual file naming convention
+                part_numbers = set()
+                files_by_part = {}
+                
+                # Try to extract part numbers from file paths or names
+                for file_path in files_for_box:
+                    file_name = os.path.basename(file_path)
+                    
+                    # Try to find part number in the file name
+                    # Assuming part numbers start with "PN-" or are in a format like "123456_drawing.pdf"
+                    # Adjust this logic based on your actual file naming convention
+                    if "_" in file_name:
+                        possible_part = file_name.split("_")[0]
+                        # If it looks like a part number (alphanumeric), use it
+                        if possible_part.isalnum() or "-" in possible_part:
+                            part_number = possible_part
+                        else:
+                            # Default part number if we can't extract one
+                            part_number = "PN-001"
+                    elif "-" in file_name:
+                        possible_part = file_name.split("-")[0]
+                        if possible_part.isalnum():
+                            part_number = f"PN-{possible_part}"
+                        else:
+                            part_number = "PN-001"
+                    else:
+                        # Default part number if we can't extract one
+                        part_number = "PN-001"
+                    
+                    part_numbers.add(part_number)
+                    
+                    # Group files by part number
+                    if part_number not in files_by_part:
+                        files_by_part[part_number] = []
+                    files_by_part[part_number].append(file_path)
+                
+                # If we couldn't extract any part numbers, use a default
+                if not part_numbers:
+                    part_numbers = {"PN-001"}
+                    files_by_part = {"PN-001": files_for_box}
+                
+                # For this email, we're only dealing with one vendor (the recipient)
+                vendor_name = recipient.split('@')[0]  # Use email username as vendor name
+                vendor_name = ''.join(c for c in vendor_name if c.isalnum())  # Clean up vendor name
+                
+                # Create the hybrid folder structure
+                if logger:
+                    logger.info(f"Creating hybrid folder structure for RFQ: {quote_id}")
+                    logger.info(f"Part numbers: {part_numbers}")
+                    logger.info(f"Vendor: {vendor_name}")
+                else:
+                    print(f"Creating hybrid folder structure for RFQ: {quote_id}")
+                    print(f"Part numbers: {part_numbers}")
+                    print(f"Vendor: {vendor_name}")
+                
+                # Generate a folder name for logging purposes
                 timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
                 folder_name = f"RFQ_{quote_id}_{process}_{timestamp}" if quote_id and process else f"RFQ_Files_{timestamp}"
-
-                # Create folder in Box
-                folder = box.create_folder(folder_name)
-                if folder:
-                    # Upload files to Box
-                    uploaded_files = box.upload_files(files_for_box, folder)
-
-                    # Create share link
-                    box_share_link = box.create_share_link(folder)
+                
+                # Create folder structure
+                folder_structure = box.create_rfq_structure(
+                    quote_id=quote_id if quote_id else f"RFQ_{timestamp}",
+                    part_numbers=list(part_numbers),
+                    vendors=[vendor_name]
+                )
+                
+                if folder_structure:
+                    # For backward compatibility with error handling
+                    folder = folder_structure["master_folder"]
+                    
+                    # Upload files to appropriate part folders
+                    uploaded_files = []
+                    for part_number, files in files_by_part.items():
+                        part_folder = folder_structure["part_folders"].get(part_number)
+                        if part_folder:
+                            part_uploaded = box.upload_part_files(part_number, files, part_folder)
+                            if part_uploaded:
+                                uploaded_files.extend(part_uploaded)
+                                
+                                # Link files to vendor folder
+                                vendor_folder = folder_structure["vendor_folders"].get(vendor_name)
+                                if vendor_folder:
+                                    box.link_files_to_vendor(
+                                        vendor=vendor_name,
+                                        part_numbers=[part_number],
+                                        part_folders=folder_structure["part_folders"],
+                                        vendor_folder=vendor_folder
+                                    )
+                    
+                    # Create share link for vendor folder
+                    vendor_folder = folder_structure["vendor_folders"].get(vendor_name)
+                    if vendor_folder:
+                        box_share_link = box.create_share_link(vendor_folder)
+                    else:
+                        # Fallback to master folder if vendor folder creation failed
+                        box_share_link = box.create_share_link(folder_structure["master_folder"])
 
                     if box_share_link:
                         # Add information about uploaded files

@@ -3,7 +3,7 @@ Box Integration Module
 
 This module provides functions for interacting with Box, including:
 - Authentication with Box
-- Creating folders
+- Creating folders with hybrid structure (RFQ/part/vendor)
 - Uploading files
 - Creating share links
 
@@ -13,14 +13,26 @@ Usage:
     # Initialize Box integration
     box = BoxIntegration()
 
-    # Create a folder
-    folder = box.create_folder("My Folder")
+    # Create a hybrid folder structure for RFQ
+    folder_structure = box.create_rfq_structure(
+        quote_id="QT57267",
+        part_numbers=["PN-001", "PN-002"],
+        vendors=["HeatTreatCo", "AnodizePro"]
+    )
 
-    # Upload files to the folder
-    uploaded_files = box.upload_files(["file1.pdf", "file2.pdf"], folder)
+    # Upload files to part folders
+    box.upload_part_files("PN-001", ["file1.pdf"], folder_structure["part_folders"]["PN-001"])
 
-    # Create a share link
-    share_link = box.create_share_link(folder)
+    # Link files to vendor folders
+    box.link_files_to_vendor(
+        vendor="HeatTreatCo",
+        part_numbers=["PN-001"],
+        part_folders=folder_structure["part_folders"],
+        vendor_folder=folder_structure["vendor_folders"]["HeatTreatCo"]
+    )
+
+    # Create a share link for a vendor folder
+    share_link = box.create_share_link(folder_structure["vendor_folders"]["HeatTreatCo"])
 """
 
 import os
@@ -548,3 +560,216 @@ class BoxIntegration:
             else:
                 print(f"Error creating Box share link: {str(e)}")
             return None
+            
+    def create_rfq_structure(self, quote_id: str, part_numbers: List[str], vendors: List[str]) -> Dict[str, Any]:
+        """
+        Create the hybrid folder structure for an RFQ as described in box_structure.md.
+        
+        Args:
+            quote_id: The quote or order number (e.g., QT57267)
+            part_numbers: List of part numbers to create folders for
+            vendors: List of vendor names to create folders for
+            
+        Returns:
+            Dictionary containing folder objects and IDs
+        """
+        if not self.client:
+            if self.logger:
+                self.logger.error("Box client not initialized")
+            else:
+                print("Box client not initialized")
+            return None
+            
+        try:
+            # Create master RFQ folder
+            if self.logger:
+                self.logger.info(f"Creating master RFQ folder: {quote_id}")
+            else:
+                print(f"Creating master RFQ folder: {quote_id}")
+                
+            master_folder = self.create_folder(quote_id)
+            
+            if not master_folder:
+                if self.logger:
+                    self.logger.error(f"Failed to create master RFQ folder: {quote_id}")
+                else:
+                    print(f"Failed to create master RFQ folder: {quote_id}")
+                return None
+            
+            # Create part folders
+            part_folders = {}
+            for part_number in part_numbers:
+                if self.logger:
+                    self.logger.info(f"Creating part folder: {part_number}")
+                else:
+                    print(f"Creating part folder: {part_number}")
+                    
+                part_folder = self.create_folder(part_number, parent_folder_id=master_folder.id)
+                
+                if part_folder:
+                    part_folders[part_number] = part_folder
+                else:
+                    if self.logger:
+                        self.logger.warning(f"Failed to create part folder: {part_number}")
+                    else:
+                        print(f"Failed to create part folder: {part_number}")
+            
+            # Create vendor_links folder
+            if self.logger:
+                self.logger.info("Creating vendor_links folder")
+            else:
+                print("Creating vendor_links folder")
+                
+            vendor_links_folder = self.create_folder("vendor_links", parent_folder_id=master_folder.id)
+            
+            if not vendor_links_folder:
+                if self.logger:
+                    self.logger.error("Failed to create vendor_links folder")
+                else:
+                    print("Failed to create vendor_links folder")
+                return {
+                    "master_folder": master_folder,
+                    "part_folders": part_folders,
+                    "vendor_links_folder": None,
+                    "vendor_folders": {}
+                }
+            
+            # Create vendor folders
+            vendor_folders = {}
+            for vendor in vendors:
+                if self.logger:
+                    self.logger.info(f"Creating vendor folder: {vendor}")
+                else:
+                    print(f"Creating vendor folder: {vendor}")
+                    
+                vendor_folder = self.create_folder(vendor, parent_folder_id=vendor_links_folder.id)
+                
+                if vendor_folder:
+                    vendor_folders[vendor] = vendor_folder
+                else:
+                    if self.logger:
+                        self.logger.warning(f"Failed to create vendor folder: {vendor}")
+                    else:
+                        print(f"Failed to create vendor folder: {vendor}")
+            
+            return {
+                "master_folder": master_folder,
+                "part_folders": part_folders,
+                "vendor_links_folder": vendor_links_folder,
+                "vendor_folders": vendor_folders
+            }
+            
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error creating RFQ folder structure: {str(e)}")
+            else:
+                print(f"Error creating RFQ folder structure: {str(e)}")
+            return None
+            
+    def upload_part_files(self, part_number: str, files: List[str], part_folder: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Upload files for a specific part to its folder.
+        
+        Args:
+            part_number: The part number
+            files: List of file paths for this part
+            part_folder: The part folder object
+            
+        Returns:
+            List of uploaded file objects
+        """
+        if not self.client or not part_folder:
+            if self.logger:
+                self.logger.error("Box client not initialized or part folder is None")
+            else:
+                print("Box client not initialized or part folder is None")
+            return []
+            
+        try:
+            if self.logger:
+                self.logger.info(f"Uploading {len(files)} files to part folder: {part_number}")
+            else:
+                print(f"Uploading {len(files)} files to part folder: {part_number}")
+                
+            return self.upload_files(files, part_folder)
+            
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error uploading files to part folder: {str(e)}")
+            else:
+                print(f"Error uploading files to part folder: {str(e)}")
+            return []
+            
+    def link_files_to_vendor(self, vendor: str, part_numbers: List[str], 
+                           part_folders: Dict[str, Dict[str, Any]], 
+                           vendor_folder: Dict[str, Any]) -> bool:
+        """
+        Create links to part files in vendor folder.
+        
+        Args:
+            vendor: Vendor name
+            part_numbers: List of part numbers this vendor is quoting
+            part_folders: Dictionary of part folders
+            vendor_folder: The vendor folder object
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.client or not vendor_folder:
+            if self.logger:
+                self.logger.error("Box client not initialized or vendor folder is None")
+            else:
+                print("Box client not initialized or vendor folder is None")
+            return False
+            
+        try:
+            success_count = 0
+            
+            for part_number in part_numbers:
+                part_folder = part_folders.get(part_number)
+                if not part_folder:
+                    if self.logger:
+                        self.logger.warning(f"Part folder not found for part number: {part_number}")
+                    else:
+                        print(f"Part folder not found for part number: {part_number}")
+                    continue
+                    
+                # Get files from part folder
+                items = self.client.folder(part_folder.id).get_items()
+                
+                for item in items:
+                    if item.type == "file":
+                        try:
+                            # Create a shortcut/link in the vendor folder
+                            if self.logger:
+                                self.logger.info(f"Creating link for file {item.name} in vendor folder: {vendor}")
+                            else:
+                                print(f"Creating link for file {item.name} in vendor folder: {vendor}")
+                                
+                            # Use the Box API to create a web link
+                            web_link = self.client.folder(vendor_folder.id).create_web_link(
+                                name=f"{part_number}_{item.name}",
+                                url=f"https://app.box.com/file/{item.id}"
+                            )
+                            
+                            success_count += 1
+                            
+                        except Exception as link_error:
+                            if self.logger:
+                                self.logger.warning(f"Failed to create link for file {item.name}: {str(link_error)}")
+                            else:
+                                print(f"Failed to create link for file {item.name}: {str(link_error)}")
+            
+            if self.logger:
+                self.logger.info(f"Created {success_count} links in vendor folder: {vendor}")
+            else:
+                print(f"Created {success_count} links in vendor folder: {vendor}")
+                
+            return success_count > 0
+            
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error linking files to vendor folder: {str(e)}")
+            else:
+                print(f"Error linking files to vendor folder: {str(e)}")
+            return False
