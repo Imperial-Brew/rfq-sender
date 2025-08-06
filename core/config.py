@@ -19,6 +19,10 @@ import streamlit as st
 from typing import Dict, Any, Optional, Union
 from dotenv import load_dotenv
 
+# Set up a basic logger first
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Get the project root directory
 ROOT_DIR = os.environ.get("APP_ROOT_DIR", Path(__file__).parent.parent)
 logger.info(f"Using ROOT_DIR: {ROOT_DIR}")
