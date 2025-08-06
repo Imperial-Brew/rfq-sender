@@ -3,6 +3,10 @@ import pandas as pd
 from pathlib import Path
 import sys
 import logging
+from streamlit_app.utils.auth_middleware import require_authentication
+
+if not require_authentication():
+    st.stop()
 
 # Add the parent directory to the path so we can import from other modules
 parent_dir = Path(__file__).parent.parent.parent

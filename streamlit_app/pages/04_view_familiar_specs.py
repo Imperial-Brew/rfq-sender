@@ -16,6 +16,11 @@ from utils.specs import (
     SPECS_PATH
 )
 from utils.auth import get_user_role
+from streamlit_app.utils.auth_middleware import require_authentication
+
+if not require_authentication():
+    st.stop()
+
 
 # Configure logging
 logging.basicConfig(

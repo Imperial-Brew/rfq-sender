@@ -22,6 +22,10 @@ from utils.email import (
     process_queue_and_send_emails
 )
 from utils.auth import get_user_role
+from streamlit_app.utils.auth_middleware import require_authentication
+
+if not require_authentication():
+    st.stop()
 
 # Initialize configuration
 init_config()

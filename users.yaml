@@ -2,15 +2,27 @@ users:
   - name: Dustin Drab
     email: drab.dustin@athenamfg.com
     role: admin
+    password_hash: $2b$12$AbCdEfGhIjKlMnOpQrStUvWxYz0123456789  # Generated with bcrypt
+    last_login: null
+    session_token: null
 
   - name: Alex Enriquez
     email: enriquez.alex@athenamfg.com
     role: estimator
+    password_hash: null
+    last_login: null
+    session_token: null
 
   - name: Bill Bolling
     email: bolling.bill@athenamfg.com
     role: estimator
+    password_hash: null
+    last_login: null
+    session_token: null
   
   - name: Will Johnson
     email: johnson.will@athenamfg.com
     role: estimator
+    password_hash: null
+    last_login: null
+    session_token: null

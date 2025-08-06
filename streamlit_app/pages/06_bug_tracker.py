@@ -17,6 +17,10 @@ sys.path.append(str(parent_dir))
 # Import utility functions
 from streamlit_app.utils.db import get_db_connection, add_issue, get_issues, update_issue_status
 from utils.auth import get_user_role
+from streamlit_app.utils.auth_middleware import require_authentication
+
+if not require_authentication():
+    st.stop()
 
 # Configure logging
 logging.basicConfig(
