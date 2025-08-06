@@ -136,14 +136,15 @@ logger = LoggingConfig.setup_logging(__name__, "config.log")
 
 # Load environment variables from .env file
 def load_environment(env_file: Optional[str] = None) -> None:
-    """
-    Load environment variables from .env file.
-    
-    Args:
-        env_file: Path to the .env file. If None, uses default .env in project root.
-    """
     try:
         dotenv_path = env_file or os.path.join(ROOT_DIR, ".env")
+        logger.info(f"Looking for .env file at: {dotenv_path}")
+        if os.path.exists(dotenv_path):
+            logger.info(f".env file found at {dotenv_path}")
+            with open(dotenv_path, 'r') as f:
+                logger.info(f"First few lines: {f.readline()[:50]}...")
+        else:
+            logger.warning(f".env file not found at {dotenv_path}")
         load_dotenv(dotenv_path=dotenv_path)
         logger.info(f"Environment variables loaded from {dotenv_path}")
     except Exception as e:
