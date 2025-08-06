@@ -20,7 +20,8 @@ from typing import Dict, Any, Optional, Union
 from dotenv import load_dotenv
 
 # Get the project root directory
-ROOT_DIR = Path(__file__).parent.parent
+ROOT_DIR = os.environ.get("APP_ROOT_DIR", Path(__file__).parent.parent)
+logger.info(f"Using ROOT_DIR: {ROOT_DIR}")
 
 # Logging configuration
 class LoggingConfig:
@@ -150,14 +151,24 @@ def load_environment(env_file: Optional[str] = None) -> None:
 
         # Then try to load from Streamlit secrets
         if hasattr(st, 'secrets'):
+            logger.info(f"Streamlit secrets found with keys: {list(st.secrets.keys())}")
             for key, value in st.secrets.items():
                 if isinstance(value, dict):  # Handle nested secrets
                     for subkey, subvalue in value.items():
                         full_key = f"{key}_{subkey}".upper()
                         os.environ[full_key] = str(subvalue)
+                        logger.debug(f"Set environment variable {full_key}")
                 else:
                     os.environ[key.upper()] = str(value)
+                    logger.debug(f"Set environment variable {key.upper()}")
             logger.info("Environment variables loaded from Streamlit secrets")
+            
+            # Log some key environment variables for debugging
+            logger.info(f"EXCHANGE_USERNAME: {os.environ.get('EXCHANGE_USERNAME', 'Not set')}")
+            logger.info(f"COMPANY_NAME: {os.environ.get('COMPANY_NAME', 'Not set')}")
+            logger.info(f"SENDER_NAME: {os.environ.get('SENDER_NAME', 'Not set')}")
+        else:
+            logger.warning("Streamlit secrets not available")
     except Exception as e:
         logger.warning(f"Failed to load environment variables: {str(e)}")
 
@@ -193,11 +204,25 @@ class Paths:
 class ExchangeConfig:
     """Container for Exchange email configuration."""
     
-    USERNAME = os.environ.get("EXCHANGE_USERNAME", "")
-    PASSWORD = os.environ.get("EXCHANGE_PASSWORD", "")
-    SERVER = os.environ.get("EXCHANGE_SERVER", "outlook.office365.com")
-    FROM_EMAIL = os.environ.get("EXCHANGE_FROM_EMAIL", "")
-    CC_EMAIL = os.environ.get("EXCHANGE_CC_EMAIL", "")
+    @classmethod
+    def get_username(cls):
+        return os.environ.get("EXCHANGE_USERNAME", "")
+    
+    @classmethod
+    def get_password(cls):
+        return os.environ.get("EXCHANGE_PASSWORD", "")
+    
+    @classmethod
+    def get_server(cls):
+        return os.environ.get("EXCHANGE_SERVER", "outlook.office365.com")
+    
+    @classmethod
+    def get_from_email(cls):
+        return os.environ.get("EXCHANGE_FROM_EMAIL", "")
+    
+    @classmethod
+    def get_cc_email(cls):
+        return os.environ.get("EXCHANGE_CC_EMAIL", "")
     
     @classmethod
     def get_settings(cls) -> Dict[str, str]:
@@ -208,9 +233,9 @@ class ExchangeConfig:
             Dictionary with Exchange settings
         """
         return {
-            "username": cls.USERNAME,
-            "from_email": cls.FROM_EMAIL,
-            "cc": cls.CC_EMAIL
+            "username": cls.get_username(),
+            "from_email": cls.get_from_email(),
+            "cc": cls.get_cc_email()
         }
     
     @classmethod
@@ -221,10 +246,10 @@ class ExchangeConfig:
         Returns:
             True if all required settings are present, False otherwise
         """
-        if not cls.USERNAME:
+        if not cls.get_username():
             logger.warning("EXCHANGE_USERNAME is not set")
             return False
-        if not cls.PASSWORD:
+        if not cls.get_password():
             logger.warning("EXCHANGE_PASSWORD is not set")
             return False
         return True
@@ -233,13 +258,33 @@ class ExchangeConfig:
 class CompanyInfo:
     """Container for company information used in emails."""
     
-    NAME = os.environ.get("COMPANY_NAME", "Your Company")
-    LOGO_URL = os.environ.get("COMPANY_LOGO_URL", "")
-    SENDER_NAME = os.environ.get("SENDER_NAME", "")
-    SENDER_TITLE = os.environ.get("SENDER_TITLE", "")
-    SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "")
-    SENDER_PHONE = os.environ.get("SENDER_PHONE", "")
-    ADDRESS = os.environ.get("COMPANY_ADDRESS", "")
+    @classmethod
+    def get_name(cls):
+        return os.environ.get("COMPANY_NAME", "Your Company")
+    
+    @classmethod
+    def get_logo_url(cls):
+        return os.environ.get("COMPANY_LOGO_URL", "")
+    
+    @classmethod
+    def get_sender_name(cls):
+        return os.environ.get("SENDER_NAME", "")
+    
+    @classmethod
+    def get_sender_title(cls):
+        return os.environ.get("SENDER_TITLE", "")
+    
+    @classmethod
+    def get_sender_email(cls):
+        return os.environ.get("SENDER_EMAIL", "")
+    
+    @classmethod
+    def get_sender_phone(cls):
+        return os.environ.get("SENDER_PHONE", "")
+    
+    @classmethod
+    def get_address(cls):
+        return os.environ.get("COMPANY_ADDRESS", "")
     
     @classmethod
     def get_info(cls) -> Dict[str, str]:
@@ -250,13 +295,13 @@ class CompanyInfo:
             Dictionary with company information
         """
         return {
-            "name": cls.NAME,
-            "logo_url": cls.LOGO_URL,
-            "sender_name": cls.SENDER_NAME,
-            "sender_title": cls.SENDER_TITLE,
-            "sender_email": cls.SENDER_EMAIL,
-            "sender_phone": cls.SENDER_PHONE,
-            "address": cls.ADDRESS
+            "name": cls.get_name(),
+            "logo_url": cls.get_logo_url(),
+            "sender_name": cls.get_sender_name(),
+            "sender_title": cls.get_sender_title(),
+            "sender_email": cls.get_sender_email(),
+            "sender_phone": cls.get_sender_phone(),
+            "address": cls.get_address()
         }
 
 # Security settings
@@ -317,17 +362,18 @@ def validate_company_info(validation_issues: list) -> None:
         validation_issues: List to append validation issues to
     """
     # Check if company name is set
-    if not CompanyInfo.NAME or CompanyInfo.NAME == "Your Company":
+    if not CompanyInfo.get_name() or CompanyInfo.get_name() == "Your Company":
         validation_issues.append("Company name is not set or is using default value")
     
     # Check if sender email is set
-    if not CompanyInfo.SENDER_EMAIL:
+    sender_email = CompanyInfo.get_sender_email()
+    if not sender_email:
         validation_issues.append("Sender email is not set")
-    elif "@" not in CompanyInfo.SENDER_EMAIL:
-        validation_issues.append(f"Sender email is invalid: {CompanyInfo.SENDER_EMAIL}")
+    elif "@" not in sender_email:
+        validation_issues.append(f"Sender email is invalid: {sender_email}")
     
     # Check if sender name is set
-    if not CompanyInfo.SENDER_NAME:
+    if not CompanyInfo.get_sender_name():
         validation_issues.append("Sender name is not set")
 
 def validate_security_settings(validation_issues: list) -> None:
