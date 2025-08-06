@@ -21,6 +21,8 @@ from utils.specs import (
 from utils.email import (
     load_vendors,
     find_vendors_for_process,
+    find_vendors_for_process_and_spec,
+    load_vendor_options,
     get_primary_contact,
     create_rfq_email,
     send_email,
@@ -213,14 +215,14 @@ with tab4:
 # --- Send RFQ Emails ---
 with tab5:
     st.subheader("Send RFQ Emails to Vendors")
-    
+
     # Initialize session state for email sending
     if 'email_sent' not in st.session_state:
         st.session_state.email_sent = False
-    
+
     if 'email_results' not in st.session_state:
         st.session_state.email_results = None
-    
+
     # Display success message if draft emails were created
     if st.session_state.email_sent and st.session_state.email_results:
         successful, total = st.session_state.email_results
@@ -230,24 +232,24 @@ with tab5:
             ✅ Draft emails created successfully! {successful} of {total} draft emails created in {user["name"]}'s Outlook.
         </div>
         """, unsafe_allow_html=True)
-        
+
         # Reset the flag after displaying
         st.session_state.email_sent = False
-    
+
     # Load queue data
     queue_df = load_queue(QUEUE_PATH)
-    
+
     if queue_df.empty:
         st.warning("No items in queue. Add items to the queue before sending emails.")
     else:
-        # Load vendor data
+        # Load vendor data from both sources
         vendor_file = "config/vendors.json"
-        if os.path.exists(vendor_file):
+        vendor_options_file = "docs/OS/vendor_options.yaml"
+
+        if os.path.exists(vendor_file) and os.path.exists(vendor_options_file):
             vendors = load_vendors(vendor_file)
-            
-            # Email configuration section
-            st.subheader("Email Configuration")
-            
+            vendor_options = load_vendor_options(vendor_options_file)
+
             # Hardcoded company info using user data
             company_info = {
                 "name": "Athena Manufacturing",
@@ -257,90 +259,89 @@ with tab5:
                 "sender_phone": "(123) 456-7890",  # You might want to add this to users.yaml
                 "address": "123 Main St, Anytown, USA"  # Replace with actual address
             }
-            
-            with st.expander("SMTP Settings", expanded=True):
-                col1, col2 = st.columns(2)
-                with col1:
-                    # Use environment variables with fallback to default values
-                    smtp_server = st.text_input("SMTP Server", os.getenv("SMTP_SERVER", "smtp.example.com"))
-                    smtp_port = st.number_input("SMTP Port", value=int(os.getenv("SMTP_PORT", "587")), min_value=1, max_value=65535)
-                    smtp_username = st.text_input("SMTP Username", os.getenv("SMTP_USERNAME", "your.email@example.com"))
-                
-                with col2:
-                    use_tls = st.checkbox("Use TLS", value=os.getenv("SMTP_USE_TLS", "true").lower() == "true")
-                    smtp_password = st.text_input("SMTP Password", type="password", value=os.getenv("SMTP_PASSWORD", ""))
-                    cc_email = st.text_input("CC Email (optional)", os.getenv("CC_EMAILS", ""))
-            
+
             # Email template selection
             template_path = "config/templates/email_signature.html"
             if not os.path.exists(template_path):
                 st.warning(f"Email template not found at {template_path}")
-            
+
             # Queue filtering
             st.subheader("Queue Items to Send")
-            
+
             # Filter options
             filter_col1, filter_col2 = st.columns(2)
             with filter_col1:
                 search_term = st.text_input("Search Queue", "")
-            
+
             with filter_col2:
                 process_filter = st.multiselect(
                     "Filter by Process",
                     options=sorted(queue_df['process'].unique()),
                     default=[]
                 )
-            
+
             # Apply filters
             filtered_df = queue_df.copy()
             if search_term:
                 filtered_df = filtered_df[filtered_df.apply(
-                    lambda row: row.astype(str).str.contains(search_term, case=False).any(), 
+                    lambda row: row.astype(str).str.contains(search_term, case=False).any(),
                     axis=1
                 )]
-            
+
             if process_filter:
                 filtered_df = filtered_df[filtered_df['process'].isin(process_filter)]
-            
+
             # Display filtered queue
             st.dataframe(filtered_df, use_container_width=True)
-            
+
             # Vendor preview
             st.subheader("Vendor Preview")
-            
+
             # Get unique processes from filtered queue
             unique_processes = filtered_df['process'].unique()
-            
+
             # Show vendors for each process
             for process in unique_processes:
-                process_vendors = find_vendors_for_process(vendors, process)
-                
-                if process_vendors:
+                # Get items for this process
+                process_items = filtered_df[filtered_df['process'] == process]
+
+                # Check if we have spec information for this process
+                has_spec = 'spec' in process_items.columns and not process_items['spec'].isna().all() and \
+                           process_items['spec'].iloc[0]
+
+                if has_spec:
+                    # Get the spec for this process
+                    spec = process_items['spec'].iloc[0]
+                    st.write(f"**Process: {process}, Spec: {spec}**")
+
+                    # Find vendors that support this process and spec
+                    process_vendors = find_vendors_for_process_and_spec(vendors, vendor_options, process, spec)
+                else:
                     st.write(f"**Process: {process}**")
+                    # Find vendors that support this process only
+                    process_vendors = find_vendors_for_process(vendors, process)
+
+                if process_vendors:
                     vendor_names = [v.get('name', 'Unknown') for v in process_vendors]
                     st.write(f"Vendors: {', '.join(vendor_names)}")
                 else:
-                    st.warning(f"No vendors found for process: {process}")
-            
+                    st.warning(f"No vendors found for process: {process}" + (f" with spec: {spec}" if has_spec else ""))
+
             # Create draft emails button
             if st.button("Create Draft Emails", type="primary", disabled=filtered_df.empty):
                 # Use the hardcoded company_info defined above
-                # company_info is already defined above
                 
-                smtp_settings = {
-                    "server": smtp_server,
-                    "port": smtp_port,
-                    "username": smtp_username,
-                    "password": smtp_password,
-                    "use_tls": use_tls,
-                    "from_email": os.getenv("SMTP_FROM_EMAIL", user["email"]),  # Use env var with fallback to user's email
-                    "cc": cc_email
+                # Exchange settings from environment variables
+                exchange_settings = {
+                    "username": os.getenv("EXCHANGE_USERNAME", user["email"]),
+                    "from_email": os.getenv("EXCHANGE_FROM_EMAIL", user["email"]),
+                    "cc": os.getenv("EXCHANGE_CC_EMAIL", "")
                 }
-                
+
                 # Save filtered queue to temporary file
                 temp_queue_file = "temp_queue.csv"
                 filtered_df.to_csv(temp_queue_file, index=False)
-                
+
                 try:
                     # Process queue and create draft emails
                     with st.spinner("Creating draft emails in Outlook..."):
@@ -348,14 +349,15 @@ with tab5:
                             temp_queue_file,
                             vendor_file,
                             template_path,
-                            smtp_settings,
-                            company_info
+                            exchange_settings,
+                            company_info,
+                            vendor_options_file  # Add vendor_options_file as a parameter
                         )
-                    
+
                     # Store results in session state
                     st.session_state.email_results = (successful, total)
                     st.session_state.email_sent = True
-                    
+
                     # Rerun to show success message
                     st.rerun()
                 except Exception as e:
@@ -365,5 +367,8 @@ with tab5:
                     if os.path.exists(temp_queue_file):
                         os.remove(temp_queue_file)
         else:
-            st.error(f"Vendor file not found at {vendor_file}")
-            st.info("Please create a vendor file at config/vendors.json with vendor information.")
+            if not os.path.exists(vendor_file):
+                st.error(f"Vendor file not found at {vendor_file}")
+            if not os.path.exists(vendor_options_file):
+                st.error(f"Vendor options file not found at {vendor_options_file}")
+            st.info("Please ensure both vendor files exist.")

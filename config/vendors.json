@@ -13,7 +13,8 @@
         "zinc nickel plate",
         "silver plating",
         "copper plating",
-        "electroless nickel"
+        "electroless nickel",
+        "Cadmium Plating"
       ],
       "contacts": [],
       "address": {
@@ -171,7 +172,7 @@
       ],
       "address": {
         "street": "",
-        "city": NaN,
+        "city": "",
         "state": "",
         "zip": ""
       },
@@ -224,7 +225,8 @@
         "chromate conversion",
         "passivation",
         "sol-epoxy",
-        "penetrant inspect"
+        "penetrant inspect",
+        "Magnetic Inspection"
       ],
       "contacts": [],
       "address": {
@@ -242,7 +244,17 @@
       "name": "Embee Processing",
       "processes": [
         "electroless nickel",
-        "dry film lubricant"
+        "dry film lubricant",
+        "anodize",
+        "cadmium plating",
+        "chromate conversion",
+        "cleaning",
+        "magnetic inspection",
+        "passivation",
+        "penetrant inspect",
+        "shot peen",
+        "silver plating",
+        "tin plating"
       ],
       "contacts": [
         {
@@ -289,7 +301,17 @@
       "id": "v011",
       "name": "Hytek Finishes",
       "processes": [
-        "electroless nickel"
+        "electroless nickel",
+        "anodize",
+        "cadmium plating",
+        "chromate conversion",
+        "cleaning",
+        "electropolish",
+        "magnetic inspection",
+        "passivation",
+        "penetrant inspect",
+        "shot peen",
+        "zinc nickel plate"
       ],
       "contacts": [
         {
@@ -432,6 +454,30 @@
       "address": {
         "street": "",
         "city": "California",
+        "state": "Texas",
+        "zip": ""
+      },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v016",
+      "name": "Mayday Manufacturing",
+      "processes": [
+        "anodize",
+        "cadmium plating",
+        "cleaning",
+        "chromate conversion",
+        "magnetic inspection",
+        "passivation",
+        "penetrant inspect",
+        "zinc nickel plate"
+      ],
+      "contacts": [],
+      "address": {
+        "street": "",
+        "city": "Denton, Tx",
         "state": "Texas",
         "zip": ""
       },
