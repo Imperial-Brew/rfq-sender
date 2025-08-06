@@ -4,12 +4,17 @@ import pandas as pd
 import yaml
 import os
 import json
-from dotenv import load_dotenv
 from utils.auth import load_users, get_user_role
 from utils.queue import load_queue, add_to_queue, QUEUE_PATH
+import logging
+from core.config import Paths, ExchangeConfig, CompanyInfo, AppConfig, LoggingConfig, init_config
 
-# Load environment variables from .env file
-load_dotenv()
+# Initialize configuration
+init_config()
+
+# Set up logging using the centralized configuration
+logger = LoggingConfig.setup_logging(__name__, "app.log")
+
 from utils.specs import (
     load_process_list,
     load_specs_for_process,

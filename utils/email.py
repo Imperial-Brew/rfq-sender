@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import json
 # import smtplib - No longer needed, using exchangelib instead
@@ -6,15 +5,19 @@ import jinja2
 # from email.mime.multipart import MIMEMultipart - No longer needed, using exchangelib instead
 # from email.mime.text import MIMEText - No longer needed, using exchangelib instead
 # from email.mime.application import MIMEApplication - No longer needed, using exchangelib instead
+from core.email.email_manager import EmailManager
 from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 import yaml
-from scripts.utils.spec_check import SpecProcessValidator  # Import the validator
 import logging
-from dotenv import load_dotenv
+import os  # Still needed for path operations
 from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
 from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
 import urllib3
+
+# Import the vendor manager and config
+from core.vendors.vendor_manager import VendorManager
+from core.config import Paths, ExchangeConfig, CompanyInfo
 
 # Disable insecure request warnings if needed
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -24,6 +27,9 @@ BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+# Note: The following functions have been replaced by the VendorManager class
+# They are kept here as wrappers for backward compatibility
 
 # Load vendor information
 def load_vendors(vendor_file: str) -> List[Dict[str, Any]]:
@@ -36,13 +42,8 @@ def load_vendors(vendor_file: str) -> List[Dict[str, Any]]:
     Returns:
         List of vendor dictionaries
     """
-    try:
-        with open(vendor_file, 'r') as f:
-            data = json.load(f)
-        return data.get('vendors', [])
-    except Exception as e:
-        logger.error(f"Error loading vendor file {vendor_file}: {str(e)}")
-        return []
+    vendor_manager = VendorManager(vendor_file=vendor_file)
+    return vendor_manager.vendors
 
 
 def load_vendor_options(vendor_options_file: str) -> Dict[str, Any]:
@@ -55,13 +56,8 @@ def load_vendor_options(vendor_options_file: str) -> Dict[str, Any]:
     Returns:
         Dictionary containing vendor options data
     """
-    try:
-        with open(vendor_options_file, 'r', encoding='utf-8') as f:
-            vendor_options = yaml.safe_load(f)
-        return vendor_options
-    except Exception as e:
-        logger.error(f"Error loading vendor options file {vendor_options_file}: {str(e)}")
-        return {}
+    vendor_manager = VendorManager(vendor_options_file=vendor_options_file)
+    return vendor_manager.vendor_options
 
 
 def find_vendors_for_process_and_spec(
@@ -82,49 +78,14 @@ def find_vendors_for_process_and_spec(
     Returns:
         List of vendor dictionaries that support the process and spec
     """
-    # If no spec provided, use the simple process-only filter
-    if not spec:
-        return find_vendors_for_process(vendors, process)
-
-    # Create a validator for normalizing process and spec names
-    validator = SpecProcessValidator()
-
-    # Normalize the input spec for comparison
-    normalized_spec = normalize_process_spec(spec, validator)
-
-    # Find vendors that support this spec
-    suitable_vendors = []
-    vendor_names_by_spec = []
-
-    # First try to find vendors by spec
-    if "vendors" in vendor_options:
-        for vendor_option in vendor_options["vendors"]:
-            vendor_name = vendor_option.get("name", "")
-
-            for vendor_process in vendor_option.get("processes", []):
-                if isinstance(vendor_process, dict) and vendor_process.get("name", "").lower() == process.lower():
-                    # This vendor supports the process, now check if it supports the spec
-                    if "specs" in vendor_process and vendor_process["specs"]:
-                        for vendor_spec in vendor_process["specs"]:
-                            if isinstance(vendor_spec, dict) and "number" in vendor_spec:
-                                # Normalize the vendor spec for comparison
-                                normalized_vendor_spec = normalize_process_spec(vendor_spec["number"], validator)
-
-                                if normalized_spec == normalized_vendor_spec:
-                                    # Found a match by spec
-                                    vendor_names_by_spec.append(vendor_name)
-                                    break
-
-    # Now find the matching vendors in the original vendors list
-    for vendor in vendors:
-        if vendor.get("name") in vendor_names_by_spec:
-            suitable_vendors.append(vendor)
-
-    # If no vendors found by spec, fall back to process-only filtering
-    if not suitable_vendors:
-        return find_vendors_for_process(vendors, process)
-
-    return suitable_vendors
+    # Create a vendor manager with the provided vendors and options
+    vendor_manager = VendorManager()
+    # Override the loaded vendors and options with the ones provided
+    vendor_manager.vendors = vendors
+    vendor_manager.vendor_options = vendor_options
+    
+    # Use the vendor manager to find vendors
+    return vendor_manager.find_vendors_for_process_and_spec(process, spec)
 
 
 def normalize_process_spec(text: str, validator: Optional[Any] = None) -> str:
@@ -133,26 +94,15 @@ def normalize_process_spec(text: str, validator: Optional[Any] = None) -> str:
 
     Args:
         text: The text to normalize
-        validator: Optional SpecProcessValidator instance
+        validator: Optional SpecValidator instance
 
     Returns:
         Normalized text
     """
-    if not text:
-        return ""
+    # Create a vendor manager to use its normalization method
+    vendor_manager = VendorManager()
+    return vendor_manager._normalize_process_spec(text)
 
-    # Basic normalization
-    normalized = text.lower().strip()
-    normalized = normalized.replace("-", "").replace(" ", "")
-
-    # Use validator if provided
-    if validator:
-        try:
-            normalized = validator.normalize(normalized)
-        except:
-            pass
-
-    return normalized
 # Find vendors for a specific process
 def find_vendors_for_process(vendors: List[Dict[str, Any]], process: str) -> List[Dict[str, Any]]:
     """
@@ -165,7 +115,128 @@ def find_vendors_for_process(vendors: List[Dict[str, Any]], process: str) -> Lis
     Returns:
         List of vendor dictionaries that support the process
     """
-    return [v for v in vendors if process.lower() in [p.lower() for p in v.get('processes', [])]]
+    # Create a vendor manager with the provided vendors
+    vendor_manager = VendorManager()
+    # Override the loaded vendors with the ones provided
+    vendor_manager.vendors = vendors
+    
+    # Use the vendor manager to find vendors
+    return vendor_manager.find_vendors_for_process(process)
+
+
+# Initialize Exchange connection
+def initialize_exchange(exchange_settings: Dict[str, Any]) -> Account:
+    """
+    Initialize connection to Exchange server.
+
+    Args:
+        exchange_settings: Dictionary with Exchange settings (username, from_email, cc)
+
+    Returns:
+        Exchange account object
+
+    Raises:
+        RuntimeError: If Exchange connection cannot be initialized
+    """
+    email_manager = EmailManager(exchange_settings=exchange_settings)
+    return email_manager.initialize_exchange()
+
+
+# Render email template
+def render_template(template_path: str, context: Dict[str, Any]) -> str:
+    """
+    Render a Jinja2 template with the given context.
+
+    Args:
+        template_path: Path to the template file
+        context: Dictionary of variables to pass to the template
+
+    Returns:
+        Rendered template as a string
+    """
+    email_manager = EmailManager()
+    return email_manager.render_template(template_path, context)
+
+
+# Create email for RFQ
+def create_rfq_email(
+        queue_items: pd.DataFrame,
+        vendor: Dict[str, Any],
+        contact: Dict[str, Any],
+        template_path: str,
+        company_info: Dict[str, Any]
+) -> Tuple[str, str, str]:
+    """
+    Create an email for an RFQ.
+
+    Args:
+        queue_items: DataFrame containing RFQ items
+        vendor: Vendor dictionary
+        contact: Contact dictionary
+        template_path: Path to the email template
+        company_info: Dictionary with company information
+
+    Returns:
+        Tuple of (recipient_email, subject, body)
+    """
+    email_manager = EmailManager(company_info=company_info)
+    return email_manager.create_rfq_email(queue_items, vendor, contact, template_path)
+
+
+# Send email
+def send_email(
+        recipient: str,
+        subject: str,
+        body: str,
+        exchange_settings: Dict[str, Any],
+        attachments: List[str] = None
+) -> bool:
+    """
+    Create a draft email using Exchange Web Services.
+
+    Args:
+        recipient: Email address of the recipient
+        subject: Email subject
+        body: Email body (HTML)
+        exchange_settings: Dictionary with Exchange settings (username, from_email, cc)
+        attachments: List of file paths to attach
+
+    Returns:
+        True if draft created successfully, False otherwise
+    """
+    email_manager = EmailManager(exchange_settings=exchange_settings)
+    return email_manager.send_email(recipient, subject, body, attachments)
+
+
+# Process queue and create draft emails
+def process_queue_and_send_emails(
+        queue_file: str,
+        vendor_file: str,
+        template_path: str,
+        exchange_settings: Dict[str, Any],
+        company_info: Dict[str, str],
+        vendor_options_file: str = None
+) -> Tuple[int, int]:
+    """
+    Process the queue and send emails to vendors.
+
+    Args:
+        queue_file: Path to the queue CSV file
+        vendor_file: Path to the vendor JSON file
+        template_path: Path to the email template
+        exchange_settings: Exchange settings (username, from_email, cc)
+        company_info: Company information
+        vendor_options_file: Path to the vendor options YAML file
+
+    Returns:
+        Tuple containing number of successful emails and total emails
+    """
+    email_manager = EmailManager(
+        template_path=template_path,
+        exchange_settings=exchange_settings,
+        company_info=company_info
+    )
+    return email_manager.process_queue_and_send_emails(queue_file, vendor_file, vendor_options_file)
 
 # Get primary contact for a vendor
 def get_primary_contact(vendor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -178,11 +249,9 @@ def get_primary_contact(vendor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     Returns:
         Primary contact dictionary or first contact if no primary is specified
     """
-    contacts = vendor.get('contacts', [])
-    for contact in contacts:
-        if contact.get('primary', False):
-            return contact
-    return contacts[0] if contacts else None
+    # Use the vendor manager to get the primary contact
+    vendor_manager = VendorManager()
+    return vendor_manager.get_primary_contact(vendor)
 
 # Initialize Exchange connection
 def initialize_exchange(exchange_settings: Dict[str, Any]) -> Account:
@@ -200,14 +269,10 @@ def initialize_exchange(exchange_settings: Dict[str, Any]) -> Account:
     """
     logger.info("Initializing Exchange connection")
     try:
-        # Get credentials from environment variables
-        from dotenv import load_dotenv
-        load_dotenv()
-        
-        # Get credentials from environment variables with fallback to settings
-        username = os.environ.get('EXCHANGE_USERNAME', exchange_settings.get('username', ''))
-        password = os.environ.get('EXCHANGE_PASSWORD', '')
-        server = os.environ.get('EXCHANGE_SERVER', 'outlook.office365.com')
+        # Get credentials from config with fallback to settings
+        username = ExchangeConfig.USERNAME or exchange_settings.get('username', '')
+        password = ExchangeConfig.PASSWORD
+        server = ExchangeConfig.SERVER
         
         # Create credentials object
         credentials = Credentials(username=username, password=password)
@@ -263,7 +328,7 @@ def create_rfq_email(
     vendor: Dict[str, Any],
     contact: Dict[str, Any],
     template_path: str,
-    company_info: Dict[str, Any]
+    company_info: Dict[str, Any] = None
 ) -> Tuple[str, str, str]:
     """
     Create an email for an RFQ.
@@ -273,7 +338,7 @@ def create_rfq_email(
         vendor: Vendor dictionary
         contact: Contact dictionary
         template_path: Path to the email template
-        company_info: Dictionary with company information
+        company_info: Dictionary with company information (optional, uses config if not provided)
         
     Returns:
         Tuple of (recipient_email, subject, body)
@@ -291,6 +356,10 @@ def create_rfq_email(
         
         # Prepare quantities as comma-separated string
         quantities = first_item.get('quantities', '')
+        
+        # Use provided company_info or get from config
+        if company_info is None:
+            company_info = CompanyInfo.get_info()
         
         # Prepare context for template
         context = {
@@ -387,7 +456,7 @@ def send_email(
     recipient: str,
     subject: str,
     body: str,
-    exchange_settings: Dict[str, Any],
+    exchange_settings: Dict[str, Any] = None,
     attachments: List[str] = None
 ) -> bool:
     """
@@ -397,18 +466,22 @@ def send_email(
         recipient: Email address of the recipient
         subject: Email subject
         body: Email body (HTML)
-        exchange_settings: Dictionary with Exchange settings (username, from_email, cc)
+        exchange_settings: Dictionary with Exchange settings (uses config if None)
         attachments: List of file paths to attach
         
     Returns:
         True if draft created successfully, False otherwise
     """
     try:
+        # Use config if exchange_settings not provided
+        if exchange_settings is None:
+            exchange_settings = ExchangeConfig.get_settings()
+            
         # Initialize Exchange connection
         account = initialize_exchange(exchange_settings)
         
         # Get CC email if specified
-        cc_email = exchange_settings.get('cc', None)
+        cc_email = exchange_settings.get('cc', ExchangeConfig.CC_EMAIL)
         
         # Create draft email
         success = create_draft_email(
@@ -433,37 +506,43 @@ def send_email(
 
 # Process queue and create draft emails
 def process_queue_and_send_emails(
-        queue_file: str,
-        vendor_file: str,
-        template_path: str,
-        exchange_settings: Dict[str, Any],
-        company_info: Dict[str, str],
+        queue_file: str = None,
+        vendor_file: str = None,
+        template_path: str = None,
+        exchange_settings: Dict[str, Any] = None,
+        company_info: Dict[str, str] = None,
         vendor_options_file: str = None
 ) -> Tuple[int, int]:
     """
     Process the queue and send emails to vendors.
 
     Args:
-        queue_file: Path to the queue CSV file
-        vendor_file: Path to the vendor JSON file
-        template_path: Path to the email template
-        exchange_settings: Exchange settings (username, from_email, cc)
-        company_info: Company information
-        vendor_options_file: Path to the vendor options YAML file
+        queue_file: Path to the queue CSV file (uses config if None)
+        vendor_file: Path to the vendor JSON file (uses config if None)
+        template_path: Path to the email template (uses config if None)
+        exchange_settings: Exchange settings (uses config if None)
+        company_info: Company information (uses config if None)
+        vendor_options_file: Path to the vendor options YAML file (uses config if None)
 
     Returns:
         Tuple containing number of successful emails and total emails
     """
+    # Use config values if parameters are not provided
+    queue_file = queue_file or Paths.QUEUE_PATH
+    vendor_file = vendor_file or Paths.VENDOR_FILE
+    template_path = template_path or Paths.EMAIL_TEMPLATE_PATH
+    exchange_settings = exchange_settings or ExchangeConfig.get_settings()
+    company_info = company_info or CompanyInfo.get_info()
+    vendor_options_file = vendor_options_file or Paths.VENDOR_OPTIONS_FILE
+    
     # Load queue data
     queue = pd.read_csv(queue_file)
 
-    # Load vendor data
-    vendors = load_vendors(vendor_file)
-
-    # Load vendor options if provided
-    vendor_options = {}
-    if vendor_options_file and os.path.exists(vendor_options_file):
-        vendor_options = load_vendor_options(vendor_options_file)
+    # Create vendor manager
+    vendor_manager = VendorManager(
+        vendor_file=vendor_file,
+        vendor_options_file=vendor_options_file if os.path.exists(vendor_options_file) else None
+    )
 
     # Initialize Exchange connection
     account = initialize_exchange(exchange_settings)
@@ -477,10 +556,7 @@ def process_queue_and_send_emails(
         spec = row.get('spec', '')
 
         # Find vendors for this process and spec
-        if vendor_options and spec:
-            matching_vendors = find_vendors_for_process_and_spec(vendors, vendor_options, process, spec)
-        else:
-            matching_vendors = find_vendors_for_process(vendors, process)
+        matching_vendors = vendor_manager.find_vendors_for_process_and_spec(process, spec)
 
         if not matching_vendors:
             continue
@@ -490,12 +566,12 @@ def process_queue_and_send_emails(
         # Create and send email to each vendor
         for vendor in matching_vendors:
             # Get primary contact
-            contact = get_primary_contact(vendor)
+            contact = vendor_manager.get_primary_contact(vendor)
             if not contact:
                 continue
 
             # Create email
-            email = create_rfq_email(
+            recipient_email, subject, body = create_rfq_email(
                 row,
                 vendor,
                 contact,
@@ -504,7 +580,7 @@ def process_queue_and_send_emails(
             )
 
             # Send email
-            if send_email(account, email, exchange_settings):
+            if send_email(recipient_email, subject, body, exchange_settings, attachments=None):
                 successful += 1
 
     return successful, total

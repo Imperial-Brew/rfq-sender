@@ -14,21 +14,15 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-# Get the project root directory (parent of scripts directory)
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-logs_dir = os.path.join(project_root, "logs")
-os.makedirs(logs_dir, exist_ok=True)
+# Add parent directory to path to import from core
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from core.config import Paths, LoggingConfig, init_config
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(os.path.join(logs_dir, "response_parser.log")),
-    ],
-)
-logger = logging.getLogger("response_parser")
+# Initialize configuration
+init_config()
+
+# Set up logging using the centralized configuration
+logger = LoggingConfig.setup_logging(__name__, "response_parser.log")
 
 
 def init_response_database() -> sqlite3.Connection:
@@ -39,7 +33,7 @@ def init_response_database() -> sqlite3.Connection:
         sqlite3.Connection: Database connection
     """
     # Create data directory if it doesn't exist
-    data_dir = os.path.join(project_root, "data")
+    data_dir = os.path.join(Paths.ROOT_DIR, "data")
     os.makedirs(data_dir, exist_ok=True)
 
     # Connect to database

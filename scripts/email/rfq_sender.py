@@ -19,7 +19,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
-from dotenv import load_dotenv
 
 import jinja2
 import yaml
@@ -29,30 +28,23 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeEl
 from rich.table import Table
 from rich.panel import Panel
 
-# Import SpecProcessValidator from spec_check.py
-from spec_check import SpecProcessValidator
+# Add parent directory to path to import from core
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from core.config import SecurityConfig, LoggingConfig, init_config, Paths
+
+# Get the project root directory (parent of scripts directory)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Initialize configuration
+init_config()
+
+# Import SpecProcessValidator from scripts.utils.spec_check
+from scripts.utils.spec_check import SpecProcessValidator
 
 console = Console()
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Create logs directory if it doesn't exist
-# Get the project root directory (parent of scripts directory)
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-logs_dir = os.path.join(project_root, "logs")
-os.makedirs(logs_dir, exist_ok=True)
-
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(os.path.join(logs_dir, "rfq_sender.log")),
-    ],
-)
-logger = logging.getLogger("rfq_sender")
+# Set up logging using the centralized configuration
+logger = LoggingConfig.setup_logging(__name__, "rfq_sender.log")
 
 
 def parse_args() -> argparse.Namespace:
@@ -514,7 +506,7 @@ def handle_cui_compliance(vendor: Dict[str, any], body: str) -> str:
         str: Modified email body with CUI warnings if applicable
     """
     # Check if CUI protection is enabled
-    enable_cui_protection = os.environ.get("ENABLE_CUI_PROTECTION", "true").lower() == "true"
+    enable_cui_protection = SecurityConfig.ENABLE_CUI_PROTECTION
 
     if not enable_cui_protection:
         return body
@@ -524,10 +516,7 @@ def handle_cui_compliance(vendor: Dict[str, any], body: str) -> str:
 
     # If vendor is approved for CUI, add CUI warning
     if approval_level == "cui":
-        cui_warning = os.environ.get(
-            "CUI_WARNING_TEXT", 
-            "This email contains Controlled Unclassified Information (CUI) that is subject to safeguarding or dissemination controls."
-        )
+        cui_warning = SecurityConfig.CUI_WARNING
 
         # Add warning at the top of the email
         modified_body = f"{cui_warning}\n\n{body}"

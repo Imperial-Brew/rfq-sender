@@ -40,7 +40,13 @@ from pandas import DataFrame
 from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
 from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
 import urllib3
-from dotenv import load_dotenv
+
+# Add parent directory to path to import from core
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from core.config import ExchangeConfig, Paths, LoggingConfig, init_config
+
+# Initialize configuration
+init_config()
 
 # Disable insecure request warnings if needed
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -124,19 +130,25 @@ def setup_logging(logs_dir: str) -> logging.Logger:
     Returns:
         Logger object configured for this script
     """
-    # Ensure logs directory exists
-    os.makedirs(logs_dir, exist_ok=True)
+    # Use the centralized logging configuration if available
+    try:
+        from core.config import LoggingConfig
+        return LoggingConfig.setup_logging("email_from_list", "email_from_list.log")
+    except ImportError:
+        # Fall back to original implementation if LoggingConfig is not available
+        # Ensure logs directory exists
+        os.makedirs(logs_dir, exist_ok=True)
 
-    # Set up logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(os.path.join(logs_dir, "email_from_list.log"), encoding='utf-8'),
-        ],
-    )
-    return logging.getLogger("email_from_list")
+        # Set up logging
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            handlers=[
+                logging.StreamHandler(sys.stdout),
+                logging.FileHandler(os.path.join(logs_dir, "email_from_list.log"), encoding='utf-8'),
+            ],
+        )
+        return logging.getLogger("email_from_list")
 
 
 def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, logger: logging.Logger = None) -> Tuple[DataFrame, Dict[Any, Dict[str, Any]]]:
@@ -337,16 +349,13 @@ def initialize_exchange(logger: logging.Logger = None) -> Account:
         print("Initializing Exchange connection")
     
     try:
-        # Load environment variables if not already loaded
-        load_dotenv()
-        
-        # Get credentials from environment variables
-        username = os.environ.get('EXCHANGE_USERNAME', '')
-        password = os.environ.get('EXCHANGE_PASSWORD', '')
-        server = os.environ.get('EXCHANGE_SERVER', 'outlook.office365.com')
+        # Get credentials from config
+        username = ExchangeConfig.USERNAME
+        password = ExchangeConfig.PASSWORD
+        server = ExchangeConfig.SERVER
         
         if not username or not password:
-            error_msg = "Exchange credentials not found in environment variables"
+            error_msg = "Exchange credentials not found in configuration"
             if logger:
                 logger.error(error_msg)
             else:

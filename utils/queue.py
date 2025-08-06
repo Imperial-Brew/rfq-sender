@@ -1,51 +1,99 @@
 import pandas as pd
 import os
+import logging
 from pathlib import Path
+from core.config import Paths, LoggingConfig, init_config
 
-# Get the project root directory
-ROOT_DIR = Path(__file__).parent.parent
-QUEUE_PATH = os.path.join(ROOT_DIR, "docs", "queue.csv")
+# Initialize configuration
+init_config()
+
+# Set up logging using the centralized configuration
+logger = LoggingConfig.setup_logging(__name__, "queue.log")
+
+# Use the centralized path from config
+QUEUE_PATH = Paths.QUEUE_PATH
 
 def load_queue(path=QUEUE_PATH):
+    """
+    Load the queue from a CSV file and standardize data types.
+    
+    Args:
+        path: Path to the queue CSV file (defaults to QUEUE_PATH)
+        
+    Returns:
+        DataFrame containing the queue data
+    """
+    logger.info(f"Loading queue from {path}")
+    
     if not os.path.exists(path):
+        logger.warning(f"Queue file not found at {path}, returning empty DataFrame")
         return pd.DataFrame()
     
-    # Load the CSV file
-    df = pd.read_csv(path)
-    
-    # Standardize data types for all columns to prevent comparison issues
-    for col in df.columns:
-        # First, clean any line breaks or extra whitespace in all columns
-        if df[col].dtype == 'object':  # Only process string/object columns
-            # Replace line breaks and normalize whitespace
-            df[col] = df[col].astype(str).str.replace('\n', ' ').str.strip()
+    try:
+        # Load the CSV file
+        df = pd.read_csv(path)
+        logger.info(f"Successfully loaded queue with {len(df)} entries")
         
-        # For columns that should be strings
-        if col in ['sent', 'quantities', 'qt/so #', 'Rev', 'process', 'spec', 
-                  'material', 'Part_Number', 'Print Callout', 'file_location', 
-                  'submitted_by', 'RFQ #']:
-            df[col] = df[col].astype(str)
-            df[col] = df[col].replace('nan', '')
+        # Standardize data types for all columns to prevent comparison issues
+        for col in df.columns:
+            # First, clean any line breaks or extra whitespace in all columns
+            if df[col].dtype == 'object':  # Only process string/object columns
+                # Replace line breaks and normalize whitespace
+                df[col] = df[col].astype(str).str.replace('\n', ' ').str.strip()
+            
+            # For columns that should be strings
+            if col in ['sent', 'quantities', 'qt/so #', 'Rev', 'process', 'spec', 
+                      'material', 'Part_Number', 'Print Callout', 'file_location', 
+                      'submitted_by', 'RFQ #']:
+                df[col] = df[col].astype(str)
+                df[col] = df[col].replace('nan', '')
+            
+            # For columns that might contain dates
+            elif col in ['due_date']:
+                # Convert to datetime with error handling
+                df[col] = pd.to_datetime(df[col], errors='coerce')
+            
+            # For columns that should be numeric
+            elif col in ['RFQ #']:
+                # Try to convert to numeric, but keep as string if it fails
+                try:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                    # Fill NaN values with empty string
+                    df[col] = df[col].fillna('')
+                except Exception as e:
+                    logger.warning(f"Error converting {col} to numeric: {str(e)}")
+                    # If conversion fails, ensure it's a clean string
+                    df[col] = df[col].astype(str).replace('nan', '')
         
-        # For columns that might contain dates
-        elif col in ['due_date']:
-            # Convert to datetime with error handling
-            df[col] = pd.to_datetime(df[col], errors='coerce')
-        
-        # For columns that should be numeric
-        elif col in ['RFQ #']:
-            # Try to convert to numeric, but keep as string if it fails
-            try:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-                # Fill NaN values with empty string
-                df[col] = df[col].fillna('')
-            except:
-                # If conversion fails, ensure it's a clean string
-                df[col] = df[col].astype(str).replace('nan', '')
-    
-    return df
+        logger.debug("Data types standardized for all columns")
+        return df
+    except Exception as e:
+        logger.error(f"Error loading queue from {path}: {str(e)}")
+        return pd.DataFrame()
 
 def add_to_queue(path, entry: dict):
-    df = load_queue(path)
-    df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
-    df.to_csv(path, index=False)
+    """
+    Add a new entry to the queue.
+    
+    Args:
+        path: Path to the queue CSV file
+        entry: Dictionary containing the entry data
+        
+    Returns:
+        None
+    """
+    logger.info(f"Adding new entry to queue at {path}")
+    try:
+        # Load existing queue
+        df = load_queue(path)
+        
+        # Add new entry
+        df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
+        
+        # Save updated queue
+        df.to_csv(path, index=False)
+        
+        logger.info(f"Successfully added entry to queue: {entry.get('part_number', 'Unknown part')} - {entry.get('process', 'Unknown process')}")
+    except Exception as e:
+        logger.error(f"Error adding entry to queue: {str(e)}")
+        raise

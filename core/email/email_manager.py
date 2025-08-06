@@ -1,0 +1,378 @@
+import os
+import pandas as pd
+import jinja2
+import logging
+from typing import Dict, List, Optional, Tuple, Any
+from dotenv import load_dotenv
+from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
+from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
+import urllib3
+
+from core.vendors.vendor_manager import VendorManager
+
+# Disable insecure request warnings if needed
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Optional: Add this for self-signed certificates
+BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+
+class EmailManager:
+    """
+    Manages email operations for RFQ emails.
+    
+    This class provides functionality to:
+    1. Connect to Exchange server
+    2. Render email templates
+    3. Create and send RFQ emails
+    4. Process the queue and send emails to vendors
+    """
+    
+    def __init__(
+        self,
+        template_path: str = None,
+        exchange_settings: Dict[str, Any] = None,
+        company_info: Dict[str, Any] = None
+    ):
+        """
+        Initialize the email manager.
+        
+        Args:
+            template_path: Path to the email template file
+            exchange_settings: Dictionary with Exchange settings (username, from_email, cc)
+            company_info: Dictionary with company information
+        """
+        self.template_path = template_path
+        self.exchange_settings = exchange_settings or {}
+        self.company_info = company_info or {}
+        self.account = None
+        
+        # Load environment variables
+        load_dotenv()
+    
+    def initialize_exchange(self) -> Account:
+        """
+        Initialize connection to Exchange server.
+        
+        Returns:
+            Exchange account object
+            
+        Raises:
+            RuntimeError: If Exchange connection cannot be initialized
+        """
+        logger.info("Initializing Exchange connection")
+        try:
+            # Get credentials from environment variables with fallback to settings
+            username = os.environ.get('EXCHANGE_USERNAME', self.exchange_settings.get('username', ''))
+            password = os.environ.get('EXCHANGE_PASSWORD', '')
+            server = os.environ.get('EXCHANGE_SERVER', 'outlook.office365.com')
+            
+            # Create credentials object
+            credentials = Credentials(username=username, password=password)
+            
+            # Create configuration
+            config = Configuration(server=server, credentials=credentials)
+            
+            # Connect to the account
+            self.account = Account(
+                primary_smtp_address=username,
+                config=config,
+                autodiscover=False,
+                access_type=DELEGATE
+            )
+            
+            return self.account
+        except Exception as e:
+            logger.error(f"Failed to initialize Exchange connection: {str(e)}")
+            raise RuntimeError(f"Failed to initialize Exchange connection: {str(e)}")
+    
+    def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
+        """
+        Render a Jinja2 template with the given context.
+        
+        Args:
+            template_path: Path to the template file
+            context: Dictionary of variables to pass to the template
+            
+        Returns:
+            Rendered template as a string
+        """
+        try:
+            template_dir = os.path.dirname(template_path)
+            template_file = os.path.basename(template_path)
+            
+            # Create Jinja2 environment
+            env = jinja2.Environment(
+                loader=jinja2.FileSystemLoader(template_dir),
+                autoescape=jinja2.select_autoescape(['html', 'xml'])
+            )
+            
+            # Load and render template
+            template = env.get_template(template_file)
+            return template.render(**context)
+        except FileNotFoundError:
+            logger.error(f"Template file not found: {template_path}")
+            return ""
+        except jinja2.exceptions.TemplateError as e:
+            logger.error(f"Template error in {template_path}: {str(e)}")
+            return ""
+        except Exception as e:
+            logger.error(f"Error rendering template {template_path}: {str(e)}")
+            return ""
+    
+    def create_rfq_email(
+        self,
+        queue_item: pd.Series,
+        vendor: Dict[str, Any],
+        contact: Dict[str, Any],
+        template_path: Optional[str] = None
+    ) -> Tuple[str, str, str]:
+        """
+        Create an email for an RFQ.
+        
+        Args:
+            queue_item: Series containing RFQ item data
+            vendor: Vendor dictionary
+            contact: Contact dictionary
+            template_path: Path to the email template (overrides instance template_path)
+            
+        Returns:
+            Tuple of (recipient_email, subject, body)
+        """
+        try:
+            # Use provided template path or instance template path
+            template_path = template_path or self.template_path
+            if not template_path:
+                raise ValueError("No template path provided")
+            
+            # Extract process and part number
+            process = queue_item.get('process', '')
+            part_number = queue_item.get('part_number', '')
+            
+            # Create email subject
+            subject = f"RFQ: {part_number} - {process}"
+            
+            # Prepare quantities as comma-separated string
+            quantities = queue_item.get('quantities', '')
+            
+            # Prepare context for template
+            context = {
+                'contact_name': contact.get('name', ''),
+                'part_number': part_number,
+                'process': process,
+                'spec': queue_item.get('spec', ''),
+                'quantities': quantities,
+                'material': queue_item.get('material', ''),
+                'company_name': self.company_info.get('name', 'Your Company'),
+                'company_logo_url': self.company_info.get('logo_url', ''),
+                'sender_name': self.company_info.get('sender_name', ''),
+                'sender_title': self.company_info.get('sender_title', ''),
+                'sender_email': self.company_info.get('sender_email', ''),
+                'sender_phone': self.company_info.get('sender_phone', ''),
+                'company_address': self.company_info.get('address', '')
+            }
+            
+            # Render email body using template
+            body = self.render_template(template_path, context)
+            
+            return contact.get('email', ''), subject, body
+        except Exception as e:
+            logger.error(f"Error creating RFQ email: {str(e)}")
+            return '', '', ''
+    
+    def create_draft_email(
+        self,
+        recipient: str,
+        subject: str,
+        body: str,
+        attachments: List[str] = None,
+        html_format: bool = True,
+        cc_email: str = None
+    ) -> bool:
+        """
+        Create a draft email using Exchange Web Services.
+        
+        Args:
+            recipient: Email address of the recipient
+            subject: Email subject
+            body: Email body (HTML or plain text)
+            attachments: List of file paths to attach
+            html_format: Whether the body is HTML (True) or plain text (False)
+            cc_email: Optional CC email address
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Ensure we have an account
+            if not self.account:
+                self.initialize_exchange()
+            
+            # Create message
+            m = Message(
+                account=self.account,
+                folder=self.account.drafts,
+                subject=subject,
+                body=body,
+                body_type='HTML' if html_format else 'Text',
+                to_recipients=[Mailbox(email_address=recipient)]
+            )
+            
+            # Add CC if specified
+            if cc_email:
+                m.cc_recipients = [Mailbox(email_address=cc_email)]
+            
+            # Add attachments
+            if attachments:
+                for file_path in attachments:
+                    if os.path.exists(file_path):
+                        with open(file_path, 'rb') as f:
+                            content = f.read()
+                        
+                        file_attachment = FileAttachment(
+                            name=os.path.basename(file_path),
+                            content=content
+                        )
+                        m.attach(file_attachment)
+                    else:
+                        logger.warning(f"Missing attachment: {file_path}")
+            
+            # Save the draft
+            m.save()
+            
+            return True
+        except FileNotFoundError as e:
+            logger.error(f"File not found: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Error creating draft email to {recipient}: {str(e)}")
+            return False
+    
+    def send_email(
+        self,
+        recipient: str,
+        subject: str,
+        body: str,
+        attachments: List[str] = None
+    ) -> bool:
+        """
+        Create a draft email using Exchange Web Services.
+        
+        Args:
+            recipient: Email address of the recipient
+            subject: Email subject
+            body: Email body (HTML)
+            attachments: List of file paths to attach
+            
+        Returns:
+            True if draft created successfully, False otherwise
+        """
+        try:
+            # Ensure we have an account
+            if not self.account:
+                self.initialize_exchange()
+            
+            # Get CC email if specified
+            cc_email = self.exchange_settings.get('cc', None)
+            
+            # Create draft email
+            success = self.create_draft_email(
+                recipient=recipient,
+                subject=subject,
+                body=body,
+                attachments=attachments,
+                cc_email=cc_email,
+                html_format=True
+            )
+            
+            if success:
+                logger.info(f"Draft email created successfully for {recipient}")
+            else:
+                logger.warning(f"Failed to create draft email for {recipient}")
+                
+            return success
+        except Exception as e:
+            logger.error(f"Error creating draft email for {recipient}: {str(e)}")
+            return False
+    
+    def process_queue_and_send_emails(
+        self,
+        queue_file: str,
+        vendor_file: str,
+        vendor_options_file: str = None
+    ) -> Tuple[int, int]:
+        """
+        Process the queue and send emails to vendors.
+        
+        Args:
+            queue_file: Path to the queue CSV file
+            vendor_file: Path to the vendor JSON file
+            vendor_options_file: Path to the vendor options YAML file
+            
+        Returns:
+            Tuple containing number of successful emails and total emails
+        """
+        try:
+            # Load queue data
+            queue = pd.read_csv(queue_file)
+            
+            # Create vendor manager
+            vendor_manager = VendorManager(
+                vendor_file=vendor_file,
+                vendor_options_file=vendor_options_file if vendor_options_file and os.path.exists(vendor_options_file) else None
+            )
+            
+            # Ensure we have an account
+            if not self.account:
+                self.initialize_exchange()
+            
+            # Process each item in the queue
+            successful = 0
+            total = 0
+            
+            for _, row in queue.iterrows():
+                process = row.get('process', '')
+                spec = row.get('spec', '')
+                
+                # Find vendors for this process and spec
+                matching_vendors = vendor_manager.find_vendors_for_process_and_spec(process, spec)
+                
+                if not matching_vendors:
+                    logger.warning(f"No vendors found for process '{process}' and spec '{spec}'")
+                    continue
+                
+                total += len(matching_vendors)
+                
+                # Create and send email to each vendor
+                for vendor in matching_vendors:
+                    # Get primary contact
+                    contact = vendor_manager.get_primary_contact(vendor)
+                    if not contact:
+                        logger.warning(f"No primary contact found for vendor '{vendor.get('name', '')}'")
+                        continue
+                    
+                    # Create email
+                    recipient_email, subject, body = self.create_rfq_email(
+                        row,
+                        vendor,
+                        contact
+                    )
+                    
+                    if not recipient_email or not subject or not body:
+                        logger.warning(f"Failed to create email for vendor '{vendor.get('name', '')}'")
+                        continue
+                    
+                    # Send email
+                    if self.send_email(recipient_email, subject, body, attachments=None):
+                        successful += 1
+            
+            return successful, total
+        except FileNotFoundError as e:
+            logger.error(f"File not found: {str(e)}")
+            return 0, 0
+        except Exception as e:
+            logger.error(f"Error processing queue: {str(e)}")
+            return 0, 0

@@ -19,25 +19,22 @@ import sys
 from datetime import datetime
 
 import win32com.client as win32
-from dotenv import load_dotenv
+
+# Add parent directory to path to import from core
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from core.config import Paths, LoggingConfig, init_config
+
+# Initialize configuration
+init_config()
 
 # Add the parent directory to the path so we can import from email
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from email_from_list import create_draft_email
 
 
-def setup_logging(logs_dir: str) -> logging.Logger:
-    """Set up logging configuration."""
-    os.makedirs(logs_dir, exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(os.path.join(logs_dir, "test_email_with_hybrid_structure.log")),
-        ],
-    )
-    return logging.getLogger("test_email_with_hybrid_structure")
+def setup_logging() -> logging.Logger:
+    """Set up logging configuration using the centralized LoggingConfig."""
+    return LoggingConfig.setup_logging(__name__, "test_email_with_hybrid_structure.log")
 
 
 def create_test_files(test_dir: str, part_numbers: list) -> dict:
@@ -78,12 +75,11 @@ def main() -> None:
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         logs_dir = os.path.join(project_root, "logs")
         
-        # Set up logging
-        logger = setup_logging(logs_dir)
+        # Set up logging using the centralized LoggingConfig
+        logger = setup_logging()
         
-        # Load environment variables
-        load_dotenv()
-        logger.info("Loaded environment variables from .env file")
+        # Environment variables already loaded by init_config()
+        logger.info("Environment variables loaded by init_config()")
         
         # Create Outlook application object
         outlook = win32.Dispatch("Outlook.Application")

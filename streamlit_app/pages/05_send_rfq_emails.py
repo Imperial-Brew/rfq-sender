@@ -10,8 +10,9 @@ from datetime import datetime
 parent_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(parent_dir))
 
-# Import utility functions
-from utils.queue import load_queue, QUEUE_PATH
+# Import configuration and utility functions
+from core.config import Paths, ExchangeConfig, CompanyInfo, LoggingConfig, init_config
+from utils.queue import load_queue
 from utils.email import (
     load_vendors,
     find_vendors_for_process,
@@ -22,16 +23,11 @@ from utils.email import (
 )
 from utils.auth import get_user_role
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(parent_dir / "logs" / "send_rfq_emails.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Initialize configuration
+init_config()
+
+# Set up logging using the centralized configuration
+logger = LoggingConfig.setup_logging(__name__, "send_rfq_emails.log")
 
 def setup_page():
     """Configure the page settings."""
@@ -48,7 +44,7 @@ def display_queue_for_emails(user, role):
     """Display the queue with options to send emails."""
     try:
         # Load queue data
-        df = load_queue(QUEUE_PATH)
+        df = load_queue(Paths.QUEUE_PATH)
         
         if df.empty:
             st.info("The queue is currently empty. Add parts using the 'Add to Queue' page.")
@@ -299,61 +295,27 @@ def display_queue_for_emails(user, role):
                 try:
                     with st.spinner("Processing entire queue..."):
                         # Set up required parameters
-                        vendor_file = str(parent_dir / "config" / "vendors.json")
-                        template_path = str(parent_dir / "config" / "templates" / "email_signature.html")
+                        vendor_file = Paths.VENDOR_FILE
+                        template_path = Paths.EMAIL_TEMPLATE_PATH
                         
-                        # Read .env file for SMTP settings
-                        env_path = parent_dir / ".env"
-                        smtp_settings = {
-                            "server": "",
-                            "port": 587,
-                            "username": "",
-                            "password": "",
-                            "use_tls": True,
-                            "from_email": "",
-                            "cc": ""
-                        }
+                        # Get email settings from config
+                        exchange_settings = ExchangeConfig.get_settings()
                         
-                        # Read settings from .env if it exists
-                        if os.path.exists(env_path):
-                            with open(env_path, "r") as f:
-                                for line in f:
-                                    line = line.strip()
-                                    if line and not line.startswith("#") and "=" in line:
-                                        key, value = line.split("=", 1)
-                                        key = key.strip()
-                                        value = value.strip()
-                                        if key == 'SMTP_SERVER':
-                                            smtp_settings["server"] = value
-                                        elif key == 'SMTP_PORT':
-                                            smtp_settings["port"] = int(value)
-                                        elif key == 'SMTP_USERNAME':
-                                            smtp_settings["username"] = value
-                                        elif key == 'SMTP_PASSWORD':
-                                            smtp_settings["password"] = value
-                                        elif key == 'SMTP_USE_TLS':
-                                            smtp_settings["use_tls"] = value.lower() == 'true'
-                                        elif key == 'SMTP_FROM_EMAIL':
-                                            smtp_settings["from_email"] = value
-                                        elif key == 'CC_EMAILS':
-                                            smtp_settings["cc"] = value
-                        
-                        # Company info
-                        company_info = {
-                            "name": "Athena Manufacturing",
+                        # Get company info from config and override with user info
+                        company_info = CompanyInfo.get_info()
+                        company_info.update({
                             "sender_name": user["name"],
                             "sender_title": user.get("title", "Estimator"),
-                            "sender_email": user.get("email", smtp_settings["from_email"]),
-                            "sender_phone": user.get("phone", "(123) 456-7890"),
-                            "address": "5750 N. Molina Rd., Austin, TX 78728"
-                        }
+                            "sender_email": user.get("email", ExchangeConfig.FROM_EMAIL),
+                            "sender_phone": user.get("phone", "(123) 456-7890")
+                        })
                         
                         # Process the entire queue
                         results = process_queue_and_send_emails(
-                            queue_file=str(QUEUE_PATH),
+                            queue_file=str(Paths.QUEUE_PATH),
                             vendor_file=vendor_file,
                             template_path=template_path,
-                            smtp_settings=smtp_settings,
+                            exchange_settings=ExchangeConfig.get_settings(),
                             company_info=company_info
                         )
                         

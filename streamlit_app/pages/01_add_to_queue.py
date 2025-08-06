@@ -8,21 +8,17 @@ import logging
 parent_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(parent_dir))
 
-# Import utility functions
+# Import configuration and utility functions
+from core.config import Paths, LoggingConfig, init_config
 from utils.specs import load_process_list, load_specs_for_process
-from utils.queue import add_to_queue, QUEUE_PATH
+from utils.queue import add_to_queue
 from utils.auth import get_user_role
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(parent_dir / "logs" / "add_to_queue.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Initialize configuration
+init_config()
+
+# Set up logging using the centralized configuration
+logger = LoggingConfig.setup_logging(__name__, "add_to_queue.log")
 
 def setup_page():
     """Configure the page settings."""
@@ -87,7 +83,7 @@ def display_add_to_queue_form(user):
                 logger.warning(f"Submission failed: missing required fields")
             else:
                 try:
-                    add_to_queue(QUEUE_PATH, {
+                    add_to_queue(Paths.QUEUE_PATH, {
                         "part_number": part_number.strip(),
                         "callout": callout.strip(),
                         "process": selected_process.strip(),

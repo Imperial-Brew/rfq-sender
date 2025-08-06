@@ -25,7 +25,13 @@ import sys
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from dotenv import load_dotenv
+# Add parent directory to path to import from core
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from core.config import Paths, ExchangeConfig, LoggingConfig, init_config
+
+# Initialize configuration
+init_config()
+
 from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox
 from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
 import urllib3
@@ -37,29 +43,14 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 
-def setup_logging(logs_dir: str) -> logging.Logger:
+def setup_logging() -> logging.Logger:
     """
-    Set up logging configuration.
-
-    Args:
-        logs_dir: Directory where log files will be stored
+    Set up logging configuration using the centralized LoggingConfig.
 
     Returns:
         Logger object configured for this script
     """
-    # Ensure logs directory exists
-    os.makedirs(logs_dir, exist_ok=True)
-
-    # Set up logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(os.path.join(logs_dir, "create_test_email.log")),
-        ],
-    )
-    return logging.getLogger("create_test_email")
+    return LoggingConfig.setup_logging(__name__, "create_test_email.log")
 
 
 def initialize_exchange(username: str, password: str, server: str, logger: logging.Logger) -> Optional[Account]:
@@ -168,12 +159,11 @@ def main() -> None:
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         logs_dir = os.path.join(project_root, "logs")
 
-        # Set up logging
-        logger = setup_logging(logs_dir)
+        # Set up logging using the centralized LoggingConfig
+        logger = setup_logging()
 
-        # Load environment variables from .env file
-        load_dotenv()
-        logger.info("Loaded environment variables from .env file")
+        # Environment variables already loaded by init_config()
+        logger.info("Environment variables loaded by init_config()")
 
         # Get email configuration from environment variables with validation
         try:
