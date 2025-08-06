@@ -167,7 +167,7 @@ class Paths:
     SPECS_PATH = os.path.join(ROOT_DIR, "docs", "OS", "spec_lists", "FamiliarSpecs.csv")
     
     # Email template paths
-    EMAIL_TEMPLATE_PATH = os.path.join(ROOT_DIR, "templates", "rfq_email_template.html")
+    EMAIL_TEMPLATE_PATH = os.path.join(ROOT_DIR, "config", "templates", "rfq_email_template.html")
     
     # Logs directory
     LOGS_DIR = os.path.join(ROOT_DIR, "logs")
