@@ -15,6 +15,7 @@ import logging
 import logging.handlers
 import sys
 from pathlib import Path
+import streamlit as st
 from typing import Dict, Any, Optional, Union
 from dotenv import load_dotenv
 
@@ -137,16 +138,26 @@ logger = LoggingConfig.setup_logging(__name__, "config.log")
 # Load environment variables from .env file
 def load_environment(env_file: Optional[str] = None) -> None:
     try:
+        # First try to load from .env file
         dotenv_path = env_file or os.path.join(ROOT_DIR, ".env")
         logger.info(f"Looking for .env file at: {dotenv_path}")
         if os.path.exists(dotenv_path):
             logger.info(f".env file found at {dotenv_path}")
-            with open(dotenv_path, 'r') as f:
-                logger.info(f"First few lines: {f.readline()[:50]}...")
+            load_dotenv(dotenv_path=dotenv_path)
+            logger.info(f"Environment variables loaded from {dotenv_path}")
         else:
             logger.warning(f".env file not found at {dotenv_path}")
-        load_dotenv(dotenv_path=dotenv_path)
-        logger.info(f"Environment variables loaded from {dotenv_path}")
+
+        # Then try to load from Streamlit secrets
+        if hasattr(st, 'secrets'):
+            for key, value in st.secrets.items():
+                if isinstance(value, dict):  # Handle nested secrets
+                    for subkey, subvalue in value.items():
+                        full_key = f"{key}_{subkey}".upper()
+                        os.environ[full_key] = str(subvalue)
+                else:
+                    os.environ[key.upper()] = str(value)
+            logger.info("Environment variables loaded from Streamlit secrets")
     except Exception as e:
         logger.warning(f"Failed to load environment variables: {str(e)}")
 
@@ -168,7 +179,9 @@ class Paths:
     SPECS_PATH = os.path.join(ROOT_DIR, "docs", "OS", "spec_lists", "FamiliarSpecs.csv")
     
     # Email template paths
-    EMAIL_TEMPLATE_PATH = os.path.join(ROOT_DIR, "config", "templates", "rfq_email_template.html")
+    EMAIL_TEMPLATE_PATH = os.path.join(ROOT_DIR, "templates", "rfq_email_template.html")
+    if not os.path.exists(EMAIL_TEMPLATE_PATH):
+        EMAIL_TEMPLATE_PATH = os.path.join(ROOT_DIR, "config", "templates", "rfq_email_template.html")
     
     # Logs directory
     LOGS_DIR = os.path.join(ROOT_DIR, "logs")
