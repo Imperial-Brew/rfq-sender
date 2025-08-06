@@ -57,7 +57,8 @@ rfq-sender/
 │       ├── 02_view_queue.py
 │       ├── 03_add_spec_process.py
 │       ├── 04_view_familiar_specs.py
-│       └── 05_send_rfq_emails.py
+│       ├── 05_send_rfq_emails.py
+│       └── 06_bug_tracker.py
 ├── utils/            # Utility modules (specs, queue, email, auth)
 └── tests/            # Test files
 ```
@@ -176,6 +177,22 @@ This will start the Streamlit server and open the application in your default we
 3. **Add Spec/Process**: Add new specifications and processes to the database
 4. **View Familiar Specs**: View and search familiar specifications
 5. **Send RFQ Emails**: Send RFQ emails to vendors for parts in the queue
+
+### Bug Tracker
+
+The system includes a bug tracking page that allows users to submit and track bug reports and feature requests. To access the bug tracker:
+
+```
+streamlit run streamlit_app\app.py
+```
+
+Or use the provided batch script:
+
+```
+Start_streamlit_app.bat
+```
+
+The bug tracker will appear as a page in the sidebar navigation. For more information, see [Bug Tracker Documentation](docs/bug_tracker.md).
 
 ### Command Line Scripts
 
