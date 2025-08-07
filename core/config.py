@@ -234,22 +234,32 @@ class ExchangeConfig:
     
     @classmethod
     def get_username(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_USERNAME' in st.secrets:
+            return st.secrets['EXCHANGE_USERNAME']
         return os.environ.get("EXCHANGE_USERNAME", "")
     
     @classmethod
     def get_password(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_PASSWORD' in st.secrets:
+            return st.secrets['EXCHANGE_PASSWORD']
         return os.environ.get("EXCHANGE_PASSWORD", "")
     
     @classmethod
     def get_server(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_SERVER' in st.secrets:
+            return st.secrets['EXCHANGE_SERVER']
         return os.environ.get("EXCHANGE_SERVER", "outlook.office365.com")
     
     @classmethod
     def get_from_email(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_FROM_EMAIL' in st.secrets:
+            return st.secrets['EXCHANGE_FROM_EMAIL']
         return os.environ.get("EXCHANGE_FROM_EMAIL", "")
     
     @classmethod
     def get_cc_email(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_CC_EMAIL' in st.secrets:
+            return st.secrets['EXCHANGE_CC_EMAIL']
         return os.environ.get("EXCHANGE_CC_EMAIL", "")
     
     @classmethod
@@ -288,30 +298,44 @@ class CompanyInfo:
     
     @classmethod
     def get_name(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'COMPANY_NAME' in st.secrets:
+            return st.secrets['COMPANY_NAME']
         return os.environ.get("COMPANY_NAME", "Your Company")
     
     @classmethod
     def get_logo_url(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'COMPANY_LOGO_URL' in st.secrets:
+            return st.secrets['COMPANY_LOGO_URL']
         return os.environ.get("COMPANY_LOGO_URL", "")
     
     @classmethod
     def get_sender_name(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'SENDER_NAME' in st.secrets:
+            return st.secrets['SENDER_NAME']
         return os.environ.get("SENDER_NAME", "")
     
     @classmethod
     def get_sender_title(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'SENDER_TITLE' in st.secrets:
+            return st.secrets['SENDER_TITLE']
         return os.environ.get("SENDER_TITLE", "")
     
     @classmethod
     def get_sender_email(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'SENDER_EMAIL' in st.secrets:
+            return st.secrets['SENDER_EMAIL']
         return os.environ.get("SENDER_EMAIL", "")
     
     @classmethod
     def get_sender_phone(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'SENDER_PHONE' in st.secrets:
+            return st.secrets['SENDER_PHONE']
         return os.environ.get("SENDER_PHONE", "")
     
     @classmethod
     def get_address(cls):
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'COMPANY_ADDRESS' in st.secrets:
+            return st.secrets['COMPANY_ADDRESS']
         return os.environ.get("COMPANY_ADDRESS", "")
     
     @classmethod

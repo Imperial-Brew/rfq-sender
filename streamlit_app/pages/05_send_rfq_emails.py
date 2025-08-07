@@ -164,51 +164,25 @@ def display_queue_for_emails(user, role):
                         vendor_file = str(parent_dir / "config" / "vendors.json")
                         template_path = str(parent_dir / "config" / "templates" / "email_signature.html")
                         
-                        # Read .env file for SMTP settings
-                        env_path = parent_dir / ".env"
+                        # Get email settings from ExchangeConfig
                         smtp_settings = {
-                            "server": "",
+                            "server": ExchangeConfig.get_server(),
                             "port": 587,
-                            "username": "",
-                            "password": "",
+                            "username": ExchangeConfig.get_username(),
+                            "password": ExchangeConfig.get_password(),
                             "use_tls": True,
-                            "from_email": "",
-                            "cc": ""
+                            "from_email": ExchangeConfig.get_from_email(),
+                            "cc": ExchangeConfig.get_cc_email()
                         }
                         
-                        # Read settings from .env if it exists
-                        if os.path.exists(env_path):
-                            with open(env_path, "r") as f:
-                                for line in f:
-                                    line = line.strip()
-                                    if line and not line.startswith("#") and "=" in line:
-                                        key, value = line.split("=", 1)
-                                        key = key.strip()
-                                        value = value.strip()
-                                        if key == 'SMTP_SERVER':
-                                            smtp_settings["server"] = value
-                                        elif key == 'SMTP_PORT':
-                                            smtp_settings["port"] = int(value)
-                                        elif key == 'SMTP_USERNAME':
-                                            smtp_settings["username"] = value
-                                        elif key == 'SMTP_PASSWORD':
-                                            smtp_settings["password"] = value
-                                        elif key == 'SMTP_USE_TLS':
-                                            smtp_settings["use_tls"] = value.lower() == 'true'
-                                        elif key == 'SMTP_FROM_EMAIL':
-                                            smtp_settings["from_email"] = value
-                                        elif key == 'CC_EMAILS':
-                                            smtp_settings["cc"] = value
-                        
-                        # Company info
-                        company_info = {
-                            "name": "Athena Manufacturing",
+                        # Get company info from CompanyInfo and override with user info
+                        company_info = CompanyInfo.get_info()
+                        company_info.update({
                             "sender_name": user["name"],
                             "sender_title": user.get("title", "Estimator"),
                             "sender_email": user.get("email", smtp_settings["from_email"]),
-                            "sender_phone": user.get("phone", "(123) 456-7890"),
-                            "address": "5750 N. Molina Rd., Austin, TX 78728"
-                        }
+                            "sender_phone": user.get("phone", CompanyInfo.get_sender_phone())
+                        })
                         
                         # Load vendors
                         vendors_data = load_vendors(vendor_file)
@@ -344,54 +318,52 @@ def display_queue_for_emails(user, role):
         logger.error(f"Error loading queue data: {str(e)}")
 
 def display_email_settings():
-    """Display and allow editing of email settings."""
+    """Display email settings from Streamlit secrets."""
     st.subheader("Email Settings")
-    
-    # Check if .env file exists
-    env_path = parent_dir / ".env"
-    if not os.path.exists(env_path):
-        st.warning("No .env file found. Email settings are not configured.")
-        return
     
     # Display current settings
     st.info("""
-    Email settings are configured in the .env file. 
+    Email settings are configured in the Streamlit secrets file. 
     Current configuration is displayed below for reference only.
-    To change these settings, edit the .env file directly.
+    To change these settings, edit the .streamlit/secrets.toml file directly.
     """)
-    
-    # Read .env file
-    env_vars = {}
-    with open(env_path, "r") as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                key, value = line.split("=", 1)
-                env_vars[key.strip()] = value.strip()
     
     # Display settings in expandable section
     with st.expander("View Current Email Settings"):
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("**SMTP Settings**")
-            st.text(f"SMTP Server: {env_vars.get('SMTP_SERVER', 'Not set')}")
-            st.text(f"SMTP Port: {env_vars.get('SMTP_PORT', 'Not set')}")
-            st.text(f"SMTP Username: {env_vars.get('SMTP_USERNAME', 'Not set')}")
-            st.text(f"From Email: {env_vars.get('SMTP_FROM_EMAIL', 'Not set')}")
-            st.text(f"From Name: {env_vars.get('SMTP_FROM_NAME', 'Not set')}")
+            st.markdown("**Exchange Settings**")
+            st.text(f"Exchange Server: {ExchangeConfig.get_server()}")
+            st.text(f"Exchange Username: {ExchangeConfig.get_username()}")
+            st.text(f"From Email: {ExchangeConfig.get_from_email()}")
+            # Don't display password for security reasons
+            st.text(f"Password: {'*' * 8 if ExchangeConfig.get_password() else 'Not set'}")
         
         with col2:
-            st.markdown("**Application Settings**")
-            st.text(f"Subject Prefix: {env_vars.get('SUBJECT_PREFIX', 'Not set')}")
-            st.text(f"CC Emails: {env_vars.get('CC_EMAILS', 'Not set')}")
+            st.markdown("**Company Settings**")
+            st.text(f"Company Name: {CompanyInfo.get_name()}")
+            st.text(f"Sender Name: {CompanyInfo.get_sender_name()}")
+            st.text(f"Sender Title: {CompanyInfo.get_sender_title()}")
+            st.text(f"Sender Phone: {CompanyInfo.get_sender_phone()}")
     
     # Test email button
     if st.button("Create Test Email Draft"):
         try:
+            # Get email settings from ExchangeConfig
+            smtp_settings = {
+                "server": ExchangeConfig.get_server(),
+                "port": 587,
+                "username": ExchangeConfig.get_username(),
+                "password": ExchangeConfig.get_password(),
+                "use_tls": True,
+                "from_email": ExchangeConfig.get_from_email(),
+                "cc": ExchangeConfig.get_cc_email()
+            }
+            
             # Create a test email
             test_email = {
-                "to": env_vars.get('SMTP_FROM_EMAIL', ''),
+                "to": ExchangeConfig.get_from_email(),
                 "subject": "Test RFQ Email",
                 "body": "This is a test email from the RFQ Sender application.",
                 "cc": [],
@@ -399,15 +371,6 @@ def display_email_settings():
             }
             
             # Send the test email
-            smtp_settings = {
-                "server": env_vars.get('SMTP_SERVER', ''),
-                "port": int(env_vars.get('SMTP_PORT', '587')),
-                "username": env_vars.get('SMTP_USERNAME', ''),
-                "password": env_vars.get('SMTP_PASSWORD', ''),
-                "use_tls": env_vars.get('SMTP_USE_TLS', 'true').lower() == 'true',
-                "from_email": env_vars.get('SMTP_FROM_EMAIL', '')
-            }
-            
             send_email(
                 recipient=test_email["to"],
                 subject=test_email["subject"],
