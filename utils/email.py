@@ -276,10 +276,13 @@ def initialize_exchange(exchange_settings: Dict[str, Any]) -> Account:
         
         # Create credentials object
         credentials = Credentials(username=username, password=password)
-        
+
         # Create configuration
-        config = Configuration(server=server, credentials=credentials)
-        
+        config = Configuration(
+            server=server,
+            credentials=credentials,
+            verify_ssl=False  # Disable SSL verification
+        )
         # Connect to the account
         account = Account(
             primary_smtp_address=username,
