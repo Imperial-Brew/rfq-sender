@@ -39,8 +39,9 @@ import urllib3
 # Disable insecure request warnings if needed
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Optional: Add this for self-signed certificates
-BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
+# We'll configure SSL verification at the Configuration level instead of globally
+# to avoid conflicts between verify_ssl=False and check_hostname=True
+# BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 
 def setup_logging() -> logging.Logger:
@@ -72,8 +73,15 @@ def initialize_exchange(username: str, password: str, server: str, logger: loggi
         # Create credentials object
         credentials = Credentials(username=username, password=password)
         
-        # Create configuration
-        config = Configuration(server=server, credentials=credentials)
+        # Create configuration with proper SSL verification settings
+        from exchangelib.protocol import TLSClientAuth
+        
+        config = Configuration(
+            server=server,
+            credentials=credentials,
+            verify_ssl=False,  # Disable SSL verification
+            auth_type=TLSClientAuth  # Use TLS auth which allows verify_ssl=False without check_hostname conflicts
+        )
         
         # Connect to the account
         account = Account(

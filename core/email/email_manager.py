@@ -73,8 +73,15 @@ class EmailManager:
             # Create credentials object
             credentials = Credentials(username=username, password=password)
             
-            # Create configuration
-            config = Configuration(server=server, credentials=credentials)
+            # Create configuration with proper SSL verification settings
+            from exchangelib.protocol import TLSClientAuth
+            
+            config = Configuration(
+                server=server,
+                credentials=credentials,
+                verify_ssl=False,  # Disable SSL verification
+                auth_type=TLSClientAuth  # Use TLS auth which allows verify_ssl=False without check_hostname conflicts
+            )
             
             # Connect to the account
             self.account = Account(

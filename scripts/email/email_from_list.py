@@ -51,8 +51,9 @@ init_config()
 # Disable insecure request warnings if needed
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Optional: Add this for self-signed certificates
-BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
+# We'll configure SSL verification at the Configuration level instead of globally
+# to avoid conflicts between verify_ssl=False and check_hostname=True
+# BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 # Import SpecProcessValidator from spec_check.py
 from spec_check import SpecProcessValidator
@@ -340,10 +341,10 @@ def initialize_exchange(logger: logging.Logger = None) -> Account:
         print("Initializing Exchange connection")
     
     try:
-        # Get credentials from config
-        username = ExchangeConfig.USERNAME
-        password = ExchangeConfig.PASSWORD
-        server = ExchangeConfig.SERVER
+        # Get credentials from config using getter methods
+        username = ExchangeConfig.get_username()
+        password = ExchangeConfig.get_password()
+        server = ExchangeConfig.get_server()
         
         if not username or not password:
             error_msg = "Exchange credentials not found in configuration"
@@ -356,8 +357,15 @@ def initialize_exchange(logger: logging.Logger = None) -> Account:
         # Create credentials object
         credentials = Credentials(username=username, password=password)
         
-        # Create configuration
-        config = Configuration(server=server, credentials=credentials)
+        # Create configuration with proper SSL verification settings
+        from exchangelib.protocol import TLSClientAuth
+        
+        config = Configuration(
+            server=server,
+            credentials=credentials,
+            verify_ssl=False,  # Disable SSL verification
+            auth_type=TLSClientAuth  # Use TLS auth which allows verify_ssl=False without check_hostname conflicts
+        )
         
         # Connect to the account
         account = Account(
