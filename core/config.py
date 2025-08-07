@@ -134,11 +134,13 @@ class LoggingConfig:
         )
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
-        
+
         return logger
+
 
 # Set up the config module's logger
 logger = LoggingConfig.setup_logging(__name__, "config.log")
+
 
 # Load environment variables from .env file
 def load_environment(env_file: Optional[str] = None) -> None:
