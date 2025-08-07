@@ -15,9 +15,19 @@ import logging
 import logging.handlers
 import sys
 from pathlib import Path
-import streamlit as st
 from typing import Dict, Any, Optional, Union
 from dotenv import load_dotenv
+
+# Try to import streamlit, but don't fail if it's not available
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
+    # Create a dummy st object to avoid errors
+    class DummyStreamlit:
+        secrets = {}
+    st = DummyStreamlit()
 
 # Set up a basic logger first
 logging.basicConfig(level=logging.INFO)
@@ -31,109 +41,121 @@ logger.info(f"Using ROOT_DIR: {ROOT_DIR}")
 class LoggingConfig:
     """
     Container for logging configuration settings.
-    
+
     This class provides standardized logging configuration for the entire application.
     It ensures consistent log formats, file locations, and rotation policies.
-    
+
     Log Level Usage Guidelines:
     - DEBUG: Detailed information, typically useful only for diagnosing problems
     - INFO: Confirmation that things are working as expected
     - WARNING: Indication that something unexpected happened, or may happen in the near future
     - ERROR: Due to a more serious problem, the software has not been able to perform a function
     - CRITICAL: A serious error indicating the program itself may be unable to continue running
-    
+
     Example Usage:
     ```python
     from core.config import LoggingConfig
-    
+
     # Get a logger with default settings
     logger = LoggingConfig.setup_logging(__name__)
-    
+
     # Log messages at appropriate levels
     logger.info("Operation completed successfully")
     logger.warning("Resource is running low")
     logger.error("Failed to process request", exc_info=True)  # Include exception info
     ```
     """
-    
+
     # Default log levels
     DEFAULT_LEVEL = logging.INFO
     DEBUG_LEVEL = logging.DEBUG
-    
+
     # Log format
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-    
+
     # Log directory
     LOGS_DIR = os.path.join(ROOT_DIR, "logs")
-    
-    # Ensure logs directory exists
-    os.makedirs(LOGS_DIR, exist_ok=True)
-    
+
+    # Note: We don't create the directory here at class definition time
+    # Instead, we'll create it when the logging is actually set up
+    # This prevents errors when the class is imported but logging isn't used
+
     # Maximum log file size (10 MB)
     MAX_LOG_SIZE = 10 * 1024 * 1024
-    
+
     # Number of backup log files to keep
     BACKUP_COUNT = 5
-    
+
     @classmethod
-    def setup_logging(cls, 
-                      logger_name: Optional[str] = None, 
+    def setup_logging(cls,
+                      logger_name: Optional[str] = None,
                       log_file: Optional[str] = None,
                       level: Optional[int] = None) -> logging.Logger:
         """
         Set up logging with standardized configuration.
-        
+
         Args:
             logger_name: Name of the logger (defaults to module name if None)
             log_file: Name of the log file (defaults to logger_name.log if None)
             level: Logging level (defaults to DEFAULT_LEVEL if None)
-            
+
         Returns:
             Configured logger instance
         """
+        # Ensure logs directory exists before setting up logging
+        try:
+            os.makedirs(cls.LOGS_DIR, exist_ok=True)
+        except Exception as e:
+            print(f"Warning: Could not create logs directory: {e}")
+            # Continue with console logging only
+
         # Get the caller's module name if logger_name is not provided
         if logger_name is None:
             import inspect
             frame = inspect.stack()[1]
             module = inspect.getmodule(frame[0])
             logger_name = module.__name__ if module else "__main__"
-        
+
         # Default log file name based on logger name
         if log_file is None:
             # Extract the last part of the logger name (after the last dot)
             module_name = logger_name.split('.')[-1]
             log_file = f"{module_name}.log"
-        
+
         # Use default level if not specified
         if level is None:
             level = cls.DEFAULT_LEVEL
-        
+
         # Create logger
         logger = logging.getLogger(logger_name)
         logger.setLevel(level)
-        
+
         # Clear any existing handlers to avoid duplicates
         if logger.handlers:
             logger.handlers.clear()
-        
+
         # Create formatter
         formatter = logging.Formatter(cls.LOG_FORMAT, cls.DATE_FORMAT)
-        
+
         # Create console handler
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-        
-        # Create file handler with rotation
-        file_path = os.path.join(cls.LOGS_DIR, log_file)
-        file_handler = logging.handlers.RotatingFileHandler(
-            file_path,
-            maxBytes=cls.MAX_LOG_SIZE,
-            backupCount=cls.BACKUP_COUNT
-        )
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+
+        # Create file handler with rotation if logs directory exists
+        try:
+            file_path = os.path.join(cls.LOGS_DIR, log_file)
+            file_handler = logging.handlers.RotatingFileHandler(
+                file_path,
+                maxBytes=cls.MAX_LOG_SIZE,
+                backupCount=cls.BACKUP_COUNT
+            )
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+        except Exception as e:
+            print(f"Warning: Could not set up file logging: {e}")
+            # Continue with console logging only
 
         return logger
 
@@ -155,8 +177,8 @@ def load_environment(env_file: Optional[str] = None) -> None:
         else:
             logger.warning(f".env file not found at {dotenv_path}")
 
-        # Then try to load from Streamlit secrets
-        if hasattr(st, 'secrets'):
+        # Then try to load from Streamlit secrets if available
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and st.secrets:
             logger.info(f"Streamlit secrets found with keys: {list(st.secrets.keys())}")
             for key, value in st.secrets.items():
                 if isinstance(value, dict):  # Handle nested secrets
