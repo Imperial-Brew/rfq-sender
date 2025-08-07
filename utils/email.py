@@ -32,17 +32,19 @@ logger = logging.getLogger(__name__)
 # They are kept here as wrappers for backward compatibility
 
 # Load vendor information
-def load_vendors(vendor_file: str) -> List[Dict[str, Any]]:
+def load_vendors(vendor_file: str, contacts_file: str = None) -> List[Dict[str, Any]]:
     """
-    Load vendor information from JSON file.
+    Load vendor information from JSON file and contacts from CSV file.
     
     Args:
         vendor_file: Path to the vendor JSON file
+        contacts_file: Path to the contacts CSV file (default: docs/OS/contacts.csv)
         
     Returns:
         List of vendor dictionaries
     """
-    vendor_manager = VendorManager(vendor_file=vendor_file)
+    contacts_file = contacts_file or "docs/OS/contacts.csv"
+    vendor_manager = VendorManager(vendor_file=vendor_file, contacts_file=contacts_file)
     return vendor_manager.vendors
 
 
@@ -514,7 +516,8 @@ def process_queue_and_send_emails(
         template_path: str = None,
         exchange_settings: Dict[str, Any] = None,
         company_info: Dict[str, str] = None,
-        vendor_options_file: str = None
+        vendor_options_file: str = None,
+        contacts_file: str = None
 ) -> Tuple[int, int]:
     """
     Process the queue and send emails to vendors.
@@ -526,6 +529,7 @@ def process_queue_and_send_emails(
         exchange_settings: Exchange settings (uses config if None)
         company_info: Company information (uses config if None)
         vendor_options_file: Path to the vendor options YAML file (uses config if None)
+        contacts_file: Path to the contacts CSV file (uses default if None)
 
     Returns:
         Tuple containing number of successful emails and total emails
@@ -537,6 +541,7 @@ def process_queue_and_send_emails(
     exchange_settings = exchange_settings or ExchangeConfig.get_settings()
     company_info = company_info or CompanyInfo.get_info()
     vendor_options_file = vendor_options_file or Paths.VENDOR_OPTIONS_FILE
+    contacts_file = contacts_file or "docs/OS/contacts.csv"
     
     # Load queue data
     queue = pd.read_csv(queue_file)
@@ -544,7 +549,8 @@ def process_queue_and_send_emails(
     # Create vendor manager
     vendor_manager = VendorManager(
         vendor_file=vendor_file,
-        vendor_options_file=vendor_options_file if os.path.exists(vendor_options_file) else None
+        vendor_options_file=vendor_options_file if os.path.exists(vendor_options_file) else None,
+        contacts_file=contacts_file
     )
 
     # Initialize Exchange connection

@@ -2,6 +2,7 @@ import os
 import json
 import yaml
 import logging
+import pandas as pd
 from typing import Dict, List, Optional, Any, Tuple
 from core.validation.validator import SpecValidator
 
@@ -18,17 +19,19 @@ class VendorManager:
     3. Get primary contacts for vendors
     """
     
-    def __init__(self, vendor_file: str = None, vendor_options_file: str = None):
+    def __init__(self, vendor_file: str = None, vendor_options_file: str = None, contacts_file: str = None):
         """
         Initialize the vendor manager.
         
         Args:
             vendor_file: Path to the vendor JSON file. If None, uses default path.
             vendor_options_file: Path to the vendor options YAML file. If None, uses default path.
+            contacts_file: Path to the contacts CSV file. If None, uses default path.
         """
         # Set default paths if not provided
         self.vendor_file = vendor_file or "config/vendors.json"
         self.vendor_options_file = vendor_options_file or "docs/OS/vendor_options.yaml"
+        self.contacts_file = contacts_file or "docs/OS/contacts.csv"
         
         # Initialize validator for spec normalization
         self.validator = SpecValidator(self.vendor_options_file)
@@ -36,6 +39,7 @@ class VendorManager:
         # Load vendor data
         self.vendors = self.load_vendors(self.vendor_file)
         self.vendor_options = self.load_vendor_options(self.vendor_options_file)
+        self.contacts = self.load_contacts(self.contacts_file)
     
     def load_vendors(self, vendor_file: str) -> List[Dict[str, Any]]:
         """
@@ -84,6 +88,83 @@ class VendorManager:
         except Exception as e:
             logger.error(f"Error loading vendor options file {vendor_options_file}: {str(e)}")
             return {}
+    
+    def load_contacts(self, contacts_file: str) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Load vendor contacts from CSV file.
+        
+        Args:
+            contacts_file: Path to the contacts CSV file
+            
+        Returns:
+            Dictionary mapping vendor names to lists of contact dictionaries
+        """
+        contacts_by_vendor = {}
+        
+        try:
+            if not os.path.exists(contacts_file):
+                logger.warning(f"Contacts file not found: {contacts_file}")
+                return contacts_by_vendor
+                
+            # Load contacts CSV with different encodings
+            try:
+                # First try UTF-8
+                df = pd.read_csv(contacts_file, encoding='utf-8')
+            except UnicodeDecodeError:
+                try:
+                    # Then try Latin-1 (a more permissive encoding)
+                    df = pd.read_csv(contacts_file, encoding='latin-1')
+                    logger.info(f"Loaded contacts file using latin-1 encoding")
+                except Exception as e:
+                    # Finally try with errors='replace' to handle problematic characters
+                    df = pd.read_csv(contacts_file, encoding='utf-8', errors='replace')
+                    logger.info(f"Loaded contacts file using utf-8 with error replacement")
+            
+            # Clean up column names and data
+            df.columns = [col.strip() for col in df.columns]
+            
+            # Helper function to safely convert values to string and strip
+            def safe_str_strip(value):
+                if pd.isna(value):  # Handle NaN values
+                    return ""
+                return str(value).strip()
+            
+            # Helper function to safely check if a value is primary
+            def is_primary(value):
+                if pd.isna(value):
+                    return False
+                return safe_str_strip(value).lower() == 'primary'
+            
+            # Group contacts by vendor
+            for _, row in df.iterrows():
+                vendor_name = safe_str_strip(row.get('Vendor', ''))
+                if not vendor_name:
+                    continue
+                
+                # Create contact dictionary
+                contact = {
+                    'name': safe_str_strip(row.get('Contact', '')),
+                    'first_name': safe_str_strip(row.get('First', '')),
+                    'last_name': safe_str_strip(row.get('Last', '')),
+                    'email': safe_str_strip(row.get('Email', '')),
+                    'phone': safe_str_strip(row.get('Phone', '')),
+                    'type': safe_str_strip(row.get('type', '')),
+                    'state': safe_str_strip(row.get('State', '')),
+                    'primary': is_primary(row.get('P/S', '')),
+                    'website': safe_str_strip(row.get('website', ''))
+                }
+                
+                # Add to contacts dictionary
+                if vendor_name not in contacts_by_vendor:
+                    contacts_by_vendor[vendor_name] = []
+                contacts_by_vendor[vendor_name].append(contact)
+            
+            logger.info(f"Loaded {len(contacts_by_vendor)} vendors with contacts from {contacts_file}")
+            return contacts_by_vendor
+            
+        except Exception as e:
+            logger.error(f"Error loading contacts file {contacts_file}: {str(e)}")
+            return contacts_by_vendor
     
     def find_vendors_for_process(self, process: str) -> List[Dict[str, Any]]:
         """
@@ -157,17 +238,97 @@ class VendorManager:
         """
         Get the primary contact for a vendor.
         
+        First checks the contacts loaded from CSV file, then falls back to contacts in the vendor JSON.
+        
         Args:
             vendor: Vendor dictionary
             
         Returns:
             Primary contact dictionary or first contact if no primary is specified
         """
-        contacts = vendor.get('contacts', [])
-        for contact in contacts:
+        vendor_name = vendor.get('name', '')
+        
+        # First try to get contacts from CSV with exact match
+        if vendor_name in self.contacts:
+            csv_contacts = self.contacts[vendor_name]
+            
+            # Look for primary contact
+            for contact in csv_contacts:
+                if contact.get('primary', False):
+                    return contact
+            
+            # If no primary contact found, return the first one
+            if csv_contacts:
+                return csv_contacts[0]
+        
+        # If no exact match, try case-insensitive match
+        vendor_name_lower = vendor_name.lower()
+        for csv_vendor_name, csv_contacts in self.contacts.items():
+            if csv_vendor_name.lower() == vendor_name_lower:
+                # Look for primary contact
+                for contact in csv_contacts:
+                    if contact.get('primary', False):
+                        return contact
+                
+                # If no primary contact found, return the first one
+                if csv_contacts:
+                    return csv_contacts[0]
+                    
+        # Try partial matching for special cases
+        if "Turn-key" in vendor_name:
+            # Look for "TURNKEY Coatings" in CSV
+            if "TURNKEY Coatings" in self.contacts:
+                csv_contacts = self.contacts["TURNKEY Coatings"]
+                # Look for primary contact
+                for contact in csv_contacts:
+                    if contact.get('primary', False):
+                        return contact
+                
+                # If no primary contact found, return the first one
+                if csv_contacts:
+                    return csv_contacts[0]
+        
+        # Try the reverse case
+        if "TURNKEY" in vendor_name:
+            # Look for vendors with "Turn-key" in the name
+            for csv_vendor_name, csv_contacts in self.contacts.items():
+                if "Turn-key" in csv_vendor_name:
+                    # Look for primary contact
+                    for contact in csv_contacts:
+                        if contact.get('primary', False):
+                            return contact
+                    
+                    # If no primary contact found, return the first one
+                    if csv_contacts:
+                        return csv_contacts[0]
+                        
+        # Try a more general approach for any vendor with "turn" or "key" in the name
+        vendor_name_lower = vendor_name.lower()
+        if "turn" in vendor_name_lower and "key" in vendor_name_lower:
+            for csv_vendor_name, csv_contacts in self.contacts.items():
+                csv_vendor_name_lower = csv_vendor_name.lower()
+                if "turn" in csv_vendor_name_lower and "key" in csv_vendor_name_lower:
+                    # Look for primary contact
+                    for contact in csv_contacts:
+                        if contact.get('primary', False):
+                            return contact
+                    
+                    # If no primary contact found, return the first one
+                    if csv_contacts:
+                        return csv_contacts[0]
+        
+        # Fall back to contacts in vendor JSON
+        json_contacts = vendor.get('contacts', [])
+        for contact in json_contacts:
             if contact.get('primary', False):
                 return contact
-        return contacts[0] if contacts else None
+        
+        # If no contacts found in either source, return None or the first JSON contact
+        if not json_contacts:
+            logger.warning(f"No valid contact found for vendor: {vendor_name}")
+            return None
+        
+        return json_contacts[0]
     
     def _normalize_process_spec(self, text: str) -> str:
         """
@@ -198,3 +359,4 @@ class VendorManager:
         """Reload vendor data from files."""
         self.vendors = self.load_vendors(self.vendor_file)
         self.vendor_options = self.load_vendor_options(self.vendor_options_file)
+        self.contacts = self.load_contacts(self.contacts_file)

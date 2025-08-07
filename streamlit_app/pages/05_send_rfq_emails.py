@@ -184,8 +184,9 @@ def display_queue_for_emails(user, role):
                             "sender_phone": user.get("phone", CompanyInfo.get_sender_phone())
                         })
                         
-                        # Load vendors
-                        vendors_data = load_vendors(vendor_file)
+                        # Load vendors and contacts from CSV
+                        contacts_file = str(parent_dir / "docs" / "OS" / "contacts.csv")
+                        vendors_data = load_vendors(vendor_file, contacts_file)
                         
                         # Process only selected parts
                         selected_parts_df = df.iloc[selected_indices]
@@ -233,10 +234,11 @@ def display_queue_for_emails(user, role):
                                     
                                     # Send the email
                                     if send_email(
-                                        recipient=recipient,
-                                        subject=subject,
-                                        body=body,
-                                        smtp_settings=smtp_settings
+                                            recipient=recipient,
+                                            subject=subject,
+                                            body=body,
+                                            exchange_settings=smtp_settings
+                                            # Changed from smtp_settings to exchange_settings
                                     ):
                                         emails_sent += 1
                                         logger.info(f"Draft email created successfully for {recipient} for {part_number}")
@@ -289,12 +291,14 @@ def display_queue_for_emails(user, role):
                         })
                         
                         # Process the entire queue
+                        contacts_file = str(parent_dir / "docs" / "OS" / "contacts.csv")
                         results = process_queue_and_send_emails(
                             queue_file=str(Paths.QUEUE_PATH),
                             vendor_file=vendor_file,
                             template_path=template_path,
                             exchange_settings=ExchangeConfig.get_settings(),
-                            company_info=company_info
+                            company_info=company_info,
+                            contacts_file=contacts_file
                         )
                         
                         # Display results
