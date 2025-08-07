@@ -375,7 +375,7 @@ def display_email_settings():
                 recipient=test_email["to"],
                 subject=test_email["subject"],
                 body=test_email["body"],
-                smtp_settings=smtp_settings,
+                exchange_settings=smtp_settings,  # Changed from smtp_settings to exchange_settings
                 attachments=test_email.get("attachments", [])
             )
             st.success("Test email draft created successfully in Outlook!")
