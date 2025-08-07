@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from core.specs.spec_manager import SpecManager
 from core.config import Paths
+SPECS_PATH = Paths.SPECS_PATH
 
 # Create a spec manager instance using path from config
 spec_manager = SpecManager(Paths.SPECS_PATH)
