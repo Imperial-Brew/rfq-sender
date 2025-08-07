@@ -30,7 +30,7 @@ Copper & Brass,Kevin Moon,Kevin,Moon,kevin.moon@thyssenkrupp-materials.com,,mate
 DB Roberts,Tanja Oster,Tanja,Oster,toster@dbroberts.com,(972) 202-4544,Hardware,,Primary,dbroberts.com
 DB Roberts,Amy Nguyen,Amy,Nguyen,anguyen@dbroberts.com,,Hardware,,Secondary,dbroberts.com
 DC Electronics,Esthefania Garcia,Esthefania,Garcia,e_garcia@dcelectronics.com,(408) 947-4500,harnesses,,Primary,dcelectronics.com
-DC Electronics,Kendi Luceli R Beltran,Kendi,Luceli R Beltran,k_beltran@dcelectronics.com,,harnesses,,Secondary,dcelectronics.com
+DC Electronics,Kendi Luceli R Beltran,Kendi,Beltran,k_beltran@dcelectronics.com,,harnesses,,Secondary,dcelectronics.com
 Embee Processing,Quotes,Embee Processing,,Quotes@embee.com. ,,finishing,California,Primary,embee.com         
 Embee Processing,Blanca Vallejo ,Blanca,Vallejo,blancav@embee.com,,finishing,California,Secondary,embee.com         
 EMJ Metals,Michael Baker,Michael,Baker,MBaker@emjmetals.com,(713) 672-1621,material,Texas,Primary,emjmetals.com
@@ -51,13 +51,15 @@ HUB Metals,,HUB Metals,,ericy@hubmetals.com;,,material,,Primary,hubmetals.com;
 Hytek Finishes,Quotes,Hytek Finishes,,quotes@hytekfinishes.com,,finishing,Washington,Primary,hytekfinishes.com
 Hytek Finishes,Joshua Schaaf ,Joshua,Schaaf ,joshua.schaaf@hytekfinishes.com,(253) 796-4584,finishing,Washington,Secondary,hytekfinishes.com
 Hytek Finishes,Lissa Garay ,Lissa,Garay , lissa.garay@hytekfinishes.com,(253) 796-4584,finishing,Washington,Secondary,hytekfinishes.com
-Metals4U,Mark Ivarra,Metals4U,,mark@metals4u.com,(512) 351-7741,material,,Primary,metals4u.com
+Mayday Manufacturing,,Mayday Manufacturing,,htestimators@maydaymfg.com,940-349-6018 ,finishing,Texas,Primary,maydaymfg.com
+Mayday Manufacturing,Ashlyn Hager,Ashlyn,Hager,ahager@maydaymfg.com,940-349-6018 ,finishing,Texas,Secondary,maydaymfg.com
+Metals4U,Mark Ivarra,Mark,Ivarra,mark@metals4u.com,(512) 351-7741,material,Texas,Primary,metals4u.com
 Nxedge Inc.,Nxe-APC.Quotes ,Nxedge Inc.,,Nxe-APC.Quotes@nxedge.com,(408) 727-0933,finishing,California,Primary,nxedgeinc.com
 Nxedge Inc.,Chandrika Shah,Chandrika,Shah,chandrika.shah@nxedgeinc.com,(408) 727-0933,finishing,California,Secondary,nxedgeinc.com
 Pentagon Technologies,Quotes,Pentagon Technologies,,quotecreate@pen-tec.com,,finishing,,Primary,pen-tec.com
 Pentagon Technologies,Rogelio Sanchez,Rogelio,Sanchez,rsanchez@pen-tec.com,(512) 790-2019,finishing,,Secondary,pen-tec.com
-Pentagon Technologies,Aaron R. Hill,Aaron,R. Hill,ahill@pen-tec.com,(512) 971-8970,finishing,,Secondary,pen-tec.com
-Powermatic,No specific person,No,specific person,CustomerService@powermatic.net,,Turck,,Primary,powermatic.net
+Pentagon Technologies,Aaron R. Hill,Aaron,Hill,ahill@pen-tec.com,(512) 971-8970,finishing,,Secondary,pen-tec.com
+Powermatic,,Powermatic,,CustomerService@powermatic.net,,Turck,,Primary,powermatic.net
 Powermatic,Veronica Maldonado ,Veronica,Maldonado ,vmaldonado@powermatic.net,,Turck,,Secondary,powermatic.net
 Progressive Alloy,Joshua Blakeley,Joshua,Blakeley,jblakeley@progressivealloy.com,(702) 405-2710,material,Nevada,Primary,progressivealloy.com
 Progressive Alloy,Brittany Grossman,Brittany,Grossman, bgrossman@progressivealloy.com,(702) 826-3385,material,Nevada,Secondary,progressivealloy.com
@@ -75,7 +77,7 @@ Sunshine Metals,Amanda Eisler,Amanda,Eisler,aeisler@sunshinemetals.com,(316) 252
 Sunshine Metals,,Sunshine Metals,,Tburbach@Sunshinemetals.com;,,material,,Secondary,Sunshinemetals.com;
 Supra Alloys,,Supra Alloys,,PFriddle@supraalloys.com;,,material,,Primary,supraalloys.com;
 Supra Alloys,,Supra Alloys,,spatterson@supraalloys.com;,,material,,Secondary,supraalloys.com;
-TechMetals,Quotes,TechMetals,,quoting@techmetals.com,(937) 253-5311,finishing,Ohio,Primary,techmetals.com
+TechMetals,,TechMetals,,quoting@techmetals.com,(937) 253-5311,finishing,Ohio,Primary,techmetals.com
 TechMetals,Kimberly Jones,Kimberly,Jones,kjones@techmetals.com,(937) 253-5311,finishing,Ohio,Secondary,techmetals.com
 TechMetals,Sidney Burton,Sidney,Burton,sburton@techmetals.com,(937) 253-5311,finishing,,Secondary,techmetals.com
 Texas Heat Treating ,Tito Correa,Tito,Correa,TCorrea@texasheattreating.com,(512) 255-5884,finishing,Texas,Primary,texasheattreating.com
