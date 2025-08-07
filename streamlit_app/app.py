@@ -120,6 +120,27 @@ def display_home_page():
 
 def main():
     """Main function to run the Streamlit application."""
+    try:
+        # Set up page configuration
+        setup_page_config()
+        
+        # Main app header
+        st.title("📬 RFQ Sender System")
+        
+        # Check authentication
+        if check_authentication():
+            # Display user info in sidebar
+            display_user_info()
+            
+            # Display home page content
+            display_home_page()
+    except KeyError as e:
+        if str(e) == "'streamlit_app'":
+            st.error("Application structure error: 'streamlit_app' key not found. This may be due to how the application is deployed.")
+            logger.error(f"KeyError in main application: {str(e)}")
+        else:
+            raise
+
     # Set up page configuration
     setup_page_config()
 

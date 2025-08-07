@@ -55,7 +55,7 @@ def main():
                 save_users(users, str(users_path))
 
                 st.success(f"Welcome, {user['name']}!")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Invalid email or password")
 
@@ -78,7 +78,7 @@ def logout():
         if key in st.session_state:
             del st.session_state[key]
 
-    st.experimental_rerun()
+    st.rerun()
 
 
 if __name__ == "__main__":
