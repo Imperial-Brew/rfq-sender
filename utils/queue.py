@@ -55,7 +55,7 @@ def load_queue(path=QUEUE_PATH):
                 df[col] = pd.to_datetime(df[col], errors='coerce')
             
             # For columns that should be numeric
-            elif col in ['RFQ #']:
+            elif col in ['rfq #']:
                 # Try to convert to numeric, but keep as string if it fails
                 try:
                     df[col] = pd.to_numeric(df[col], errors='coerce')
