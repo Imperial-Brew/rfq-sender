@@ -33,7 +33,8 @@ def load_queue(path=QUEUE_PATH):
         # Load the CSV file
         df = pd.read_csv(path)
         logger.info(f"Successfully loaded queue with {len(df)} entries")
-        
+        df.columns = [col.lower() for col in df.columns]
+
         # Standardize data types for all columns to prevent comparison issues
         for col in df.columns:
             # First, clean any line breaks or extra whitespace in all columns
