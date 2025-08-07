@@ -15,17 +15,10 @@ sys.path.append(str(parent_dir))
 
 # Import database utilities
 from streamlit_app.utils.db import get_db_connection, add_issue
+from utils.logging import get_logger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(parent_dir / "logs" / "populate_bug_tracker.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Get module-specific logger
+logger = get_logger(__name__, "populate_bug_tracker.log")
 
 def extract_from_tasks_md():
     """

@@ -12,17 +12,13 @@ sys.path.append(str(parent_dir))
 # Import utility functions
 from utils.auth import load_users, get_user_role, validate_session
 from streamlit_app.components.logout_button import logout_button
+from utils.logging import get_logger, configure_root_logger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(parent_dir / "logs" / "app.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Configure root logger first (ensures logs directory exists)
+configure_root_logger()
+
+# Get module-specific logger
+logger = get_logger(__name__)
 
 
 def setup_page_config():

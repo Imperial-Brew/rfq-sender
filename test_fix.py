@@ -4,19 +4,16 @@ import sys
 from pathlib import Path
 import logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
 # Add the parent directory to the path
 parent_dir = Path(__file__).parent
 sys.path.append(str(parent_dir))
 
-# Import the queue loading function
+# Import the queue loading function and logging module
 from utils.queue import load_queue, QUEUE_PATH
+from utils.logging import get_logger
+
+# Get module-specific logger
+logger = get_logger(__name__)
 
 def test_view_queue():
     """Test loading the queue data and processing it similar to the view_queue page."""

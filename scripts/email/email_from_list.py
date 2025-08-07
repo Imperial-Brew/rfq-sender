@@ -130,25 +130,16 @@ def setup_logging(logs_dir: str) -> logging.Logger:
     Returns:
         Logger object configured for this script
     """
-    # Use the centralized logging configuration if available
+    # Use the centralized logging module
     try:
+        # Add parent directory to path to import from utils
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        from utils.logging import get_logger
+        return get_logger("email_from_list", "email_from_list.log")
+    except ImportError:
+        # Fall back to original implementation if centralized logging is not available
         from core.config import LoggingConfig
         return LoggingConfig.setup_logging("email_from_list", "email_from_list.log")
-    except ImportError:
-        # Fall back to original implementation if LoggingConfig is not available
-        # Ensure logs directory exists
-        os.makedirs(logs_dir, exist_ok=True)
-
-        # Set up logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-            handlers=[
-                logging.StreamHandler(sys.stdout),
-                logging.FileHandler(os.path.join(logs_dir, "email_from_list.log"), encoding='utf-8'),
-            ],
-        )
-        return logging.getLogger("email_from_list")
 
 
 def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, logger: logging.Logger = None) -> Tuple[DataFrame, Dict[Any, Dict[str, Any]]]:

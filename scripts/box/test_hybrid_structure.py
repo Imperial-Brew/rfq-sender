@@ -17,23 +17,15 @@ import logging
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
+
+# Add the project root to the path so we can import from utils
+project_root = Path(__file__).parent.parent.parent
+sys.path.append(str(project_root))
 
 # Import BoxIntegration directly since we're in the same directory
 from box_integration import BoxIntegration
-
-
-def setup_logging(logs_dir: str) -> logging.Logger:
-    """Set up logging configuration."""
-    os.makedirs(logs_dir, exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(os.path.join(logs_dir, "test_hybrid_structure.log")),
-        ],
-    )
-    return logging.getLogger("test_hybrid_structure")
+from utils.logging import get_logger
 
 
 def create_test_files(test_dir: str, part_numbers: list) -> dict:
@@ -74,10 +66,9 @@ def main() -> None:
     try:
         # Get the project root directory
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        logs_dir = os.path.join(project_root, "logs")
         
-        # Set up logging
-        logger = setup_logging(logs_dir)
+        # Get logger
+        logger = get_logger(__name__, "test_hybrid_structure.log")
         logger.info("Starting hybrid folder structure test")
         
         # Create test directory
@@ -167,7 +158,8 @@ def main() -> None:
         
         logger.info("Test completed successfully")
         print("\nTest completed successfully. Check the log file for details.")
-        print(f"Log file: {os.path.join(logs_dir, 'test_hybrid_structure.log')}")
+        from core.config import LoggingConfig
+        print(f"Log file: {os.path.join(LoggingConfig.LOGS_DIR, 'test_hybrid_structure.log')}")
         
     except Exception as e:
         print(f"Script failed with unexpected error: {str(e)}")

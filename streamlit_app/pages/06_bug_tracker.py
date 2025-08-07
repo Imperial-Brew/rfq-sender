@@ -18,20 +18,13 @@ sys.path.append(str(parent_dir))
 from streamlit_app.utils.db import get_db_connection, add_issue, get_issues, update_issue_status
 from utils.auth import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
+from utils.logging import get_logger
 
 if not require_authentication():
     st.stop()
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(parent_dir / "logs" / "bug_tracker.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+# Get module-specific logger
+logger = get_logger(__name__)
 
 def setup_page():
     """Configure the page settings."""
