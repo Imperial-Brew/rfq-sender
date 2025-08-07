@@ -270,9 +270,9 @@ def initialize_exchange(exchange_settings: Dict[str, Any]) -> Account:
     logger.info("Initializing Exchange connection")
     try:
         # Get credentials from config with fallback to settings
-        username = ExchangeConfig.USERNAME or exchange_settings.get('username', '')
-        password = ExchangeConfig.PASSWORD
-        server = ExchangeConfig.SERVER
+        username = ExchangeConfig.get_username() or exchange_settings.get('username', '')
+        password = ExchangeConfig.get_password()
+        server = ExchangeConfig.get_server()
         
         # Create credentials object
         credentials = Credentials(username=username, password=password)
