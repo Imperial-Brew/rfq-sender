@@ -64,8 +64,12 @@ def configure_root_logger(level: int = logging.INFO) -> None:
         None
     """
     # Ensure logs directory exists
-    logs_dir = Path(LoggingConfig.LOGS_DIR)
-    logs_dir.mkdir(exist_ok=True)
+    try:
+        logs_dir = Path(LoggingConfig.LOGS_DIR)
+        logs_dir.mkdir(exist_ok=True)
+    except Exception as e:
+        print(f"Warning: Could not create logs directory: {e}")
+        # Continue with console logging only
     
     # Configure root logger
     root_logger = logging.getLogger()
@@ -86,12 +90,16 @@ def configure_root_logger(level: int = logging.INFO) -> None:
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
     
-    # Create file handler with rotation
-    file_path = os.path.join(LoggingConfig.LOGS_DIR, "app.log")
-    file_handler = logging.handlers.RotatingFileHandler(
-        file_path,
-        maxBytes=LoggingConfig.MAX_LOG_SIZE,
-        backupCount=LoggingConfig.BACKUP_COUNT
-    )
-    file_handler.setFormatter(formatter)
-    root_logger.addHandler(file_handler)
+    # Create file handler with rotation if logs directory exists
+    try:
+        file_path = os.path.join(LoggingConfig.LOGS_DIR, "app.log")
+        file_handler = logging.handlers.RotatingFileHandler(
+            file_path,
+            maxBytes=LoggingConfig.MAX_LOG_SIZE,
+            backupCount=LoggingConfig.BACKUP_COUNT
+        )
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)
+    except Exception as e:
+        print(f"Warning: Could not set up file logging: {e}")
+        # Continue with console logging only
