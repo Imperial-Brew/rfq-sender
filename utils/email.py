@@ -481,7 +481,7 @@ def send_email(
         account = initialize_exchange(exchange_settings)
         
         # Get CC email if specified
-        cc_email = exchange_settings.get('cc', ExchangeConfig.CC_EMAIL)
+        cc_email = exchange_settings.get('cc', ExchangeConfig.get_cc_email())
         
         # Create draft email
         success = create_draft_email(

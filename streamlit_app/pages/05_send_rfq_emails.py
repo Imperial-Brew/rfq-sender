@@ -310,7 +310,7 @@ def display_queue_for_emails(user, role):
                         company_info.update({
                             "sender_name": user["name"],
                             "sender_title": user.get("title", "Estimator"),
-                            "sender_email": user.get("email", ExchangeConfig.FROM_EMAIL),
+                            "sender_email": user.get("email", ExchangeConfig.get_from_email()),
                             "sender_phone": user.get("phone", "(123) 456-7890")
                         })
                         
