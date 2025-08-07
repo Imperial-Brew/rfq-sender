@@ -43,9 +43,9 @@ def load_queue(path=QUEUE_PATH):
                 df[col] = df[col].astype(str).str.replace('\n', ' ').str.strip()
             
             # For columns that should be strings
-            if col in ['sent', 'quantities', 'qt/so #', 'Rev', 'process', 'spec', 
-                      'material', 'Part_Number', 'Print Callout', 'file_location', 
-                      'submitted_by', 'RFQ #']:
+            if col in ['sent', 'quantities', 'qt/so #', 'rev', 'process', 'spec',
+                       'material', 'part_number', 'print callout', 'file_location',
+                       'submitted_by', 'rfq #']:
                 df[col] = df[col].astype(str)
                 df[col] = df[col].replace('nan', '')
             
