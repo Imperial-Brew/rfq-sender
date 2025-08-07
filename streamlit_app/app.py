@@ -141,20 +141,6 @@ def main():
         else:
             raise
 
-    # Set up page configuration
-    setup_page_config()
-
-    # Main app header
-    st.title("📬 RFQ Sender System")
-
-    # Check authentication
-    if check_authentication():
-        # Display user info in sidebar
-        display_user_info()
-
-        # Display home page content
-        display_home_page()
-
 
 if __name__ == "__main__":
     try:
