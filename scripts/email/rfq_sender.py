@@ -140,37 +140,20 @@ def validate_args(args: argparse.Namespace) -> Tuple[bool, Optional[str]]:
     if not os.path.exists(args.file_location):
         return False, f"File location '{args.file_location}' does not exist"
 
-    # Validate quantities format
-    try:
-        # Handle potential mixed types by ensuring string conversion first
-        if not isinstance(args.quantities, str):
-            args.quantities = str(args.quantities)
-            
-        # Clean up the input - remove any non-numeric characters except commas
-        cleaned_quantities = []
-        for q in args.quantities.split(","):
-            q = q.strip()
-            # Skip empty parts
-            if not q:
-                continue
-            try:
-                # Try to convert to integer
-                qty = int(q)
-                if qty > 0:
-                    cleaned_quantities.append(qty)
-            except ValueError:
-                # If conversion fails, log a warning but don't fail validation
-                logger.warning(f"Non-integer quantity value found: '{q}', skipping")
-                
-        if not cleaned_quantities:
-            return False, "Quantities list cannot be empty or contains only invalid values"
-            
-        # Store the cleaned quantities back in args for later use
-        args.cleaned_quantities = cleaned_quantities
-    except Exception as e:
-        logger.error(f"Error processing quantities '{args.quantities}': {str(e)}")
-        return False, f"Error processing quantities: {str(e)}"
+    # Validate quantities
+    if not args.quantities or not str(args.quantities).strip():
+        return False, "Quantities must be comma-separated integers"
 
+    try:
+        quantities = [int(q.strip()) for q in str(args.quantities).split(",")]
+    except ValueError:
+        return False, "Quantities must be comma-separated integers"
+
+    if any(q <= 0 for q in quantities):
+        return False, "Quantities must be positive integers"
+
+    # Store parsed quantities for later use
+    args.cleaned_quantities = quantities
     return True, None
 
 
