@@ -1,11 +1,9 @@
 import pandas as pd
 import json
-# import smtplib - No longer needed, using exchangelib instead
 import jinja2
 # from email.mime.multipart import MIMEMultipart - No longer needed, using exchangelib instead
 # from email.mime.text import MIMEText - No longer needed, using exchangelib instead
 # from email.mime.application import MIMEApplication - No longer needed, using exchangelib instead
-from core.email.email_manager import EmailManager
 from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 import yaml
@@ -127,119 +125,6 @@ def find_vendors_for_process(vendors: List[Dict[str, Any]], process: str) -> Lis
     return vendor_manager.find_vendors_for_process(process)
 
 
-# Initialize Exchange connection
-def initialize_exchange(exchange_settings: Dict[str, Any]) -> Account:
-    """
-    Initialize connection to Exchange server.
-
-    Args:
-        exchange_settings: Dictionary with Exchange settings (username, from_email, cc)
-
-    Returns:
-        Exchange account object
-
-    Raises:
-        RuntimeError: If Exchange connection cannot be initialized
-    """
-    email_manager = EmailManager(exchange_settings=exchange_settings)
-    return email_manager.initialize_exchange()
-
-
-# Render email template
-def render_template(template_path: str, context: Dict[str, Any]) -> str:
-    """
-    Render a Jinja2 template with the given context.
-
-    Args:
-        template_path: Path to the template file
-        context: Dictionary of variables to pass to the template
-
-    Returns:
-        Rendered template as a string
-    """
-    email_manager = EmailManager()
-    return email_manager.render_template(template_path, context)
-
-
-# Create email for RFQ
-def create_rfq_email(
-        queue_items: pd.DataFrame,
-        vendor: Dict[str, Any],
-        contact: Dict[str, Any],
-        template_path: str,
-        company_info: Dict[str, Any]
-) -> Tuple[str, str, str]:
-    """
-    Create an email for an RFQ.
-
-    Args:
-        queue_items: DataFrame containing RFQ items
-        vendor: Vendor dictionary
-        contact: Contact dictionary
-        template_path: Path to the email template
-        company_info: Dictionary with company information
-
-    Returns:
-        Tuple of (recipient_email, subject, body)
-    """
-    email_manager = EmailManager(company_info=company_info)
-    return email_manager.create_rfq_email(queue_items, vendor, contact, template_path)
-
-
-# Send email
-def send_email(
-        recipient: str,
-        subject: str,
-        body: str,
-        exchange_settings: Dict[str, Any],
-        attachments: List[str] = None
-) -> bool:
-    """
-    Create a draft email using Exchange Web Services.
-
-    Args:
-        recipient: Email address of the recipient
-        subject: Email subject
-        body: Email body (HTML)
-        exchange_settings: Dictionary with Exchange settings (username, from_email, cc)
-        attachments: List of file paths to attach
-
-    Returns:
-        True if draft created successfully, False otherwise
-    """
-    email_manager = EmailManager(exchange_settings=exchange_settings)
-    return email_manager.send_email(recipient, subject, body, attachments)
-
-
-# Process queue and create draft emails
-def process_queue_and_send_emails(
-        queue_file: str,
-        vendor_file: str,
-        template_path: str,
-        exchange_settings: Dict[str, Any],
-        company_info: Dict[str, str],
-        vendor_options_file: str = None
-) -> Tuple[int, int]:
-    """
-    Process the queue and send emails to vendors.
-
-    Args:
-        queue_file: Path to the queue CSV file
-        vendor_file: Path to the vendor JSON file
-        template_path: Path to the email template
-        exchange_settings: Exchange settings (username, from_email, cc)
-        company_info: Company information
-        vendor_options_file: Path to the vendor options YAML file
-
-    Returns:
-        Tuple containing number of successful emails and total emails
-    """
-    email_manager = EmailManager(
-        template_path=template_path,
-        exchange_settings=exchange_settings,
-        company_info=company_info
-    )
-    return email_manager.process_queue_and_send_emails(queue_file, vendor_file, vendor_options_file)
 
 # Get primary contact for a vendor
 def get_primary_contact(vendor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
