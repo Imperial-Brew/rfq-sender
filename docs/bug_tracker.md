@@ -1,4 +1,4 @@
-# Bug Tracker Documentation
+# docs/bug_tracker.md - Bug Tracker Documentation
 
 ## Overview
 The Bug Tracker is a feature of the RFQ Sender application that allows users to submit and track bug reports and feature requests. This document explains how to access and use the Bug Tracker.

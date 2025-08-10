@@ -8,15 +8,19 @@ import sys
 import importlib.util
 from pathlib import Path
 
+# Add the project root to the Python path (adjusted for new location in tests/bug_tracker/)
+project_root = Path(__file__).parent.parent.parent
+sys.path.append(str(project_root))
+
 def test_bug_tracker_exists():
     """Test if the bug tracker page file exists."""
-    bug_tracker_path = Path("streamlit_app/pages/06_bug_tracker.py")
+    bug_tracker_path = project_root / "streamlit_app" / "pages" / "04_bug_tracker.py"
     assert bug_tracker_path.exists(), f"Bug tracker file not found at {bug_tracker_path}"
     print(f"✓ Bug tracker file exists at {bug_tracker_path}")
 
 def test_db_module_exists():
     """Test if the database module used by the bug tracker exists."""
-    db_path = Path("streamlit_app/utils/db.py")
+    db_path = project_root / "streamlit_app" / "utils" / "db.py"
     assert db_path.exists(), f"Database module not found at {db_path}"
     print(f"✓ Database module exists at {db_path}")
 
@@ -32,13 +36,10 @@ def test_bug_tracker_imports():
             print("ℹ Streamlit not installed in this environment, skipping import test")
             return
         
-        # Add the project root to the Python path
-        sys.path.insert(0, str(Path.cwd()))
-        
         # Import the bug tracker module
         spec = importlib.util.spec_from_file_location(
             "bug_tracker", 
-            "streamlit_app/pages/06_bug_tracker.py"
+            str(project_root / "streamlit_app" / "pages" / "04_bug_tracker.py")
         )
         bug_tracker = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(bug_tracker)
@@ -51,13 +52,13 @@ def test_bug_tracker_imports():
 
 def test_batch_script_exists():
     """Test if the batch script to run the streamlit app exists."""
-    batch_script_path = Path("Start_streamlit_app.bat")
+    batch_script_path = project_root / "Start_streamlit_app.bat"
     assert batch_script_path.exists(), f"Batch script not found at {batch_script_path}"
     print(f"✓ Batch script exists at {batch_script_path}")
 
 def test_documentation_exists():
     """Test if the bug tracker documentation exists."""
-    doc_path = Path("docs/bug_tracker.md")
+    doc_path = project_root / "docs" / "bug_tracker.md"
     assert doc_path.exists(), f"Documentation not found at {doc_path}"
     print(f"✓ Documentation exists at {doc_path}")
 

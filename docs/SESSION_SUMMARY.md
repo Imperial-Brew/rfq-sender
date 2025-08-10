@@ -1,4 +1,4 @@
-# RFQ Sender System - Session Summary
+# docs/SESSION_SUMMARY.md - Session Summary
 
 ## Overview
 This document summarizes the work completed during the current session on the RFQ Sender System project. The session focused on assessing the project's status, documenting current issues, and creating a roadmap for future development.

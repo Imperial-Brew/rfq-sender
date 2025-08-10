@@ -11,8 +11,8 @@ import sys
 import logging
 from pathlib import Path
 
-# Add the project root to the Python path
-project_root = Path(__file__).parent
+# Add the project root to the Python path (adjusted for new location in tests/config/)
+project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 
 # Import the configuration module

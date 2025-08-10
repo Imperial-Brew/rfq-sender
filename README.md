@@ -40,27 +40,48 @@ The RFQ Sender System provides:
 
 ```
 rfq-sender/
+├── .devcontainer/    # Development container configuration
+├── .github/          # GitHub workflows and templates
+├── .junie/           # Project task tracking and documentation
+├── .streamlit/       # Streamlit configuration
+├── cli/              # Command-line interface tools
 ├── config/           # Configuration files (vendors, email settings)
+├── core/             # Core application modules
 ├── data_raw/         # Raw data files (CSV, input files)
 ├── data_cleaned/     # Processed data files (databases, cleaned data)
 ├── docs/             # Documentation
-│   └── templates/    # Jinja2 templates for emails and forms
+│   ├── Material/     # Material-related documentation
+│   ├── OS/           # Operating system specific documentation
+│   └── templates/    # Documentation templates
+├── logs/             # Application logs
 ├── scripts/          # Python scripts
-│   ├── email/        # Email-related scripts
 │   ├── box/          # Box integration scripts
-│   ├── vendor/       # Vendor-related scripts
-│   └── utils/        # Utility scripts
+│   ├── email/        # Email-related scripts
+│   ├── utils/        # Utility scripts
+│   └── vendor/       # Vendor-related scripts
 ├── streamlit_app/    # Streamlit web application
 │   ├── app.py        # Main Streamlit application
+│   ├── components/   # Reusable UI components
+│   ├── utils/        # Streamlit-specific utilities
 │   └── pages/        # Multi-page Streamlit app pages
-│       ├── 01_add_to_queue.py
-│       ├── 02_view_queue.py
-│       ├── 03_add_spec_process.py
-│       ├── 04_view_familiar_specs.py
-│       ├── 05_send_rfq_emails.py
-│       └── 06_bug_tracker.py
-├── utils/            # Utility modules (specs, queue, email, auth)
-└── tests/            # Test files
+│       ├── 00_login.py                  # Login page
+│       ├── 01_queue_management.py       # Queue management
+│       ├── 02_specifications_management.py # Specifications management
+│       ├── 03_send_rfq_emails.py        # Send RFQ emails
+│       ├── 04_bug_tracker.py            # Bug tracking system
+│       ├── 05_vendors.py                # Vendor management
+│       └── 06_send_emails.py            # Alternative email sending
+├── templates/        # Jinja2 templates for emails and forms
+├── tests/            # Test files
+│   ├── bug_tracker/  # Bug tracker tests
+│   ├── config/       # Configuration tests
+│   ├── data/         # Data loading tests
+│   ├── email/        # Email functionality tests
+│   ├── fixes/        # Bug fix tests
+│   ├── logging/      # Logging tests
+│   ├── queue/        # Queue tests
+│   └── vendor/       # Vendor tests
+└── utils/            # Utility modules (specs, queue, email, auth)
 ```
 
 ## Setup
@@ -228,18 +249,19 @@ This will create a draft email in Outlook with a test subject and body, allowing
 
 ## Development
 
-This project follows the style guidelines outlined in the [Project Style Guidelines](docs/guidelines.md).
+This project follows the style guidelines outlined in the [Project Style Guidelines](docs/guidelines.md). For a comprehensive index of all documentation files, see the [Documentation Index](docs/DOCUMENTATION_INDEX.md).
 
 ### Style Guidelines Overview
-
-- **Python Code Style**: Use type hints, follow PEP 8, use docstrings with Args/Returns sections
-- **Markdown Formatting**: Use GitHub Flavored Markdown, task lists, code blocks with language identifiers
+- **Python Code Style**: Use type hints for all function parameters and return values, follow PEP 8 with exceptions noted in .flake8, use docstrings with Args/Returns sections
+- **Markdown Formatting**: Use GitHub Flavored Markdown, task lists, code blocks with language identifiers, keep lines <= 80 characters
 - **Commit Messages**: Use the format `<scope>(<module>): <short summary>`
-- **Documentation**: Maintain comprehensive README.md, document classes and methods
-- **Project Structure**: Place scripts in scripts/ directory, use modular components
-- **Testing and Quality**: Write tests using pytest, use pre-commit hooks
-- **Logging**: Use appropriate log levels (info, warning, error) with context
-- **Security**: Store sensitive information in environment variables, never in code
+- **Documentation**: Maintain comprehensive README.md, document classes and methods with detailed docstrings, update CHANGELOG.md
+- **Project Structure**: Place scripts in scripts/ directory with subdirectories for specific functionality, use modular components
+- **Testing and Quality**: Write unit and integration tests using pytest, use pre-commit hooks, run flake8 for linting
+- **Logging**: Use appropriate log levels (info, warning, error) with context, configure log rotation
+- **Security**: Store sensitive information in environment variables, never in code, use pre-commit hooks to prevent committing secrets
+- **Scalability and Performance**: Design for horizontal scaling, implement caching, use asynchronous processing for I/O-bound operations
+- **Deployment and Operations**: Use containerization (Docker), implement CI/CD pipelines, have a rollback strategy
 
 ## Scalability
 

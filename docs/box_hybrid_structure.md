@@ -1,4 +1,4 @@
-# Box Hybrid Folder Structure Implementation
+# docs/box_hybrid_structure.md - Box Hybrid Folder Structure Implementation
 
 This document describes the implementation of the hybrid folder structure for RFQ documentation in Box, as outlined in `.junie/box_structure.md`.
 

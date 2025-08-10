@@ -1,4 +1,4 @@
-# RFQ Sender System - Project Status Report
+# docs/PROJECT_STATUS.md - Project Status Report
 
 ## Overview
 This document provides a comprehensive status report of the RFQ Sender System as of June 19, 2025. It covers the current state of the project, including functionality, code quality, documentation, and outstanding issues.

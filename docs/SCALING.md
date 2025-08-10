@@ -1,4 +1,4 @@
-# Scaling the RFQ Sender System
+# docs/SCALING.md - Scaling the RFQ Sender System
 
 This document provides recommendations for scaling the RFQ Sender system to handle larger volumes of RFQs, vendors, and attachments.
 

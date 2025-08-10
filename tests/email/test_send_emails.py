@@ -6,8 +6,8 @@ import os
 import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.append(str(Path(__file__).parent))
+# Add parent directory to path (adjusted for new location in tests/email/)
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 def test_imports():
     """Test that the imports in 06_send_emails.py work correctly."""

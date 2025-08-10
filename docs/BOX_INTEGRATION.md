@@ -1,4 +1,4 @@
-# Box Integration for RFQ Sender
+# docs/BOX_INTEGRATION.md - Box Integration for RFQ Sender
 
 ## Implementation Summary
 

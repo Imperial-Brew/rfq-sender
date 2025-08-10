@@ -5,8 +5,8 @@ import logging
 import sys
 from pathlib import Path
 
-# Add the parent directory to the path
-parent_dir = Path(__file__).parent
+# Add the parent directory to the path (adjusted for new location in tests/queue/)
+parent_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(parent_dir))
 
 # Import the logging module

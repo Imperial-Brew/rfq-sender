@@ -1,4 +1,4 @@
-# Test Fix Plan
+# docs/TEST_FIX_PLAN.md - Test Fix Plan
 
 ## Overview
 This document outlines the plan to address the failing tests in the RFQ Sender System. Currently, 2 out of 5 tests are failing:

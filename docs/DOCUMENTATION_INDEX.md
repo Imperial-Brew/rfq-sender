@@ -28,10 +28,22 @@ A detailed plan for addressing the failing tests in the system, including analys
 ### [Development Roadmap](DEVELOPMENT_ROADMAP.md)
 A structured plan for future development of the RFQ Sender System, outlining phases, goals, tasks, and success metrics.
 
+### [Session Summary](SESSION_SUMMARY.md)
+A summary of work completed during development sessions, including project status assessment, documentation creation, and next steps.
+
 ## User Guides
 
-### [Email From List Guide](email_from_list_guide.md) (To Be Created)
-A guide for using the `email_from_list.py` script to process RFQs from CSV files and create draft emails in Outlook.
+### [Email From List](email_from_list.md)
+Documentation for the `email_from_list.py` script that processes RFQs from CSV files and creates draft emails in Outlook.
+
+### [Email From List Changes](email_from_list_changes.md)
+Detailed changelog of modifications made to the `email_from_list.py` script.
+
+### [Find Vendors By Process](find_vendors_by_process.md)
+Documentation for the script that finds vendors based on their process capabilities.
+
+### [Find Vendors By Spec](find_vendors_by_spec.md)
+Documentation for the script that finds vendors based on their specification capabilities.
 
 ### [RFQ Sender Guide](rfq_sender_guide.md) (To Be Created)
 A guide for using the core `rfq_sender.py` script to send RFQ emails to vendors.
@@ -47,11 +59,43 @@ Technical documentation of the system's API, including function signatures, para
 ### [Box Integration](BOX_INTEGRATION.md)
 Documentation of the Box integration for file sharing, including implementation details, credentials management, and workflow.
 
+### [Box Hybrid Structure](box_hybrid_structure.md)
+Detailed documentation on the hybrid folder structure used in Box for organizing RFQ documentation.
+
 ### [Database Schema](database_schema.md) (To Be Created)
 Documentation of the database schema used for tracking RFQs.
 
 ### [Configuration Guide](configuration_guide.md) (To Be Created)
 A guide for configuring the RFQ Sender System, including environment variables, YAML configuration files, and templates.
+
+### [Scaling Guide](SCALING.md)
+Recommendations for scaling the RFQ Sender system to handle larger volumes of RFQs, vendors, and attachments.
+
+### [Code Style Verification](code_style_verification.md)
+Documentation of code style and formatting configurations, including black, isort, mypy, pytest, and flake8 settings and recommendations for maintaining code style consistency.
+
+## Implementation and Bug Fixes
+
+### [Bug Tracker Implementation](bug_tracker_implementation.md)
+Implementation details for the bug tracking system.
+
+### [Comprehensive Queue Fix](comprehensive_queue_fix.md)
+Documentation for fixes related to queue handling and processing.
+
+### [Comprehensive Type Fix](comprehensive_type_fix.md)
+Documentation for fixes related to type handling and validation.
+
+### [Documentation Consistency Fix](documentation_consistency_fix.md)
+Documentation of changes made to resolve documentation inconsistencies and recommendations for maintaining consistency.
+
+### [Date Comparison Fix](date_comparison_fix.md)
+Documentation for fixes related to date comparison functionality.
+
+### [Type Comparison Fix](type_comparison_fix.md)
+Documentation for fixes related to type comparison functionality.
+
+### [Fix View Queue Type Error](fix_view_queue_type_error.md)
+Documentation for fixes related to type errors in the view queue functionality.
 
 ## Specialized Documentation
 
@@ -81,4 +125,4 @@ Based on the current state of the project and the development roadmap, the follo
 
 This index should be updated whenever new documentation is added or existing documentation is significantly modified. The goal is to maintain a comprehensive and up-to-date reference for all aspects of the RFQ Sender System.
 
-Last Updated: July 17, 2025
+Last Updated: August 10, 2025

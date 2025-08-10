@@ -1,4 +1,4 @@
-# Bug Tracker Implementation Summary
+# docs/bug_tracker_implementation.md - Bug Tracker Implementation Summary
 
 ## Issue
 The bug tracking page was not visible in the Streamlit application despite being implemented in the codebase.

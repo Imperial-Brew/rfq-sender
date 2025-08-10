@@ -7,8 +7,8 @@ import yaml
 import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.append(str(Path(__file__).parent))
+# Add parent directory to path (adjusted for new location in tests/vendor/)
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Import from project modules
 from core.config import Paths, init_config

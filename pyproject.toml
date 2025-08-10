@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rfq-sender"
+version = "0.1.0"
+description = "RFQ Sender application for managing and sending RFQ emails"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Dustin Drab", email = "ddrab01@gmail.com"}
+]
+requires-python = ">=3.7"
+keywords = ["rfq", "email", "manufacturing", "quotes"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "streamlit>=1.20.0",
+    "pandas",
+    "pyyaml>=6.0",
+    "jinja2>=3.1.2",
+    "exchangelib==4.6.2",
+    "python-dotenv>=1.0.0",
+    "bcrypt==4.0.1",
+    "questionary>=1.10.0",
+    "rich>=12.0.0",
+    "boxsdk",
+    "requests",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.3.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.3.0",
+    "pre-commit>=3.3.2",
+]
+test = [
+    "pytest>=7.3.1",
+]
+all = [
+    "rfq-sender[dev,test]",
+]
+
+[project.scripts]
+rfq-sender = "streamlit_app.app:main"
+
+[tool.setuptools]
+packages = ["streamlit_app", "core", "utils", "scripts"]
+
+[tool.setuptools.package-data]
+"*" = ["*.html", "*.yaml", "*.csv", "*.md"]
+
+[tool.black]
+line-length = 100
+target-version = ["py37"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.7"
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+
