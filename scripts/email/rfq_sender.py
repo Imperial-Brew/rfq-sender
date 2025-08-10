@@ -46,218 +46,15 @@ console = Console()
 # Set up logging using the centralized configuration
 logger = LoggingConfig.setup_logging(__name__, "rfq_sender.log")
 
-
-def parse_args() -> argparse.Namespace:
-    """
-    Parse command-line arguments.
-
-    Returns:
-        argparse.Namespace: Parsed command-line arguments
-    """
-    parser = argparse.ArgumentParser(
-        description="Send RFQ emails to vendors for finishing, material, and hardware quotes."
-    )
-
-    # Add interactive mode flag
-    parser.add_argument(
-        "--interactive", 
-        "-i", 
-        action="store_true",
-        help="Run in interactive mode with a user-friendly interface"
-    )
-
-    # Required arguments (not required if in interactive mode)
-    parser.add_argument(
-        "--part_no", 
-        help="Part number (e.g. 0250-20000)"
-    )
-    parser.add_argument(
-        "--process", 
-        help="Process name (e.g. 'cleaning', 'anodizing')"
-    )
-    parser.add_argument(
-        "--file_location", 
-        help="Path to directory containing files to attach"
-    )
-    parser.add_argument(
-        "--quantities", 
-        help="Comma-separated list of quantities (e.g. '1,2,5,10')"
-    )
-
-    # Optional arguments
-    parser.add_argument(
-        "--spec", 
-        help="Optional specification details"
-    )
-    parser.add_argument(
-        "--dry-run", 
-        action="store_true", 
-        help="Print email contents without sending"
-    )
-    parser.add_argument(
-        "--config-dir", 
-        default=os.path.join(project_root, "config"),
-        help="Path to configuration directory"
-    )
-
-    # Subcommands
-    subparsers = parser.add_subparsers(dest="command")
-
-    # Show log subcommand
-    show_log_parser = subparsers.add_parser(
-        "show-log", 
-        help="Show recent RFQ log entries"
-    )
-    show_log_parser.add_argument(
-        "--limit", 
-        type=int, 
-        default=10,
-        help="Number of log entries to show"
-    )
-
-    return parser.parse_args()
+# Import split-out helpers
+from .cli import parse_args, validate_args  # noqa: E402
+from .config import init_database  # noqa: E402
 
 
-def validate_args(args: argparse.Namespace) -> Tuple[bool, Optional[str]]:
-    """
-    Validate command-line arguments.
-
-    Args:
-        args (argparse.Namespace): Parsed command-line arguments
-
-    Returns:
-        Tuple[bool, Optional[str]]: (is_valid, error_message)
-    """
-    # Validate part_no format
-    if not args.part_no or not args.part_no.strip():
-        return False, "Part number cannot be empty"
-
-    # Validate process
-    if not args.process or not args.process.strip():
-        return False, "Process cannot be empty"
-
-    # Validate file_location
-    if not os.path.exists(args.file_location):
-        return False, f"File location '{args.file_location}' does not exist"
-
-    # Validate quantities
-    if not args.quantities or not str(args.quantities).strip():
-        return False, "Quantities must be comma-separated integers"
-
-    try:
-        quantities = [int(q.strip()) for q in str(args.quantities).split(",")]
-    except ValueError:
-        return False, "Quantities must be comma-separated integers"
-
-    if any(q <= 0 for q in quantities):
-        return False, "Quantities must be positive integers"
-
-    # Store parsed quantities for later use
-    args.cleaned_quantities = quantities
-    return True, None
-
-
-def load_config(config_dir: str) -> dict:
-    """
-    Load configuration files.
-
-    Args:
-        config_dir (str): Path to configuration directory
-
-    Returns:
-        dict: Configuration data
-    """
-    config = {}
-
-    # First, load vendor_options.yaml to get the reference list of vendors
-    vendor_options_file = os.path.join(project_root, "docs", "OS", "vendor_options.yaml")
-    vendor_options = {}
-    if os.path.exists(vendor_options_file):
-        try:
-            with open(vendor_options_file, "r", encoding="utf-8") as f:
-                vendor_options = yaml.safe_load(f)
-            logger.info(f"Loaded vendor options from {vendor_options_file}")
-        except Exception as e:
-            logger.error(f"Failed to load vendor options: {str(e)}")
-            sys.exit(1)
-    else:
-        logger.error(f"Vendor options file not found: {vendor_options_file}")
-        sys.exit(1)
-
-    # Extract vendor names and their processes from vendor_options.yaml
-    vendor_processes = {}
-    if "vendors" in vendor_options:
-        for vendor in vendor_options["vendors"]:
-            vendor_name = vendor.get("name", "")
-            processes = []
-            for process in vendor.get("processes", []):
-                if isinstance(process, dict) and "name" in process:
-                    process_name = process["name"]
-                    processes.append(process_name)
-            vendor_processes[vendor_name] = processes
-        logger.info(f"Found {len(vendor_processes)} vendors in vendor_options.yaml")
-    else:
-        logger.error("No vendors found in vendor_options.yaml")
-        sys.exit(1)
-
-    # Now load contacts.yml to get contact information for the vendors
-    contacts_file = os.path.join(config_dir, "contacts.yml")
-    if os.path.exists(contacts_file):
-        with open(contacts_file, "r") as f:
-            contacts_data = yaml.safe_load(f)
-    else:
-        logger.error(f"Contacts file not found: {contacts_file}")
-        sys.exit(1)
-
-    # Create transformed vendor objects only for vendors in vendor_options.yaml
-    transformed_vendors = []
-    for vendor_name, processes in vendor_processes.items():
-        # Find this vendor in contacts.yml
-        vendor_contact = None
-        for contact_vendor in contacts_data.get("vendors", []):
-            if contact_vendor.get("name", "") == vendor_name:
-                vendor_contact = contact_vendor
-                break
-
-        if not vendor_contact:
-            logger.warning(f"Vendor '{vendor_name}' found in vendor_options.yaml but not in contacts.yml")
-            continue
-
-        # Extract the email address from the primary contact
-        email = None
-        for contact in vendor_contact.get("contacts", []):
-            if contact.get("primary", False):
-                email = contact.get("email")
-                break
-
-        # Skip vendors without a primary contact email
-        if not email:
-            logger.warning(f"No primary contact email found for vendor '{vendor_name}'")
-            continue
-
-        # Create a transformed vendor object
-        transformed_vendor = {
-            "name": vendor_name,
-            "email": email,
-            "processes": processes
-        }
-
-        transformed_vendors.append(transformed_vendor)
-        logger.info(f"Added vendor '{vendor_name}' with {len(processes)} processes")
-
-    # Wrap the transformed vendors in another "vendors" key to match what the code expects
-    config["vendors"] = {"vendors": transformed_vendors}
-
-    # Load email configuration
-    email_file = os.path.join(config_dir, "email.yml")
-    if os.path.exists(email_file):
-        with open(email_file, "r") as f:
-            config["email"] = yaml.safe_load(f)
-    else:
-        logger.error(f"Email configuration file not found: {email_file}")
-        sys.exit(1)
-
-    return config
+def load_config(config_dir: str) -> dict:  # pragma: no cover - legacy wrapper
+    """Wrapper for :func:`scripts.email.config.load_config` for backwards compatibility."""
+    from .config import load_config as _load_config
+    return _load_config(config_dir)
 
 
 def get_attachments(part_no: str, process: str, file_location: str) -> List[str]:
@@ -331,38 +128,10 @@ def render_template(template_name: str, context: Dict[str, any]) -> str:
     return template.render(**context)
 
 
-def init_database() -> sqlite3.Connection:
-    """
-    Initialize the SQLite database for RFQ tracking.
-
-    Returns:
-        sqlite3.Connection: Database connection
-    """
-    # Create data directory if it doesn't exist
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-    os.makedirs(data_dir, exist_ok=True)
-
-    # Connect to database
-    db_path = os.path.join(data_dir, "rfq_log.db")
-    conn = sqlite3.connect(db_path)
-
-    # Create table if it doesn't exist
-    cursor = conn.cursor()
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS rfq_log (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        part_no TEXT NOT NULL,
-        process TEXT NOT NULL,
-        vendor_name TEXT NOT NULL,
-        vendor_email TEXT NOT NULL,
-        quantities TEXT NOT NULL,
-        sent_at TIMESTAMP NOT NULL,
-        quote_no TEXT
-    )
-    ''')
-    conn.commit()
-
-    return conn
+def init_database() -> sqlite3.Connection:  # pragma: no cover - legacy wrapper
+    """Wrapper for :func:`scripts.email.config.init_database` for backwards compatibility."""
+    from .config import init_database as _init_database
+    return _init_database()
 
 
 def log_rfq(
@@ -440,80 +209,22 @@ def show_rfq_log(conn: sqlite3.Connection, limit: int = 10) -> List[Dict[str, an
     return results
 
 
-def validate_email(email: str) -> bool:
-    """
-    Validate email format.
-
-    Args:
-        email (str): Email address to validate
-
-    Returns:
-        bool: True if email is valid, False otherwise
-    """
-    import re
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return bool(re.match(pattern, email))
+def validate_email(email: str) -> bool:  # pragma: no cover - legacy wrapper
+    """Wrapper for :func:`scripts.email.sender.validate_email`."""
+    from .sender import validate_email as _validate_email
+    return _validate_email(email)
 
 
-def check_attachments(attachments: List[str]) -> Tuple[bool, List[str], List[str]]:
-    """
-    Check if attachments exist and are readable.
-
-    Args:
-        attachments (List[str]): List of file paths to check
-
-    Returns:
-        Tuple[bool, List[str], List[str]]: (all_valid, valid_attachments, invalid_attachments)
-    """
-    valid_attachments = []
-    invalid_attachments = []
-
-    for file_path in attachments:
-        if os.path.exists(file_path) and os.access(file_path, os.R_OK):
-            valid_attachments.append(file_path)
-        else:
-            invalid_attachments.append(file_path)
-
-    return len(invalid_attachments) == 0, valid_attachments, invalid_attachments
+def check_attachments(attachments: List[str]) -> Tuple[bool, List[str], List[str]]:  # pragma: no cover - legacy wrapper
+    """Wrapper for :func:`scripts.email.sender.check_attachments`."""
+    from .sender import check_attachments as _check_attachments
+    return _check_attachments(attachments)
 
 
-def handle_cui_compliance(vendor: Dict[str, any], body: str) -> str:
-    """
-    Handle CUI (Controlled Unclassified Information) compliance based on vendor approval level.
-
-    Args:
-        vendor (Dict[str, any]): Vendor information
-        body (str): Email body
-
-    Returns:
-        str: Modified email body with CUI warnings if applicable
-    """
-    # Check if CUI protection is enabled
-    enable_cui_protection = SecurityConfig.ENABLE_CUI_PROTECTION
-
-    if not enable_cui_protection:
-        return body
-
-    # Check vendor approval level
-    approval_level = vendor.get("approval_level", "").lower()
-
-    # If vendor is approved for CUI, add CUI warning
-    if approval_level == "cui":
-        cui_warning = SecurityConfig.CUI_WARNING
-
-        # Add warning at the top of the email
-        modified_body = f"{cui_warning}\n\n{body}"
-
-        # Add warning at the bottom of the email
-        modified_body = f"{modified_body}\n\n{cui_warning}"
-
-        logger.info(f"Added CUI warning to email for CUI-approved vendor: {vendor['name']}")
-        return modified_body
-    else:
-        # For non-CUI vendors, check if there are any CUI attachments or content
-        # This is a placeholder for more sophisticated CUI detection
-        logger.info(f"Vendor {vendor['name']} is not approved for CUI data")
-        return body
+def handle_cui_compliance(vendor: Dict[str, any], body: str) -> str:  # pragma: no cover - legacy wrapper
+    """Wrapper for :func:`scripts.email.sender.handle_cui_compliance`."""
+    from .sender import handle_cui_compliance as _handle_cui_compliance
+    return _handle_cui_compliance(vendor, body)
 
 
 def send_email(
@@ -524,102 +235,10 @@ def send_email(
     config: Dict[str, any],
     dry_run: bool = False,
     max_retries: int = 3,
-) -> bool:
-    """
-    Send an email with attachments.
-
-    Args:
-        to_email (str): Recipient email address
-        subject (str): Email subject
-        body (str): Email body (HTML or plain text)
-        attachments (List[str]): List of file paths to attach
-        config (Dict[str, any]): Email configuration
-        dry_run (bool, optional): If True, don't actually send the email. Defaults to False.
-        max_retries (int, optional): Maximum number of retry attempts. Defaults to 3.
-
-    Returns:
-        bool: True if email was sent successfully, False otherwise
-    """
-    # Validate email format
-    if not validate_email(to_email):
-        logger.error(f"Invalid email address: {to_email}")
-        return False
-
-    # Check attachments
-    all_valid, valid_attachments, invalid_attachments = check_attachments(attachments)
-    if not all_valid:
-        logger.warning(f"Some attachments are missing or not readable: {invalid_attachments}")
-        logger.warning(f"Proceeding with valid attachments: {valid_attachments}")
-
-    if dry_run:
-        logger.info(f"[DRY RUN] Would send email to: {to_email}")
-        logger.info(f"[DRY RUN] Subject: {subject}")
-        logger.info(f"[DRY RUN] Body: {body[:100]}...")
-        logger.info(f"[DRY RUN] Attachments: {valid_attachments}")
-        return True
-
-    # Retry logic
-    for attempt in range(1, max_retries + 1):
-        try:
-            # Create message
-            msg = MIMEMultipart()
-            msg["Subject"] = subject
-            msg["From"] = f"{config['email']['smtp']['from_name']} <{config['email']['smtp']['from_email']}>"
-            msg["To"] = to_email
-
-            # Add CC recipients if specified
-            if config["email"]["settings"].get("cc_emails"):
-                cc_emails = config["email"]["settings"]["cc_emails"].split(",")
-                msg["Cc"] = ", ".join(cc_emails)
-
-            # Add body
-            msg.attach(MIMEText(body, "plain"))
-
-            # Add attachments
-            for file_path in valid_attachments:
-                try:
-                    with open(file_path, "rb") as f:
-                        attachment = MIMEApplication(f.read())
-                        attachment.add_header(
-                            "Content-Disposition",
-                            f"attachment; filename={os.path.basename(file_path)}",
-                        )
-                        msg.attach(attachment)
-                except Exception as e:
-                    logger.error(f"Failed to attach file {file_path}: {str(e)}")
-
-            # Send email
-            with smtplib.SMTP(config["email"]["smtp"]["server"], int(config["email"]["smtp"]["port"])) as server:
-                if config["email"]["smtp"]["use_tls"]:
-                    server.starttls()
-                server.login(
-                    config["email"]["smtp"]["username"],
-                    config["email"]["smtp"]["password"],
-                )
-                server.send_message(msg)
-
-            logger.info(f"Email sent successfully to {to_email}")
-            return True
-
-        except smtplib.SMTPServerDisconnected as e:
-            logger.warning(f"SMTP server disconnected (attempt {attempt}/{max_retries}): {str(e)}")
-            if attempt < max_retries:
-                time.sleep(2 ** attempt)  # Exponential backoff
-            else:
-                logger.error(f"Failed to send email after {max_retries} attempts")
-                return False
-
-        except smtplib.SMTPException as e:
-            logger.warning(f"SMTP error (attempt {attempt}/{max_retries}): {str(e)}")
-            if attempt < max_retries:
-                time.sleep(2 ** attempt)  # Exponential backoff
-            else:
-                logger.error(f"Failed to send email after {max_retries} attempts")
-                return False
-
-        except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {str(e)}")
-            return False
+) -> bool:  # pragma: no cover - legacy wrapper
+    """Wrapper for :func:`scripts.email.sender.send_email`."""
+    from .sender import send_email as _send_email
+    return _send_email(to_email, subject, body, attachments, config, dry_run=dry_run, max_retries=max_retries)
 
 
 def validate_process_name(process: str) -> str:
