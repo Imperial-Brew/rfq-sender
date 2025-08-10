@@ -26,7 +26,7 @@ import os
 import sys
 import csv
 import argparse
-from box_integration import BoxIntegration
+from scripts.box.box_integration import BoxIntegration
 from typing import Dict, List, Optional, Tuple, Any, Union
 
 import pandas as pd
@@ -56,7 +56,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 # Import SpecProcessValidator from spec_check.py
-from spec_check import SpecProcessValidator
+from scripts.utils.spec_check import SpecProcessValidator
 
 console = Console()
 
