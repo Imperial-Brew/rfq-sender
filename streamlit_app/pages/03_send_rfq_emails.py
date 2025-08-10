@@ -1,328 +1,906 @@
 import streamlit as st
 import pandas as pd
-from pathlib import Path
+import os
 import sys
 import logging
-import os
+from pathlib import Path
+from typing import Dict, List, Any, Optional, Tuple
+import yaml
+import jinja2
 from datetime import datetime
 
-# Add the parent directory to the path so we can import from other modules
+# Add parent directory to path to import from other modules
 parent_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(parent_dir))
 
 # Import configuration and utility functions
 from core.config import Paths, ExchangeConfig, CompanyInfo, LoggingConfig, init_config
-from utils.queue import load_queue
-from utils.email import (
-    load_vendors,
-    find_vendors_for_process,
-    get_primary_contact,
-    create_rfq_email,
-    send_email,
-    process_queue_and_send_emails
-)
 from utils.auth import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
+from scripts.utils.spec_check import SpecProcessValidator
 
+# Check authentication
 if not require_authentication():
     st.stop()
 
 # Initialize configuration
 init_config()
 
-# Set up logging using the centralized configuration
+# Set up logging
 logger = LoggingConfig.setup_logging(__name__, "send_rfq_emails.log")
+
+def normalize_process_spec(text: str, validator: SpecProcessValidator = None) -> str:
+    """
+    Normalize a process or spec name using the SpecProcessValidator.
+
+    Args:
+        text: The process or spec name to normalize
+        validator: Optional SpecProcessValidator instance. If None, a new one will be created.
+
+    Returns:
+        The normalized process or spec name
+    """
+    if not text:
+        return ""
+
+    # Create a validator if one wasn't provided
+    if validator is None:
+        validator = SpecProcessValidator()
+
+    # Use the validator's normalize method
+    return validator.normalize(text)
+
+def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, 
+              logger: logging.Logger = None) -> Tuple[pd.DataFrame, Dict[Any, Dict[str, Any]]]:
+    """
+    Load data from CSV and YAML files and prepare vendor information.
+
+    Args:
+        queue_file: Path to the queue CSV file (Queue.csv)
+        contacts_file: Path to the contacts CSV file (contacts.csv)
+        vendor_options_file: Path to the vendor options YAML file (vendor_options.yaml)
+        logger: Optional logger for logging messages
+
+    Returns:
+        Tuple containing:
+            - DataFrame with queue data (with renamed columns)
+            - Dictionary mapping vendor_id to vendor information (email and name)
+    """
+    if logger:
+        logger.info(f"Loading queue data from {queue_file}")
+    else:
+        print(f"Loading queue data from {queue_file}")
+
+    if not os.path.exists(queue_file):
+        if logger:
+            logger.error(f"Queue file not found: {queue_file}")
+        else:
+            print(f"Queue file not found: {queue_file}")
+        raise FileNotFoundError(f"Queue file not found: {queue_file}")
+
+    if logger:
+        logger.info(f"Loading contacts data from {contacts_file}")
+    else:
+        print(f"Loading contacts data from {contacts_file}")
+
+    if not os.path.exists(contacts_file):
+        if logger:
+            logger.error(f"Contacts file not found: {contacts_file}")
+        else:
+            print(f"Contacts file not found: {contacts_file}")
+        raise FileNotFoundError(f"Contacts file not found: {contacts_file}")
+
+    if logger:
+        logger.info(f"Loading vendor options from {vendor_options_file}")
+    else:
+        print(f"Loading vendor options from {vendor_options_file}")
+
+    if not os.path.exists(vendor_options_file):
+        if logger:
+            logger.error(f"Vendor options file not found: {vendor_options_file}")
+        else:
+            print(f"Vendor options file not found: {vendor_options_file}")
+        raise FileNotFoundError(f"Vendor options file not found: {vendor_options_file}")
+
+    try:
+        # Load queue data with UTF-8 encoding and error handling
+        try:
+            queue = pd.read_csv(queue_file, encoding='utf-8')
+        except UnicodeDecodeError:
+            # Fall back to cp1252 if UTF-8 fails
+            queue = pd.read_csv(queue_file, encoding='cp1252')
+
+        # Log the number of items where SENT=YES, but don't filter them out
+        if 'SENT' in queue.columns:
+            sent_items_count = len(queue[queue['SENT'] == 'YES'])
+            if logger:
+                logger.info(f"Found {sent_items_count} items where SENT=YES. Total items: {len(queue)}")
+            else:
+                print(f"Found {sent_items_count} items where SENT=YES. Total items: {len(queue)}")
+
+        # Load contacts data with UTF-8 encoding and error handling
+        try:
+            contacts = pd.read_csv(contacts_file, encoding='utf-8')
+        except UnicodeDecodeError:
+            # Fall back to cp1252 if UTF-8 fails
+            contacts = pd.read_csv(contacts_file, encoding='cp1252')
+
+        # Load vendor options data
+        with open(vendor_options_file, 'r', encoding='utf-8') as f:
+            vendor_options = yaml.safe_load(f)
+
+        # Rename queue columns to match expected names
+        queue_column_mapping = {
+            'RFQ #': 'RFQ #',
+            'Part_Number': 'part_number',
+            'Rev': 'Rev',
+            'Print Callout': 'callout',
+            'process': 'process',
+            'spec': 'spec',
+            'material': 'material',
+            'quantities': 'quantities',
+            'file_location': 'file_location',
+            'submitted_by': 'submitted_by',
+            'qt/so #': 'qt/so #'
+        }
+        
+        # Rename columns
+        queue = queue.rename(columns=queue_column_mapping)
+        
+        # Add part_number as quote_id since it doesn't exist in the queue.csv
+        queue['quote_id'] = queue['part_number']
+
+        # Process contacts data
+        # Filter to primary contacts only
+        # The 'Primary' value is in the 9th column which might be unnamed in the CSV
+        # Find the column that contains 'Primary' values
+        primary_column = None
+        for col in contacts.columns:
+            if 'Primary' in contacts[col].values:
+                primary_column = col
+                break
+
+        # Filter to primary contacts in the finishing category
+        if primary_column:
+            primary_contacts = contacts[(contacts['type'] == 'finishing') & (contacts[primary_column] == 'Primary')]
+        else:
+            # Fallback to just filtering by type if we can't find the primary column
+            primary_contacts = contacts[contacts['type'] == 'finishing']
+
+        # Create vendor info dictionary
+        vendor_info = {}
+        for _, row in primary_contacts.iterrows():
+            vendor_id = row['Vendor'].strip()
+            email = row['Email'].strip() if pd.notna(row['Email']) else ""
+
+            # Skip entries without email
+            if not email:
+                continue
+
+            # Get the first name if available
+            first_name = row['First'].strip() if pd.notna(row['First']) else ""
+
+            vendor_info[vendor_id] = {
+                'email': email,
+                'vendor_name': vendor_id,  # Use vendor name as is
+                'first_name': first_name  # Add first name for personalized greeting
+            }
+
+        # Enrich vendor info with capabilities from vendor_options
+        if vendor_options and 'vendors' in vendor_options:
+            for vendor in vendor_options['vendors']:
+                vendor_name = vendor['name']
+                if vendor_name in vendor_info:
+                    # Add capabilities information
+                    if 'processes' in vendor:
+                        # Store the full process objects, ensuring it's not None
+                        vendor_info[vendor_name]['processes'] = vendor['processes'] if vendor['processes'] is not None else []
+
+    except Exception as e:
+        if logger:
+            logger.error(f"Error loading files: {str(e)}")
+        else:
+            print(f"Error loading files: {str(e)}")
+        raise
+
+    return queue, vendor_info
+
+
+def find_vendors_for_process_spec(vendor_info: Dict[str, Dict[str, Any]], 
+                                 process: str, 
+                                 spec: str = None,
+                                 validator: SpecProcessValidator = None) -> List[Dict[str, Any]]:
+    """
+    Find vendors that can handle a specific process and optionally a spec.
+    
+    Args:
+        vendor_info: Dictionary mapping vendor_id to vendor information
+        process: Process name to match
+        spec: Optional spec name to match
+        validator: Optional SpecProcessValidator instance
+        
+    Returns:
+        List of vendor dictionaries that can handle the process/spec
+    """
+    if validator is None:
+        validator = SpecProcessValidator()
+    
+    # Normalize process and spec for comparison
+    normalized_process = normalize_process_spec(process, validator)
+    normalized_spec = normalize_process_spec(spec, validator) if spec else None
+    
+    matching_vendors = []
+    
+    for vendor_id, vendor_data in vendor_info.items():
+        if 'processes' not in vendor_data:
+            continue
+            
+        # Check if vendor can handle this process
+        can_handle_process = False
+        can_handle_spec = normalized_spec is None  # If no spec is provided, default to True
+        
+        for vendor_process in vendor_data['processes']:
+            # Skip if process name is missing
+            if not vendor_process or 'name' not in vendor_process:
+                continue
+                
+            # Normalize vendor process name
+            vendor_process_name = normalize_process_spec(vendor_process['name'], validator)
+            
+            # Check if process matches
+            if vendor_process_name == normalized_process:
+                can_handle_process = True
+                
+                # If spec is provided, check if vendor can handle it
+                if normalized_spec and 'specs' in vendor_process and vendor_process['specs']:
+                    for vendor_spec in vendor_process['specs']:
+                        if not vendor_spec:
+                            continue
+                            
+                        # Normalize vendor spec name
+                        vendor_spec_name = normalize_process_spec(vendor_spec, validator)
+                        
+                        if vendor_spec_name == normalized_spec:
+                            can_handle_spec = True
+                            break
+                
+                # If we found a match for both process and spec (or no spec was required),
+                # we can stop checking other processes
+                if can_handle_process and can_handle_spec:
+                    break
+        
+        # Add vendor to matching vendors if they can handle both process and spec
+        if can_handle_process and can_handle_spec:
+            # Create a copy of vendor data to avoid modifying the original
+            vendor_copy = vendor_data.copy()
+            # Add vendor_id to the copy for reference
+            vendor_copy['id'] = vendor_id
+            matching_vendors.append(vendor_copy)
+    
+    return matching_vendors
+
+
+def create_email_body(queue_items: pd.DataFrame, 
+                     vendor_name: str, 
+                     contact_name: str = None,
+                     company_info: Dict[str, str] = None) -> str:
+    """
+    Create HTML email body for RFQ using Jinja2 templates.
+    
+    Args:
+        queue_items: DataFrame containing queue items for this vendor
+        vendor_name: Name of the vendor
+        contact_name: Optional contact first name for personalized greeting
+        company_info: Dictionary with company information
+        
+    Returns:
+        HTML formatted email body
+    """
+    # Default company info if not provided
+    if company_info is None:
+        company_info = {
+            'name': CompanyInfo.get_name(),
+            'sender_name': CompanyInfo.get_sender_name(),
+            'sender_title': CompanyInfo.get_sender_title(),
+            'sender_phone': CompanyInfo.get_sender_phone(),
+            'sender_email': CompanyInfo.get_sender_email()
+        }
+    
+    # Create a Jinja2 environment
+    template_dir = os.path.join(parent_dir, 'config', 'templates')
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(template_dir),
+        autoescape=jinja2.select_autoescape(['html', 'xml'])
+    )
+    
+    # Try to load the template
+    try:
+        template = env.get_template('rfq_email.html')
+    except jinja2.exceptions.TemplateNotFound:
+        # Fallback to a basic template if the file doesn't exist
+        template_str = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; }
+                table { border-collapse: collapse; width: 100%; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+            </style>
+        </head>
+        <body>
+            {% if contact_name %}
+            <p>Hello {{ contact_name }},</p>
+            {% else %}
+            <p>Hello,</p>
+            {% endif %}
+            
+            <p>We would like to request a quote for the following part(s):</p>
+            
+            <table>
+                <tr>
+                    <th>Part Number</th>
+                    <th>Process</th>
+                    <th>Spec</th>
+                    <th>Quantities</th>
+                </tr>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.part_number }}</td>
+                    <td>{{ item.process }}</td>
+                    <td>{{ item.spec }}</td>
+                    <td>{{ item.quantities }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            
+            <p>Please provide your best pricing and lead time.</p>
+            
+            <p>Thank you,</p>
+            <p>{{ sender_name }}<br>
+            {{ sender_title }}<br>
+            {{ company_name }}<br>
+            {{ sender_phone }}<br>
+            {{ sender_email }}</p>
+        </body>
+        </html>
+        """
+        template = jinja2.Template(template_str)
+    
+    # Prepare items for the template
+    items = []
+    for _, row in queue_items.iterrows():
+        item = {
+            'part_number': row.get('part_number', ''),
+            'process': row.get('process', ''),
+            'spec': row.get('spec', ''),
+            'quantities': row.get('quantities', '')
+        }
+        items.append(item)
+    
+    # Render the template
+    html_content = template.render(
+        items=items,
+        contact_name=contact_name,
+        vendor_name=vendor_name,
+        company_name=company_info.get('name', ''),
+        sender_name=company_info.get('sender_name', ''),
+        sender_title=company_info.get('sender_title', ''),
+        sender_phone=company_info.get('sender_phone', ''),
+        sender_email=company_info.get('sender_email', '')
+    )
+    
+    return html_content
+
+
+def create_draft_email(recipient: str, 
+                      subject: str, 
+                      body: str, 
+                      attachments: List[str] = None,
+                      cc: List[str] = None,
+                      exchange_settings: Dict[str, Any] = None) -> bool:
+    """
+    Create a draft email in Outlook using Exchange Web Services.
+    
+    Args:
+        recipient: Email address of the recipient
+        subject: Email subject
+        body: HTML email body
+        attachments: Optional list of file paths to attach
+        cc: Optional list of CC email addresses
+        exchange_settings: Dictionary with Exchange settings
+        
+    Returns:
+        True if draft was created successfully, False otherwise
+    """
+    try:
+        # Get Exchange settings if not provided
+        if exchange_settings is None:
+            exchange_settings = {
+                'server': ExchangeConfig.get_server(),
+                'username': ExchangeConfig.get_username(),
+                'password': ExchangeConfig.get_password(),
+                'from_email': ExchangeConfig.get_from_email()
+            }
+        
+        # Import exchangelib here to avoid import errors if not installed
+        from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
+        from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
+        
+        # Configure SSL verification
+        BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
+        
+        # Set up credentials and account
+        credentials = Credentials(
+            username=exchange_settings.get('username'),
+            password=exchange_settings.get('password')
+        )
+        
+        config = Configuration(
+            server=exchange_settings.get('server'),
+            credentials=credentials
+        )
+        
+        account = Account(
+            primary_smtp_address=exchange_settings.get('from_email'),
+            config=config,
+            autodiscover=False,
+            access_type=DELEGATE
+        )
+        
+        # Create a new message
+        m = Message(
+            account=account,
+            folder=account.drafts,
+            subject=subject,
+            body=body,
+            body_type='HTML',
+            to_recipients=[Mailbox(email_address=recipient)]
+        )
+        
+        # Add CC recipients if provided
+        if cc:
+            m.cc_recipients = [Mailbox(email_address=email) for email in cc if email]
+        
+        # Add attachments if provided
+        if attachments:
+            for file_path in attachments:
+                if os.path.exists(file_path):
+                    with open(file_path, 'rb') as f:
+                        content = f.read()
+                    
+                    file_attachment = FileAttachment(
+                        name=os.path.basename(file_path),
+                        content=content
+                    )
+                    m.attach(file_attachment)
+        
+        # Save as draft
+        m.save()
+        
+        return True
+    
+    except Exception as e:
+        logger.error(f"Error creating draft email: {str(e)}")
+        return False
+
+
+def get_file_attachments(file_path: str, logger: logging.Logger = None) -> List[str]:
+    """
+    Get file attachments from a file path, handling both direct files and directories.
+    
+    Args:
+        file_path: Path to file or directory
+        logger: Optional logger for logging messages
+        
+    Returns:
+        List of file paths to attach
+    """
+    attachments = []
+    
+    if not file_path or not os.path.exists(file_path):
+        if logger:
+            logger.warning(f"File path does not exist: {file_path}")
+        return attachments
+    
+    # If it's a directory, get all files in it
+    if os.path.isdir(file_path):
+        for root, _, files in os.walk(file_path):
+            for file in files:
+                # Skip hidden files and temp files
+                if file.startswith('.') or file.startswith('~$'):
+                    continue
+                attachments.append(os.path.join(root, file))
+    else:
+        # It's a single file
+        attachments.append(file_path)
+    
+    return attachments
+
 
 def setup_page():
     """Configure the page settings."""
     st.title("Send RFQ Emails")
     st.markdown("""
     This page allows you to create RFQ email drafts in Outlook for vendors based on parts in the queue.
-    You can create drafts for individual parts or process the entire queue.
+    Vendors are automatically matched based on their process and spec capabilities.
     
     > **Note:** This tool creates draft emails in your Outlook client. No emails are sent automatically.
     > You will need to review and manually send each draft from Outlook.
     """)
 
-def display_queue_for_emails(user, role):
-    """Display the queue with options to send emails."""
+
+def display_queue_for_emails(user: Dict[str, Any], role: str):
+    """
+    Display the queue with options to send emails.
+    
+    Args:
+        user: User information dictionary
+        role: User role (admin, editor, viewer)
+    """
     try:
         # Load queue data
-        df = load_queue(Paths.QUEUE_PATH)
+        queue_file = str(Paths.QUEUE_PATH)
+        contacts_file = str(parent_dir / "docs" / "OS" / "contacts.csv")
+        vendor_options_file = str(parent_dir / "config" / "vendor_options.yaml")
         
-        if df.empty:
-            st.info("The queue is currently empty. Add parts using the 'Add to Queue' page.")
-            return
-        
-        # Display the queue
-        st.subheader("RFQ Queue")
-        
-        # Format the dataframe for display
-        display_df = df.copy()
-        
-        # Convert date columns to datetime if they exist
-        if "due_date" in display_df.columns:
-            display_df["due_date"] = pd.to_datetime(display_df["due_date"], errors="coerce")
-            # Store datetime objects for comparison
-            display_df["due_date_dt"] = display_df["due_date"]
-        
-        # Add a status column based on due date if it exists
-        if "due_date_dt" in display_df.columns:
-            today = datetime.now().date()
+        try:
+            # Use load_data function
+            queue, vendor_info = load_data(queue_file, contacts_file, vendor_options_file, logger)
             
-            # Define a safe date comparison function
-            def safe_date_compare(x):
-                try:
-                    # Handle NaN, NaT, None, or any non-datetime value
-                    if pd.isna(x) or x is pd.NaT or x is None:
-                        return "No Date"
-                    
-                    # Convert to datetime if it's a string
-                    if isinstance(x, str):
-                        try:
-                            date_val = pd.to_datetime(x).date()
-                        except:
-                            return "No Date"
-                    # Ensure x is a datetime object
-                    elif not isinstance(x, (pd.Timestamp, datetime)):
-                        return "No Date"
-                    else:
-                        date_val = x.date() if hasattr(x, 'date') else None
-                    
-                    if date_val is None:
-                        return "No Date"
-                        
-                    # Ensure both values are of the same type before comparison
-                    if not isinstance(date_val, type(today)):
-                        # Convert date_val to the same type as today if possible
-                        try:
-                            date_val = type(today)(date_val)
-                        except:
-                            return "No Date"
-                    
-                    return "Overdue" if date_val < today else "Active"
-                except Exception as e:
-                    logger.debug(f"Error comparing date value {x} of type {type(x)}: {str(e)}")
-                    return "No Date"
+            if queue.empty:
+                st.info("The queue is currently empty. Add parts using the 'Add to Queue' page.")
+                return
             
-            # Apply the safe comparison function
-            display_df["status"] = display_df["due_date_dt"].apply(safe_date_compare)
+            # Display the queue
+            st.subheader("RFQ Queue")
             
-            # Format dates for display after comparison is done
+            # Format the dataframe for display
+            display_df = queue.copy()
+            
+            # Convert date columns to datetime if they exist
             if "due_date" in display_df.columns:
-                display_df["due_date"] = display_df["due_date"].dt.strftime("%Y-%m-%d")
-        
-        # Highlight expedited items
-        if "expedited" in display_df.columns:
-            display_df["priority"] = display_df["expedited"].apply(
-                lambda x: "⚠️ Expedited" if x else "Standard"
-            )
-        
-        # Reorder and select columns for display
-        columns_to_display = ["part_number", "process", "spec", "quantities"]
-        if "priority" in display_df.columns:
-            columns_to_display.append("priority")
-        if "due_date" in display_df.columns:
-            columns_to_display.append("due_date")
-        if "status" in display_df.columns:
-            columns_to_display.append("status")
-        
-        # Only include columns that actually exist in the dataframe
-        columns_to_display = [col for col in columns_to_display if col in display_df.columns]
-        
-        # Add a selection column
-        display_df_with_selection = display_df.copy()
-        
-        # Display the dataframe with selection
-        selected_indices = st.multiselect(
-            "Select parts to send RFQ emails for:",
-            options=list(range(len(display_df_with_selection))),
-            format_func=lambda i: f"{display_df_with_selection.iloc[i]['part_number']} - {display_df_with_selection.iloc[i]['process']}"
-        )
-        
-        if selected_indices:
-            selected_parts = display_df_with_selection.iloc[selected_indices]
-            st.write("Selected parts:")
-            st.dataframe(
-                selected_parts[columns_to_display],
-                use_container_width=True,
-                hide_index=True
-            )
-        
-        # Process selected parts
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button("Create Draft Emails for Selected Parts", disabled=len(selected_indices) == 0):
-                if role not in ["admin", "editor"]:
-                    st.warning("You need admin or editor privileges to send emails.")
-                    return
+                display_df["due_date"] = pd.to_datetime(display_df["due_date"], errors="coerce")
+                # Store datetime objects for comparison
+                display_df["due_date_dt"] = display_df["due_date"]
+            
+            # Add a status column based on due date if it exists
+            if "due_date_dt" in display_df.columns:
+                today = datetime.now().date()
                 
-                try:
-                    with st.spinner("Sending emails..."):
-                        # Set up required parameters
-                        vendor_file = str(parent_dir / "config" / "vendors.json")
-                        template_path = str(parent_dir / "config" / "templates" / "email_signature.html")
+                # Define a safe date comparison function
+                def safe_date_compare(x):
+                    try:
+                        # Handle NaN, NaT, None, or any non-datetime value
+                        if pd.isna(x) or x is pd.NaT or x is None:
+                            return "No Date"
                         
-                        # Get email settings from ExchangeConfig
-                        smtp_settings = {
-                            "server": ExchangeConfig.get_server(),
-                            "port": 587,
-                            "username": ExchangeConfig.get_username(),
-                            "password": ExchangeConfig.get_password(),
-                            "use_tls": True,
-                            "from_email": ExchangeConfig.get_from_email(),
-                            "cc": ExchangeConfig.get_cc_email()
-                        }
+                        # Convert to datetime if it's a string
+                        if isinstance(x, str):
+                            try:
+                                date_val = pd.to_datetime(x).date()
+                            except:
+                                return "No Date"
+                        # Ensure x is a datetime object
+                        elif not isinstance(x, (pd.Timestamp, datetime)):
+                            return "No Date"
+                        else:
+                            date_val = x.date() if hasattr(x, 'date') else None
                         
-                        # Get company info from CompanyInfo and override with user info
-                        company_info = CompanyInfo.get_info()
-                        company_info.update({
-                            "sender_name": user["name"],
-                            "sender_title": user.get("title", "Estimator"),
-                            "sender_email": user.get("email", smtp_settings["from_email"]),
-                            "sender_phone": user.get("phone", CompanyInfo.get_sender_phone())
-                        })
-                        
-                        # Load vendors and contacts from CSV
-                        contacts_file = str(parent_dir / "docs" / "OS" / "contacts.csv")
-                        vendors_data = load_vendors(vendor_file, contacts_file)
-                        
-                        # Process only selected parts
-                        selected_parts_df = df.iloc[selected_indices]
-                        results = []
-                        
-                        for _, row in selected_parts_df.iterrows():
-                            part_number = row["part_number"]
-                            process = row["process"]
+                        if date_val is None:
+                            return "No Date"
                             
-                            # Find vendors for this process
-                            process_vendors = find_vendors_for_process(vendors_data, process)
+                        # Ensure both values are of the same type before comparison
+                        if not isinstance(date_val, type(today)):
+                            # Convert date_val to the same type as today if possible
+                            try:
+                                date_val = type(today)(date_val)
+                            except:
+                                return "No Date"
+                        
+                        return "Overdue" if date_val < today else "Active"
+                    except Exception as e:
+                        logger.debug(f"Error comparing date value {x} of type {type(x)}: {str(e)}")
+                        return "No Date"
+                
+                # Apply the safe comparison function
+                display_df["status"] = display_df["due_date_dt"].apply(safe_date_compare)
+                
+                # Format dates for display after comparison is done
+                if "due_date" in display_df.columns:
+                    display_df["due_date"] = display_df["due_date"].dt.strftime("%Y-%m-%d")
+            
+            # Highlight expedited items
+            if "expedited" in display_df.columns:
+                display_df["priority"] = display_df["expedited"].apply(
+                    lambda x: "⚠️ Expedited" if x else "Standard"
+                )
+            
+            # Reorder and select columns for display
+            columns_to_display = ["part_number", "process", "spec", "quantities"]
+            if "priority" in display_df.columns:
+                columns_to_display.append("priority")
+            if "due_date" in display_df.columns:
+                columns_to_display.append("due_date")
+            if "status" in display_df.columns:
+                columns_to_display.append("status")
+            
+            # Only include columns that actually exist in the dataframe
+            columns_to_display = [col for col in columns_to_display if col in display_df.columns]
+            
+            # Add a selection column
+            display_df_with_selection = display_df.copy()
+            
+            # Display the dataframe with selection
+            selected_indices = st.multiselect(
+                "Select parts to send RFQ emails for:",
+                options=list(range(len(display_df_with_selection))),
+                format_func=lambda i: f"{display_df_with_selection.iloc[i]['part_number']} - {display_df_with_selection.iloc[i]['process']}"
+            )
+            
+            if selected_indices:
+                selected_parts = display_df_with_selection.iloc[selected_indices]
+                st.write("Selected parts:")
+                st.dataframe(
+                    selected_parts[columns_to_display],
+                    use_container_width=True,
+                    hide_index=True
+                )
+            
+            # Process selected parts
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("Create Draft Emails for Selected Parts", disabled=len(selected_indices) == 0):
+                    if role not in ["admin", "editor"]:
+                        st.warning("You need admin or editor privileges to send emails.")
+                        return
+                    
+                    try:
+                        with st.spinner("Creating draft emails..."):
+                            # Get company info from CompanyInfo and override with user info
+                            company_info = CompanyInfo.get_info()
+                            company_info.update({
+                                "sender_name": user["name"],
+                                "sender_title": user.get("title", "Estimator"),
+                                "sender_email": user.get("email", ExchangeConfig.get_from_email()),
+                                "sender_phone": user.get("phone", CompanyInfo.get_sender_phone())
+                            })
                             
-                            if not process_vendors:
+                            # Get exchange settings
+                            exchange_settings = {
+                                "server": ExchangeConfig.get_server(),
+                                "username": ExchangeConfig.get_username(),
+                                "password": ExchangeConfig.get_password(),
+                                "from_email": ExchangeConfig.get_from_email(),
+                                "cc": ExchangeConfig.get_cc_email()
+                            }
+                            
+                            # Process only selected parts
+                            selected_parts_df = queue.iloc[selected_indices]
+                            results = []
+                            
+                            # Create a validator instance to reuse
+                            validator = SpecProcessValidator()
+                            
+                            for _, row in selected_parts_df.iterrows():
+                                part_number = row["part_number"]
+                                process = row["process"]
+                                spec = row.get("spec", None)
+                                
+                                # Find vendors for this process and spec
+                                matching_vendors = find_vendors_for_process_spec(
+                                    vendor_info, 
+                                    process, 
+                                    spec, 
+                                    validator
+                                )
+                                
+                                if not matching_vendors:
+                                    results.append({
+                                        "part_number": part_number,
+                                        "process": process,
+                                        "status": "No vendors found",
+                                        "emails_sent": 0
+                                    })
+                                    continue
+                                
+                                # Send emails to each vendor
+                                emails_sent = 0
+                                for vendor in matching_vendors:
+                                    try:
+                                        # Get vendor email and name
+                                        vendor_email = vendor.get('email', '')
+                                        vendor_name = vendor.get('vendor_name', '')
+                                        contact_name = vendor.get('first_name', '')
+                                        
+                                        if not vendor_email:
+                                            logger.warning(f"No email found for vendor: {vendor_name}")
+                                            continue
+                                        
+                                        # Create email subject
+                                        subject = f"RFQ for {part_number} - {process}"
+                                        
+                                        # Create email body
+                                        body = create_email_body(
+                                            queue_items=pd.DataFrame([row]),
+                                            vendor_name=vendor_name,
+                                            contact_name=contact_name,
+                                            company_info=company_info
+                                        )
+                                        
+                                        # Get file attachments
+                                        attachments = []
+                                        if 'file_location' in row and row['file_location']:
+                                            file_path = row['file_location']
+                                            attachments = get_file_attachments(file_path, logger)
+                                        
+                                        # Create draft email
+                                        if create_draft_email(
+                                            recipient=vendor_email,
+                                            subject=subject,
+                                            body=body,
+                                            attachments=attachments,
+                                            cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
+                                            exchange_settings=exchange_settings
+                                        ):
+                                            emails_sent += 1
+                                            logger.info(f"Draft email created successfully for {vendor_email} for {part_number}")
+                                        else:
+                                            logger.warning(f"Failed to create draft email for {vendor_email} for {part_number}")
+                                    except Exception as e:
+                                        logger.error(f"Error creating draft email for {vendor.get('vendor_name', 'Unknown')} for {part_number}: {str(e)}")
+                                
                                 results.append({
                                     "part_number": part_number,
                                     "process": process,
-                                    "status": "No vendors found",
-                                    "emails_sent": 0
+                                    "status": "Success" if emails_sent > 0 else "Failed",
+                                    "emails_sent": emails_sent
                                 })
-                                continue
                             
-                            # Send emails to each vendor
-                            emails_sent = 0
-                            for vendor in process_vendors:
-                                try:
-                                    # Get primary contact
-                                    contact = get_primary_contact(vendor)
-                                    
-                                    if not contact or not contact.get('email'):
-                                        logger.warning(f"No valid contact found for vendor: {vendor.get('name', 'Unknown')}")
-                                        continue
-                                    
-                                    # Create email content
-                                    recipient, subject, body = create_rfq_email(
-                                        queue_items=pd.DataFrame([row]), 
-                                        vendor=vendor, 
-                                        contact=contact, 
-                                        template_path=template_path, 
-                                        company_info=company_info
-                                    )
-                                    
-                                    if not recipient or not subject or not body:
-                                        logger.warning(f"Failed to create email for vendor: {vendor.get('name', 'Unknown')}")
-                                        continue
-                                    
-                                    # Send the email
-                                    if send_email(
-                                            recipient=recipient,
-                                            subject=subject,
-                                            body=body,
-                                            exchange_settings=smtp_settings
-                                            # Changed from smtp_settings to exchange_settings
-                                    ):
-                                        emails_sent += 1
-                                        logger.info(f"Draft email created successfully for {recipient} for {part_number}")
-                                    else:
-                                        logger.warning(f"Failed to create draft email for {recipient} for {part_number}")
-                                except Exception as e:
-                                    logger.error(f"Error creating draft email for {vendor.get('name', 'Unknown')} for {part_number}: {str(e)}")
-                            
-                            results.append({
-                                "part_number": part_number,
-                                "process": process,
-                                "status": "Success" if emails_sent > 0 else "Failed",
-                                "emails_sent": emails_sent
-                            })
-                        
-                        # Display results
-                        results_df = pd.DataFrame(results)
-                        st.success(f"Processed {len(results)} parts. Created {results_df['emails_sent'].sum()} draft emails in Outlook.")
-                        st.dataframe(results_df, use_container_width=True, hide_index=True)
-                        
-                        # Log the action
-                        logger.info(f"RFQ draft emails created by {user['name']} for {len(results)} parts")
-                        
-                except Exception as e:
-                    st.error(f"Error creating RFQ email drafts: {str(e)}")
-                    logger.error(f"Error creating RFQ email drafts: {str(e)}")
-        
-        with col2:
-            if st.button("Create Drafts for Entire Queue"):
-                if role not in ["admin", "editor"]:
-                    st.warning("You need admin or editor privileges to send emails.")
-                    return
-                
-                try:
-                    with st.spinner("Processing entire queue..."):
-                        # Set up required parameters
-                        vendor_file = Paths.VENDOR_FILE
-                        template_path = Paths.EMAIL_TEMPLATE_PATH
-                        
-                        # Get email settings from config
-                        exchange_settings = ExchangeConfig.get_settings()
-                        
-                        # Get company info from config and override with user info
-                        company_info = CompanyInfo.get_info()
-                        company_info.update({
-                            "sender_name": user["name"],
-                            "sender_title": user.get("title", "Estimator"),
-                            "sender_email": user.get("email", ExchangeConfig.get_from_email()),
-                            "sender_phone": user.get("phone", "(123) 456-7890")
-                        })
-                        
-                        # Process the entire queue
-                        contacts_file = str(parent_dir / "docs" / "OS" / "contacts.csv")
-                        results = process_queue_and_send_emails(
-                            queue_file=str(Paths.QUEUE_PATH),
-                            vendor_file=vendor_file,
-                            template_path=template_path,
-                            exchange_settings=ExchangeConfig.get_settings(),
-                            company_info=company_info,
-                            contacts_file=contacts_file
-                        )
-                        
-                        # Display results
-                        if isinstance(results, tuple) and len(results) == 2:
-                            successful, total = results
-                            st.success(f"Processed entire queue. Created {successful} of {total} draft emails in Outlook.")
-                        else:
+                            # Display results
                             results_df = pd.DataFrame(results)
                             st.success(f"Processed {len(results)} parts. Created {results_df['emails_sent'].sum()} draft emails in Outlook.")
                             st.dataframe(results_df, use_container_width=True, hide_index=True)
-                        
-                        # Log the action
-                        logger.info(f"Entire queue processed by {user['name']}, draft emails created")
-                        
-                except Exception as e:
-                    st.error(f"Error creating draft emails for queue: {str(e)}")
-                    logger.error(f"Error creating draft emails for queue: {str(e)}")
+                            
+                            # Log the action
+                            logger.info(f"RFQ draft emails created by {user['name']} for {len(results)} parts")
+                            
+                    except Exception as e:
+                        st.error(f"Error creating RFQ email drafts: {str(e)}")
+                        logger.error(f"Error creating RFQ email drafts: {str(e)}")
+            
+            with col2:
+                if st.button("Create Drafts for Entire Queue"):
+                    if role not in ["admin", "editor"]:
+                        st.warning("You need admin or editor privileges to send emails.")
+                        return
+                    
+                    try:
+                        with st.spinner("Processing entire queue..."):
+                            # Get company info from CompanyInfo and override with user info
+                            company_info = CompanyInfo.get_info()
+                            company_info.update({
+                                "sender_name": user["name"],
+                                "sender_title": user.get("title", "Estimator"),
+                                "sender_email": user.get("email", ExchangeConfig.get_from_email()),
+                                "sender_phone": user.get("phone", CompanyInfo.get_sender_phone())
+                            })
+                            
+                            # Get exchange settings
+                            exchange_settings = {
+                                "server": ExchangeConfig.get_server(),
+                                "username": ExchangeConfig.get_username(),
+                                "password": ExchangeConfig.get_password(),
+                                "from_email": ExchangeConfig.get_from_email(),
+                                "cc": ExchangeConfig.get_cc_email()
+                            }
+                            
+                            # Process the entire queue
+                            results = []
+                            
+                            # Create a validator instance to reuse
+                            validator = SpecProcessValidator()
+                            
+                            for _, row in queue.iterrows():
+                                part_number = row["part_number"]
+                                process = row["process"]
+                                spec = row.get("spec", None)
+                                
+                                # Find vendors for this process and spec
+                                matching_vendors = find_vendors_for_process_spec(
+                                    vendor_info, 
+                                    process, 
+                                    spec, 
+                                    validator
+                                )
+                                
+                                if not matching_vendors:
+                                    results.append({
+                                        "part_number": part_number,
+                                        "process": process,
+                                        "status": "No vendors found",
+                                        "emails_sent": 0
+                                    })
+                                    continue
+                                
+                                # Send emails to each vendor
+                                emails_sent = 0
+                                for vendor in matching_vendors:
+                                    try:
+                                        # Get vendor email and name
+                                        vendor_email = vendor.get('email', '')
+                                        vendor_name = vendor.get('vendor_name', '')
+                                        contact_name = vendor.get('first_name', '')
+                                        
+                                        if not vendor_email:
+                                            logger.warning(f"No email found for vendor: {vendor_name}")
+                                            continue
+                                        
+                                        # Create email subject
+                                        subject = f"RFQ for {part_number} - {process}"
+                                        
+                                        # Create email body
+                                        body = create_email_body(
+                                            queue_items=pd.DataFrame([row]),
+                                            vendor_name=vendor_name,
+                                            contact_name=contact_name,
+                                            company_info=company_info
+                                        )
+                                        
+                                        # Get file attachments
+                                        attachments = []
+                                        if 'file_location' in row and row['file_location']:
+                                            file_path = row['file_location']
+                                            attachments = get_file_attachments(file_path, logger)
+                                        
+                                        # Create draft email
+                                        if create_draft_email(
+                                            recipient=vendor_email,
+                                            subject=subject,
+                                            body=body,
+                                            attachments=attachments,
+                                            cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
+                                            exchange_settings=exchange_settings
+                                        ):
+                                            emails_sent += 1
+                                            logger.info(f"Draft email created successfully for {vendor_email} for {part_number}")
+                                        else:
+                                            logger.warning(f"Failed to create draft email for {vendor_email} for {part_number}")
+                                    except Exception as e:
+                                        logger.error(f"Error creating draft email for {vendor.get('vendor_name', 'Unknown')} for {part_number}: {str(e)}")
+                                
+                                results.append({
+                                    "part_number": part_number,
+                                    "process": process,
+                                    "status": "Success" if emails_sent > 0 else "Failed",
+                                    "emails_sent": emails_sent
+                                })
+                            
+                            # Display results
+                            results_df = pd.DataFrame(results)
+                            st.success(f"Processed {len(results)} parts. Created {results_df['emails_sent'].sum()} draft emails in Outlook.")
+                            st.dataframe(results_df, use_container_width=True, hide_index=True)
+                            
+                            # Log the action
+                            logger.info(f"Entire queue processed by {user['name']}, draft emails created")
+                            
+                    except Exception as e:
+                        st.error(f"Error creating draft emails for queue: {str(e)}")
+                        logger.error(f"Error creating draft emails for queue: {str(e)}")
         
+        except Exception as e:
+            st.error(f"Error loading data: {str(e)}")
+            logger.error(f"Error loading data: {str(e)}")
+            
     except Exception as e:
         st.error(f"Error loading queue data: {str(e)}")
         logger.error(f"Error loading queue data: {str(e)}")
 
+
 def display_email_settings():
-    """Display email settings from Streamlit secrets."""
+    """Display email settings from configuration."""
     st.subheader("Email Settings")
     
     # Display current settings
@@ -354,13 +932,11 @@ def display_email_settings():
     # Test email button
     if st.button("Create Test Email Draft"):
         try:
-            # Get email settings from ExchangeConfig
-            smtp_settings = {
+            # Get Exchange settings
+            exchange_settings = {
                 "server": ExchangeConfig.get_server(),
-                "port": 587,
                 "username": ExchangeConfig.get_username(),
                 "password": ExchangeConfig.get_password(),
-                "use_tls": True,
                 "from_email": ExchangeConfig.get_from_email(),
                 "cc": ExchangeConfig.get_cc_email()
             }
@@ -369,25 +945,28 @@ def display_email_settings():
             test_email = {
                 "to": ExchangeConfig.get_from_email(),
                 "subject": "Test RFQ Email",
-                "body": "This is a test email from the RFQ Sender application.",
+                "body": "<h1>Test Email</h1><p>This is a test email from the RFQ Sender application.</p>",
                 "cc": [],
                 "attachments": []
             }
             
-            # Send the test email
-            send_email(
+            # Create the test email draft
+            if create_draft_email(
                 recipient=test_email["to"],
                 subject=test_email["subject"],
                 body=test_email["body"],
-                exchange_settings=smtp_settings,  # Changed from smtp_settings to exchange_settings
-                attachments=test_email.get("attachments", [])
-            )
-            st.success("Test email draft created successfully in Outlook!")
-            logger.info("Test email draft created successfully in Outlook")
+                exchange_settings=exchange_settings
+            ):
+                st.success("Test email draft created successfully in Outlook!")
+                logger.info("Test email draft created successfully in Outlook")
+            else:
+                st.error("Failed to create test email draft.")
+                logger.error("Failed to create test email draft")
             
         except Exception as e:
             st.error(f"Error creating test email draft: {str(e)}")
             logger.error(f"Error creating test email draft: {str(e)}")
+
 
 def main():
     """Main function to run the page."""
@@ -410,6 +989,7 @@ def main():
     
     # Display queue for sending emails
     display_queue_for_emails(user, role)
+
 
 if __name__ == "__main__":
     main()
