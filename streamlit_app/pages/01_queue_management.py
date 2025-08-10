@@ -10,8 +10,10 @@ from datetime import datetime
 parent_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(parent_dir))
 
-# Import utility functions
-from utils.queue import load_queue, QUEUE_PATH
+# Import configuration and utility functions
+from core.config import Paths, LoggingConfig, init_config
+from utils.specs import load_process_list, load_specs_for_process
+from utils.queue import add_to_queue, load_queue, QUEUE_PATH
 from utils.auth import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
 from utils.logging import get_logger
@@ -19,44 +21,104 @@ from utils.logging import get_logger
 if not require_authentication():
     st.stop()
 
-# Get module-specific logger
+# Initialize configuration
+init_config()
+
+# Set up logging using the centralized configuration
 logger = get_logger(__name__)
 
 def setup_page():
     """Configure the page settings."""
-    st.title("View RFQ Queue")
+    st.title("Queue Management")
     st.markdown("""
-    This page displays all parts currently in the RFQ queue.
-    You can filter and sort the queue to find specific entries.
+    This page allows you to add new parts to the RFQ queue and view the current queue contents.
+    Use the tabs below to switch between adding parts and viewing the queue.
     """)
+
+def display_add_to_queue_form(user):
+    """Display the form for adding a part to the queue."""
+    processes = load_process_list()
+    
+    # Process selection outside the form
+    st.subheader("Select Process and Spec")
+    selected_process = st.selectbox(
+        "Process", 
+        options=sorted(processes), 
+        help="Select the manufacturing process"
+    )
+    
+    # Load specs based on selected process
+    available_specs = load_specs_for_process(selected_process)
+    spec = st.selectbox(
+        "Spec (optional)", 
+        options=available_specs, 
+        help="Select the specification if applicable"
+    )
+    
+    st.subheader("Part Details")
+    with st.form("rfq_form"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            part_number = st.text_input("Part Number", help="Enter the part number to be quoted")
+            callout = st.text_input("Callout", help="Enter the callout text from the drawing")
+            
+        with col2:
+            material = st.text_input("Material", help="Enter the material specification")
+            material_family = st.text_input("Material Family", help="Enter the material family (e.g., Aluminum, Steel)")
+            quantity = st.text_input(
+                "Quantities (comma separated)", 
+                value="1,5,10",
+                help="Enter quantities separated by commas"
+            )
+        
+        file_location = st.text_input(
+            "File Location", 
+            help="Enter the location of the files to be quoted"
+        )
+        
+        notes = st.text_area(
+            "Notes", 
+            help="Enter any additional notes or instructions"
+        )
+        
+        submitted = st.form_submit_button("Add to Queue", use_container_width=True)
+        
+        if submitted:
+            if not part_number or not selected_process:
+                st.warning("Part number and process are required.")
+                logger.warning(f"Submission failed: missing required fields")
+            else:
+                try:
+                    add_to_queue(Paths.QUEUE_PATH, {
+                        "part_number": part_number.strip(),
+                        "callout": callout.strip(),
+                        "process": selected_process.strip(),
+                        "spec": spec.strip(),
+                        "material": material.strip(),
+                        "material_family": material_family.strip(),
+                        "quantities": quantity.strip(),
+                        "file_location": file_location.strip(),
+                        "notes": notes.strip(),
+                        "submitted_by": user["name"]
+                    })
+                    st.success("✅ Part added to queue!")
+                    logger.info(f"Part {part_number} added to queue by {user['name']}")
+                    
+                    # Clear form (requires rerun)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error adding part to queue: {str(e)}")
+                    logger.error(f"Error adding part to queue: {str(e)}")
 
 def display_queue_data(user, role):
     """Display the queue data with filtering options."""
     try:
-        # Debug: Show the queue path
-        st.sidebar.write(f"Queue path: {QUEUE_PATH}")
-        
         # Load queue data
         df = load_queue(QUEUE_PATH)
         
-        # Debug: Show if file exists
-        st.sidebar.write(f"Queue file exists: {os.path.exists(QUEUE_PATH)}")
-        
-        # Debug: Show dataframe info
-        if not df.empty:
-            st.sidebar.write(f"Queue data loaded: {len(df)} rows")
-            st.sidebar.write(f"Columns: {df.columns.tolist()}")
-            
-            # Standardize the 'sent' column if it exists to prevent type comparison issues
-            if 'sent' in df.columns:
-                # Convert to string
-                df['sent'] = df['sent'].astype(str)
-                # Replace 'nan' with empty string
-                df['sent'] = df['sent'].replace('nan', '')
-                logger.info("Standardized 'sent' column to string type")
-        else:
-            st.sidebar.write("Queue dataframe is empty")
-            st.info("The queue is currently empty. Add parts using the 'Add to Queue' page.")
+        if df.empty:
+            st.info("The queue is currently empty. Add parts using the 'Add to Queue' tab.")
             return
         
         # Add filter options
@@ -223,8 +285,14 @@ def main():
     st.sidebar.markdown(f"**User:** {user['name']}")
     st.sidebar.markdown(f"**Role:** {role}")
     
-    # Display queue data
-    display_queue_data(user, role)
+    # Create tabs for Add to Queue and View Queue
+    tab1, tab2 = st.tabs(["Add to Queue", "View Queue"])
+    
+    with tab1:
+        display_add_to_queue_form(user)
+    
+    with tab2:
+        display_queue_data(user, role)
 
 if __name__ == "__main__":
     main()
