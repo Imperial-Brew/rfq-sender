@@ -540,10 +540,12 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
         role: User role (admin, editor, viewer)
     """
     try:
-        # Load queue data
+        # Load queue data using centralized path configuration
         queue_file = str(Paths.QUEUE_PATH)
         contacts_file = str(parent_dir / "docs" / "OS" / "contacts.csv")
-        vendor_options_file = str(parent_dir / "config" / "vendor_options.yaml")
+        # Use the centralized path configuration for vendor_options.yaml
+        # This ensures consistent path handling across the application
+        vendor_options_file = str(Paths.VENDOR_OPTIONS_FILE)
         
         try:
             # Use load_data function

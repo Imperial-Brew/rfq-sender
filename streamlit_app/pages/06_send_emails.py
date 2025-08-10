@@ -39,10 +39,12 @@ def setup_page():
     """)
 
 def display_queue_for_emails(user, role):
-    # Load queue data
+    # Load queue data using centralized path configuration
     queue_file = str(Paths.QUEUE_PATH)
     contacts_file = str(parent_dir / "docs" / "OS" / "contacts.csv")
-    vendor_options_file = str(parent_dir / "config" / "vendor_options.yaml")
+    # Use the centralized path configuration for vendor_options.yaml
+    # This ensures consistent path handling across the application
+    vendor_options_file = str(Paths.VENDOR_OPTIONS_FILE)
     
     try:
         # Use load_data function from email_from_list.py
@@ -55,8 +57,30 @@ def display_queue_for_emails(user, role):
         if st.button("Create Draft Emails for Selected Parts"):
             # Use process_queue function adapted from email_from_list.py
             # [Email creation code]
+            pass
     
     except Exception as e:
         st.error(f"Error: {str(e)}")
         logger.error(f"Error: {str(e)}")
 
+def main():
+    """Main function to run the page."""
+    setup_page()
+    
+    # Get user from session state (set in main app)
+    if "user" not in st.session_state:
+        st.warning("Please select a user in the sidebar of the main page.")
+        return
+    
+    user = st.session_state.user
+    role = get_user_role(user)
+    
+    # Display user info
+    st.sidebar.markdown(f"**User:** {user['name']}")
+    st.sidebar.markdown(f"**Role:** {role}")
+    
+    # Display queue for sending emails
+    display_queue_for_emails(user, role)
+
+if __name__ == "__main__":
+    main()
