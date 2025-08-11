@@ -1,8 +1,0 @@
-[server]
-headless = true
-runOnSave = true
-
-[general]
-# Set the entrypoint for the app
-# This should point to your multi-page app
-target = "streamlit_app/app.py"

@@ -2,19 +2,17 @@ import os
 import pandas as pd
 import jinja2
 import logging
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Mapping, Union
 from dotenv import load_dotenv
 from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
-from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
-import urllib3
 
 from core.vendors.vendor_manager import VendorManager
 
 # Disable insecure request warnings if needed
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) - commented out for debug
 
 # Optional: Add this for self-signed certificates
-BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
+#  BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter - commented out for debug
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -52,50 +50,39 @@ class EmailManager:
         
         # Load environment variables
         load_dotenv()
-    
+
     def initialize_exchange(self) -> Account:
-        """
-        Initialize connection to Exchange server.
-        
-        Returns:
-            Exchange account object
-            
-        Raises:
-            RuntimeError: If Exchange connection cannot be initialized
-        """
         logger.info("Initializing Exchange connection")
         try:
-            # Get credentials from environment variables with fallback to settings
             username = os.environ.get('EXCHANGE_USERNAME', self.exchange_settings.get('username', ''))
             password = os.environ.get('EXCHANGE_PASSWORD', '')
             server = os.environ.get('EXCHANGE_SERVER', 'outlook.office365.com')
-            
-            # Create credentials object
-            credentials = Credentials(username=username, password=password)
-            
-            # Create configuration with proper SSL verification settings
-            from exchangelib.protocol import TLSClientAuth
-            
-            config = Configuration(
-                server=server,
-                credentials=credentials,
-                verify_ssl=False,  # Disable SSL verification
-                auth_type=TLSClientAuth  # Use TLS auth which allows verify_ssl=False without check_hostname conflicts
-            )
-            
-            # Connect to the account
+
+            creds = Credentials(username=username, password=password)
+
+            import certifi, ssl
+            verify_path = certifi.where()
+
+            # Prefer new-style 'verify' if supported; otherwise fall back to ssl_context
+            try:
+                config = Configuration(server=server, credentials=creds, verify=verify_path)
+                logger.info(f"exchangelib using verify path: {verify_path}")
+            except TypeError:
+                ctx = ssl.create_default_context(cafile=verify_path)
+                config = Configuration(server=server, credentials=creds, ssl_context=ctx)
+                logger.info(f"exchangelib using ssl_context with cafile: {verify_path}")
+
             self.account = Account(
                 primary_smtp_address=username,
                 config=config,
                 autodiscover=False,
                 access_type=DELEGATE
             )
-            
             return self.account
         except Exception as e:
-            logger.error(f"Failed to initialize Exchange connection: {str(e)}")
-            raise RuntimeError(f"Failed to initialize Exchange connection: {str(e)}")
-    
+            logger.error(f"Failed to initialize Exchange connection: {e}")
+            raise RuntimeError(f"Failed to initialize Exchange connection: {e}")
+
     def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
         """
         Render a Jinja2 template with the given context.
@@ -129,14 +116,15 @@ class EmailManager:
         except Exception as e:
             logger.error(f"Error rendering template {template_path}: {str(e)}")
             return ""
-    
+
     def create_rfq_email(
-        self,
-        queue_item: pd.Series,
-        vendor: Dict[str, Any],
-        contact: Dict[str, Any],
-        template_path: Optional[str] = None
+            self,
+            queue_item: Union[pd.Series, Mapping[str, Any]],
+            vendor: Dict[str, Any],
+            contact: Dict[str, Any],
+            template_path: Optional[str] = None
     ) -> Tuple[str, str, str]:
+
         """
         Create an email for an RFQ.
         
@@ -156,23 +144,28 @@ class EmailManager:
                 raise ValueError("No template path provided")
             
             # Extract process and part number
-            process = queue_item.get('process', '')
-            part_number = queue_item.get('part_number', '')
+            data = queue_item.to_dict() if isinstance(queue_item, pd.Series) else dict(queue_item)
+
+            process = data.get('process', '') or ''
+            part_number = data.get('part_number', '') or ''
+            quantities = data.get('quantities', '') or ''
+            spec = data.get('spec', '') or ''
+            material = data.get('material', '') or ''
             
             # Create email subject
             subject = f"RFQ: {part_number} - {process}"
             
             # Prepare quantities as comma-separated string
-            quantities = queue_item.get('quantities', '')
+            # quantities = data.get('quantities', '') -- already given above
             
             # Prepare context for template
             context = {
                 'contact_name': contact.get('name', ''),
                 'part_number': part_number,
                 'process': process,
-                'spec': queue_item.get('spec', ''),
+                'spec': spec,  # <- was queue_item.get('spec', '')
                 'quantities': quantities,
-                'material': queue_item.get('material', ''),
+                'material': material,  # <- was queue_item.get('material', '')
                 'company_name': self.company_info.get('name', 'Your Company'),
                 'company_logo_url': self.company_info.get('logo_url', ''),
                 'sender_name': self.company_info.get('sender_name', ''),

@@ -51,9 +51,9 @@ init_config()
 # Disable insecure request warnings if needed
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# We'll configure SSL verification at the Configuration level instead of globally
-# to avoid conflicts between verify_ssl=False and check_hostname=True
-# BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
+# Configure SSL verification at the protocol level to avoid conflicts
+# between verify_mode=CERT_NONE and check_hostname=True
+BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 # Import SpecProcessValidator from spec_check.py
 from scripts.utils.spec_check import SpecProcessValidator
@@ -357,14 +357,10 @@ def initialize_exchange(logger: logging.Logger = None) -> Account:
         # Create credentials object
         credentials = Credentials(username=username, password=password)
         
-        # Create configuration with proper SSL verification settings
-        from exchangelib.protocol import TLSClientAuth
-        
+        # Create configuration
         config = Configuration(
             server=server,
-            credentials=credentials,
-            verify_ssl=False,  # Disable SSL verification
-            auth_type=TLSClientAuth  # Use TLS auth which allows verify_ssl=False without check_hostname conflicts
+            credentials=credentials
         )
         
         # Connect to the account

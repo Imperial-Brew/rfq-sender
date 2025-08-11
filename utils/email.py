@@ -1,28 +1,15 @@
 import pandas as pd
 import json
 import jinja2
-# from email.mime.multipart import MIMEMultipart - No longer needed, using exchangelib instead
-# from email.mime.text import MIMEText - No longer needed, using exchangelib instead
-# from email.mime.application import MIMEApplication - No longer needed, using exchangelib instead
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Mapping, Union
 from pathlib import Path
 import yaml
 import logging
 import os  # Still needed for path operations
 from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
-from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
-import urllib3
-
 # Import the vendor manager and config
 from core.vendors.vendor_manager import VendorManager
 from core.config import Paths, ExchangeConfig, CompanyInfo
-
-# Disable insecure request warnings if needed
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# We'll configure SSL verification at the Configuration level instead of globally
-# to avoid conflicts between verify_ssl=False and check_hostname=True
-# BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -157,31 +144,25 @@ def initialize_exchange(exchange_settings: Dict[str, Any]) -> Account:
     """
     logger.info("Initializing Exchange connection")
     try:
-        # Get credentials from config with fallback to settings
         username = ExchangeConfig.get_username() or exchange_settings.get('username', '')
         password = ExchangeConfig.get_password()
-        server = ExchangeConfig.get_server()
-        
-        # Create credentials object
+        server = ExchangeConfig.get_server() or 'outlook.office365.com'
+
         credentials = Credentials(username=username, password=password)
 
-        # Create configuration with proper SSL verification settings
-        from exchangelib.protocol import TLSClientAuth
-        
+        import certifi
         config = Configuration(
             server=server,
             credentials=credentials,
-            verify_ssl=False,  # Disable SSL verification
-            auth_type=TLSClientAuth  # Use TLS auth which allows verify_ssl=False without check_hostname conflicts
+            verify=certifi.where()  # <-- public CA bundle
         )
-        # Connect to the account
+
         account = Account(
             primary_smtp_address=username,
             config=config,
             autodiscover=False,
             access_type=DELEGATE
         )
-        
         return account
     except Exception as e:
         logger.error(f"Failed to initialize Exchange connection: {str(e)}")
@@ -218,67 +199,72 @@ def render_template(template_path: str, context: Dict[str, Any]) -> str:
 
 # Create email for RFQ
 def create_rfq_email(
-    queue_items: pd.DataFrame,
+    queue_item: Union[pd.Series, Mapping[str, Any]],
     vendor: Dict[str, Any],
     contact: Dict[str, Any],
     template_path: str,
-    company_info: Dict[str, Any] = None
+    company_info: Optional[Dict[str, Any]] = None
 ) -> Tuple[str, str, str]:
     """
     Create an email for an RFQ.
-    
+
     Args:
-        queue_items: DataFrame containing RFQ items
+        queue_item: Single RFQ row (pd.Series or dict-like)
         vendor: Vendor dictionary
         contact: Contact dictionary
         template_path: Path to the email template
-        company_info: Dictionary with company information (optional, uses config if not provided)
-        
+        company_info: Optional company info (falls back to config)
+
     Returns:
-        Tuple of (recipient_email, subject, body)
+        (recipient_email, subject, body)
     """
+    # Normalize to a plain dict so .get(...) is consistent
+    if isinstance(queue_item, pd.Series):
+        data = queue_item.to_dict()
+    else:
+        data = dict(queue_item)
+
+    # Extract fields (safe defaults)
+    process = data.get('process', '') or ''
+    part_number = data.get('part_number', '') or ''
+    quantities = data.get('quantities', '') or ''
+    spec = data.get('spec', '') or ''
+    material = data.get('material', '') or ''
+
+    # Subject
+    subject = f"RFQ: {part_number} - {process}"
+
+    # Company info
+    if company_info is None:
+        from core.config import CompanyInfo
+        company_info = CompanyInfo.get_info()
+
+    # Build template context
+    context = {
+        'contact_name': contact.get('name', ''),
+        'part_number': part_number,
+        'process': process,
+        'spec': spec,
+        'quantities': quantities,
+        'material': material,
+        'company_name': company_info.get('name', 'Your Company'),
+        'company_logo_url': company_info.get('logo_url', ''),
+        'sender_name': company_info.get('sender_name', ''),
+        'sender_title': company_info.get('sender_title', ''),
+        'sender_email': company_info.get('sender_email', ''),
+        'sender_phone': company_info.get('sender_phone', ''),
+        'company_address': company_info.get('address', '')
+    }
+
+    # Keep try/except around the risky bit (template rendering)
     try:
-        # Get the first item for basic info
-        first_item = queue_items.iloc[0]
-        
-        # Extract process and part number
-        process = first_item.get('process', '')
-        part_number = first_item.get('part_number', '')
-        
-        # Create email subject
-        subject = f"RFQ: {part_number} - {process}"
-        
-        # Prepare quantities as comma-separated string
-        quantities = first_item.get('quantities', '')
-        
-        # Use provided company_info or get from config
-        if company_info is None:
-            company_info = CompanyInfo.get_info()
-        
-        # Prepare context for template
-        context = {
-            'contact_name': contact.get('name', ''),
-            'part_number': part_number,
-            'process': process,
-            'spec': first_item.get('spec', ''),
-            'quantities': quantities,
-            'material': first_item.get('material', ''),
-            'company_name': company_info.get('name', 'Your Company'),
-            'company_logo_url': company_info.get('logo_url', ''),
-            'sender_name': company_info.get('sender_name', ''),
-            'sender_title': company_info.get('sender_title', ''),
-            'sender_email': company_info.get('sender_email', ''),
-            'sender_phone': company_info.get('sender_phone', ''),
-            'company_address': company_info.get('address', '')
-        }
-        
-        # Render email body using template
         body = render_template(template_path, context)
-        
-        return contact.get('email', ''), subject, body
     except Exception as e:
-        logger.error(f"Error creating RFQ email: {str(e)}")
+        import logging
+        logging.getLogger(__name__).error(f"Error rendering template {template_path}: {e}")
         return '', '', ''
+
+    return contact.get('email', ''), subject, body
 
 # Create draft email using Exchange Web Services
 def create_draft_email(
