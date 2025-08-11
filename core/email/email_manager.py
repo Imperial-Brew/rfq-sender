@@ -5,7 +5,8 @@ import logging
 from typing import Dict, List, Optional, Tuple, Any, Mapping, Union
 from dotenv import load_dotenv
 from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
-
+from core.email.ews_client import get_exchange_account, extract_rfq_fields
+from core.secrets import get_section  # to grab [company] and [app]
 from core.vendors.vendor_manager import VendorManager
 
 # Disable insecure request warnings if needed
@@ -51,37 +52,9 @@ class EmailManager:
         # Load environment variables
         load_dotenv()
 
-    def initialize_exchange(self) -> Account:
-        logger.info("Initializing Exchange connection")
-        try:
-            username = os.environ.get('EXCHANGE_USERNAME', self.exchange_settings.get('username', ''))
-            password = os.environ.get('EXCHANGE_PASSWORD', '')
-            server = os.environ.get('EXCHANGE_SERVER', 'outlook.office365.com')
-
-            creds = Credentials(username=username, password=password)
-
-            import certifi, ssl
-            verify_path = certifi.where()
-
-            # Prefer new-style 'verify' if supported; otherwise fall back to ssl_context
-            try:
-                config = Configuration(server=server, credentials=creds, verify=verify_path)
-                logger.info(f"exchangelib using verify path: {verify_path}")
-            except TypeError:
-                ctx = ssl.create_default_context(cafile=verify_path)
-                config = Configuration(server=server, credentials=creds, ssl_context=ctx)
-                logger.info(f"exchangelib using ssl_context with cafile: {verify_path}")
-
-            self.account = Account(
-                primary_smtp_address=username,
-                config=config,
-                autodiscover=False,
-                access_type=DELEGATE
-            )
-            return self.account
-        except Exception as e:
-            logger.error(f"Failed to initialize Exchange connection: {e}")
-            raise RuntimeError(f"Failed to initialize Exchange connection: {e}")
+    def initialize_exchange(self):
+        self.account = get_exchange_account(self.exchange_settings)
+        return self.account
 
     def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
         """
@@ -119,70 +92,47 @@ class EmailManager:
 
     def create_rfq_email(
             self,
-            queue_item: Union[pd.Series, Mapping[str, Any]],
-            vendor: Dict[str, Any],
-            contact: Dict[str, Any],
+            queue_item,
+            vendor,
+            contact,
             template_path: Optional[str] = None
     ) -> Tuple[str, str, str]:
+        # Use provided template path or instance template path
+        template_path = template_path or self.template_path
+        if not template_path:
+            raise ValueError("No template path provided")
 
-        """
-        Create an email for an RFQ.
-        
-        Args:
-            queue_item: Series containing RFQ item data
-            vendor: Vendor dictionary
-            contact: Contact dictionary
-            template_path: Path to the email template (overrides instance template_path)
-            
-        Returns:
-            Tuple of (recipient_email, subject, body)
-        """
-        try:
-            # Use provided template path or instance template path
-            template_path = template_path or self.template_path
-            if not template_path:
-                raise ValueError("No template path provided")
-            
-            # Extract process and part number
-            data = queue_item.to_dict() if isinstance(queue_item, pd.Series) else dict(queue_item)
+        # NEW: pull normalized fields from the shared helper
+        fields = extract_rfq_fields(queue_item)
 
-            process = data.get('process', '') or ''
-            part_number = data.get('part_number', '') or ''
-            quantities = data.get('quantities', '') or ''
-            spec = data.get('spec', '') or ''
-            material = data.get('material', '') or ''
-            
-            # Create email subject
-            subject = f"RFQ: {part_number} - {process}"
-            
-            # Prepare quantities as comma-separated string
-            # quantities = data.get('quantities', '') -- already given above
-            
-            # Prepare context for template
-            context = {
-                'contact_name': contact.get('name', ''),
-                'part_number': part_number,
-                'process': process,
-                'spec': spec,  # <- was queue_item.get('spec', '')
-                'quantities': quantities,
-                'material': material,  # <- was queue_item.get('material', '')
-                'company_name': self.company_info.get('name', 'Your Company'),
-                'company_logo_url': self.company_info.get('logo_url', ''),
-                'sender_name': self.company_info.get('sender_name', ''),
-                'sender_title': self.company_info.get('sender_title', ''),
-                'sender_email': self.company_info.get('sender_email', ''),
-                'sender_phone': self.company_info.get('sender_phone', ''),
-                'company_address': self.company_info.get('address', '')
-            }
-            
-            # Render email body using template
-            body = self.render_template(template_path, context)
-            
-            return contact.get('email', ''), subject, body
-        except Exception as e:
-            logger.error(f"Error creating RFQ email: {str(e)}")
-            return '', '', ''
-    
+        # Subject line using those fields
+        app_cfg = get_section("app")
+        prefix = app_cfg.get("subject_prefix", "")
+        subject = f"{prefix}RFQ: {fields['part_number']} - {fields['process']}"
+
+        company = {**self.company_info, **get_section("company")},
+
+        # Build the template context (what the Jinja file renders with)
+        context = {
+            'contact_name': contact.get('name', ''),
+            'part_number': fields['part_number'],
+            'process': fields['process'],
+            'spec': fields['spec'],
+            'quantities': fields['quantities'],
+            'material': fields['material'],
+            'company_name': company.get('name', 'Your Company'),
+            'company_logo_url': company.get('logo_url', ''),
+            'sender_name': company.get('sender_name', ''),
+            'sender_title': company.get('sender_title', ''),
+            'sender_email': company.get('sender_email', ''),
+            'sender_phone': company.get('sender_phone', ''),
+            'company_address': company.get('address', ''),
+        }
+
+        # Render and return
+        body = self.render_template(template_path, context)
+        return contact.get('email', ''), subject, body
+
     def create_draft_email(
         self,
         recipient: str,

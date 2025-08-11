@@ -10,6 +10,8 @@ from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, 
 # Import the vendor manager and config
 from core.vendors.vendor_manager import VendorManager
 from core.config import Paths, ExchangeConfig, CompanyInfo
+from core.email.ews_client import get_exchange_account, extract_rfq_fields
+from core.secrets import get_section
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -130,46 +132,13 @@ def get_primary_contact(vendor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 # Initialize Exchange connection
 def initialize_exchange(exchange_settings: Dict[str, Any]) -> Account:
-    """
-    Initialize connection to Exchange server.
-    
-    Args:
-        exchange_settings: Dictionary with Exchange settings (username, from_email, cc)
-        
-    Returns:
-        Exchange account object
-        
-    Raises:
-        RuntimeError: If Exchange connection cannot be initialized
-    """
     logger.info("Initializing Exchange connection")
     try:
-        username = ExchangeConfig.get_username() or exchange_settings.get('username', '')
-        password = ExchangeConfig.get_password()
-        server = ExchangeConfig.get_server() or 'outlook.office365.com'
-
-        credentials = Credentials(username=username, password=password)
-
-        import certifi, ssl
-        verify_path = certifi.where()
-        try:
-            config = Configuration(server=server, credentials=credentials, verify=verify_path)
-            logger.info(f"exchangelib using verify path: {verify_path}")
-        except TypeError:
-            ctx = ssl.create_default_context(cafile=verify_path)
-            config = Configuration(server=server, credentials=credentials, ssl_context=ctx)
-            logger.info(f"exchangelib using ssl_context with cafile: {verify_path}")
-
-        account = Account(
-            primary_smtp_address=username,
-            config=config,
-            autodiscover=False,
-            access_type=DELEGATE
-        )
-        return account
+        return get_exchange_account(exchange_settings)
     except Exception as e:
-        logger.error(f"Failed to initialize Exchange connection: {str(e)}")
-        raise RuntimeError(f"Failed to initialize Exchange connection: {str(e)}")
+        logger.error(f"Failed to initialize Exchange connection: {e}")
+        raise RuntimeError(f"Failed to initialize Exchange connection: {e}")
+
 
 # Render email template
 def render_template(template_path: str, context: Dict[str, Any]) -> str:
@@ -202,72 +171,40 @@ def render_template(template_path: str, context: Dict[str, Any]) -> str:
 
 # Create email for RFQ
 def create_rfq_email(
-    queue_item: Union[pd.Series, Mapping[str, Any]],
+    queue_item,      # <-- single row (Series or dict), not a whole DataFrame
     vendor: Dict[str, Any],
     contact: Dict[str, Any],
     template_path: str,
-    company_info: Optional[Dict[str, Any]] = None
+    company_info: Dict[str, Any] = None
 ) -> Tuple[str, str, str]:
-    """
-    Create an email for an RFQ.
-
-    Args:
-        queue_item: Single RFQ row (pd.Series or dict-like)
-        vendor: Vendor dictionary
-        contact: Contact dictionary
-        template_path: Path to the email template
-        company_info: Optional company info (falls back to config)
-
-    Returns:
-        (recipient_email, subject, body)
-    """
-    # Normalize to a plain dict so .get(...) is consistent
-    if isinstance(queue_item, pd.Series):
-        data = queue_item.to_dict()
-    else:
-        data = dict(queue_item)
-
-    # Extract fields (safe defaults)
-    process = data.get('process', '') or ''
-    part_number = data.get('part_number', '') or ''
-    quantities = data.get('quantities', '') or ''
-    spec = data.get('spec', '') or ''
-    material = data.get('material', '') or ''
-
-    # Subject
-    subject = f"RFQ: {part_number} - {process}"
-
-    # Company info
-    if company_info is None:
-        from core.config import CompanyInfo
-        company_info = CompanyInfo.get_info()
-
-    # Build template context
-    context = {
-        'contact_name': contact.get('name', ''),
-        'part_number': part_number,
-        'process': process,
-        'spec': spec,
-        'quantities': quantities,
-        'material': material,
-        'company_name': company_info.get('name', 'Your Company'),
-        'company_logo_url': company_info.get('logo_url', ''),
-        'sender_name': company_info.get('sender_name', ''),
-        'sender_title': company_info.get('sender_title', ''),
-        'sender_email': company_info.get('sender_email', ''),
-        'sender_phone': company_info.get('sender_phone', ''),
-        'company_address': company_info.get('address', '')
-    }
-
-    # Keep try/except around the risky bit (template rendering)
     try:
-        body = render_template(template_path, context)
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).error(f"Error rendering template {template_path}: {e}")
-        return '', '', ''
+        fields = extract_rfq_fields(queue_item)
+        prefix = get_section("app").get("subject_prefix", "")
+        subject = f"{prefix}RFQ: {fields['part_number']} - {fields['process']}"
 
-    return contact.get('email', ''), subject, body
+        company_info = company_info or get_section("company") or {}
+
+        context = {
+            'contact_name': contact.get('name', ''),
+            'part_number': fields['part_number'],
+            'process': fields['process'],
+            'spec': fields['spec'],
+            'quantities': fields['quantities'],
+            'material': fields['material'],
+            'company_name': company_info.get('name', 'Your Company'),
+            'company_logo_url': company_info.get('logo_url', ''),
+            'sender_name': company_info.get('sender_name', ''),
+            'sender_title': company_info.get('sender_title', ''),
+            'sender_email': company_info.get('sender_email', ''),
+            'sender_phone': company_info.get('sender_phone', ''),
+            'company_address': company_info.get('address', ''),
+        }
+
+        body = render_template(template_path, context)
+        return contact.get('email', ''), subject, body
+    except Exception as e:
+        logger.error(f"Error creating RFQ email: {str(e)}")
+        return '', '', ''
 
 # Create draft email using Exchange Web Services
 def create_draft_email(

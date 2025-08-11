@@ -36,6 +36,7 @@ logs/
 temp/
 data/*.db
 scripts/0__config.json
+.streamlit/secrets.toml
 
 # Windows
 Thumbs.db
