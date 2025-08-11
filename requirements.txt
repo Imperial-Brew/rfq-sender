@@ -8,7 +8,7 @@ streamlit
 certifi
 
 # Email handling
-exchangelib==4.6.2  # For Exchange integration (specific version to avoid compatibility issues)
+exchangelib==5.5.1  # For Exchange integration (specific version to avoid compatibility issues)
 # pywin32>=305  # For Outlook integration (Windows only, no longer used)
 
 # Optional but recommended

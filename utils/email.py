@@ -150,12 +150,15 @@ def initialize_exchange(exchange_settings: Dict[str, Any]) -> Account:
 
         credentials = Credentials(username=username, password=password)
 
-        import certifi
-        config = Configuration(
-            server=server,
-            credentials=credentials,
-            verify=certifi.where()  # <-- public CA bundle
-        )
+        import certifi, ssl
+        verify_path = certifi.where()
+        try:
+            config = Configuration(server=server, credentials=credentials, verify=verify_path)
+            logger.info(f"exchangelib using verify path: {verify_path}")
+        except TypeError:
+            ctx = ssl.create_default_context(cafile=verify_path)
+            config = Configuration(server=server, credentials=credentials, ssl_context=ctx)
+            logger.info(f"exchangelib using ssl_context with cafile: {verify_path}")
 
         account = Account(
             primary_smtp_address=username,
