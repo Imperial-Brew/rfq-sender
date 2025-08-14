@@ -19,6 +19,7 @@ logger.error("Failed to process request", exc_info=True)  # Include exception in
 """
 
 import logging
+import logging.handlers
 import os
 import sys
 from pathlib import Path

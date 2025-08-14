@@ -130,8 +130,14 @@ class LoggingConfig:
         # Create logger
         logger = logging.getLogger(logger_name)
         logger.setLevel(level)
+        
+        # Prevent double-logging via root handlers
+        # When a module logger has its own handlers and propagate=True (default),
+        # each record is handled twice: by this logger and again by the root.
+        # Setting propagate=False ensures records are handled only once here.
+        logger.propagate = False
 
-        # Clear any existing handlers to avoid duplicates
+        # Clear any existing handlers to avoid duplicates on repeated setup
         if logger.handlers:
             logger.handlers.clear()
 
@@ -440,6 +446,72 @@ def validate_security_settings(validation_issues: list) -> None:
         validation_issues.append("CUI protection is enabled but warning text is empty")
 
 # Initialize configuration
+def _ensure_sender_defaults() -> None:
+    """Infer and set sender identity defaults if missing.
+    
+    - SENDER_EMAIL: prefer EXCHANGE_FROM_EMAIL; else EXCHANGE_USERNAME.
+    - SENDER_NAME: derive from email local-part (john.doe -> John Doe);
+      else fall back to COMPANY_NAME; else 'RFQ Sender'.
+    Also align EXCHANGE_FROM_EMAIL if we inferred SENDER_EMAIL.
+    """
+    try:
+        sender_email = os.environ.get("SENDER_EMAIL", "").strip()
+        exchange_from = os.environ.get("EXCHANGE_FROM_EMAIL", "").strip()
+        exchange_user = os.environ.get("EXCHANGE_USERNAME", "").strip()
+
+        # Infer sender email
+        inferred_email = None
+        if not sender_email:
+            # Check company-scoped env first (may come from secrets flattening)
+            company_sender_email = os.environ.get("COMPANY_SENDER_EMAIL", "").strip()
+            if company_sender_email:
+                inferred_email = company_sender_email
+            elif exchange_from:
+                inferred_email = exchange_from
+            elif exchange_user and "@" in exchange_user:
+                inferred_email = exchange_user
+
+            if inferred_email:
+                os.environ["SENDER_EMAIL"] = inferred_email
+                logger.info(f"SENDER_EMAIL not set; inferred from environment: {inferred_email}")
+                # If EXCHANGE_FROM_EMAIL missing, align it
+                if not exchange_from:
+                    os.environ["EXCHANGE_FROM_EMAIL"] = inferred_email
+                    logger.info("EXCHANGE_FROM_EMAIL not set; aligned with inferred SENDER_EMAIL")
+
+        # Infer sender name
+        sender_name = os.environ.get("SENDER_NAME", "").strip()
+        if not sender_name:
+            email_for_name = os.environ.get("SENDER_EMAIL", "") or exchange_user
+            inferred_name = None
+            if email_for_name and "@" in email_for_name:
+                local = email_for_name.split("@", 1)[0]
+                # Split on common separators and build a title-cased name
+                import re
+                parts = [p for p in re.split(r"[._\-]+", local) if p]
+                if len(parts) >= 2:
+                    first = parts[-1].title()
+                    last = parts[0].title()
+                    inferred_name = f"{first} {last}"
+                elif len(parts) == 1:
+                    inferred_name = parts[0].title()
+            # Fallback to company sender name or company name
+            if not inferred_name:
+                company_sender_name = os.environ.get("COMPANY_SENDER_NAME", "").strip()
+                if company_sender_name:
+                    inferred_name = company_sender_name
+                else:
+                    company = os.environ.get("COMPANY_NAME", "").strip()
+                    if company:
+                        inferred_name = company
+                    else:
+                        inferred_name = "RFQ Sender"
+            os.environ["SENDER_NAME"] = inferred_name
+            logger.info(f"SENDER_NAME not set; inferred as: {inferred_name}")
+    except Exception as e:
+        logger.warning(f"Failed to infer sender defaults: {e}")
+
+
 def init_config() -> None:
     """
     Initialize configuration and validate settings.
@@ -456,6 +528,9 @@ def init_config() -> None:
     """
     # Load environment variables
     load_environment()
+
+    # Apply defaults for sender identity if missing
+    _ensure_sender_defaults()
     
     # Track validation status
     validation_issues = []
