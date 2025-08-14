@@ -3,7 +3,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from scripts.email import sender
+from scripts.mail import sender
 
 
 def test_validate_email():

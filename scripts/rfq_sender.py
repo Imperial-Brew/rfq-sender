@@ -1,4 +1,4 @@
-"""Convenience wrapper for :mod:`scripts.email.rfq_sender`.
+"""Convenience wrapper for :mod:`scripts.mail.rfq_sender`.
 
 The original RFQ sender implementation lives in ``scripts/email/rfq_sender.py``.
 Historically tests and other tooling imported it as ``scripts/rfq_sender``.  At
@@ -14,7 +14,7 @@ import os
 from types import ModuleType
 
 # Locate the real rfq_sender implementation
-_module_path = os.path.join(os.path.dirname(__file__), "email", "rfq_sender.py")
+_module_path = os.path.join(os.path.dirname(__file__), "mail", "rfq_sender.py")
 _spec = importlib.util.spec_from_file_location("_rfq_sender", _module_path)
 _rfq: ModuleType = importlib.util.module_from_spec(_spec)
 assert _spec and _spec.loader  # for type checkers

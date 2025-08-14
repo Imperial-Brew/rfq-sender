@@ -4,7 +4,7 @@ import tempfile
 from unittest.mock import patch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from scripts.email import rfq_sender
+from scripts.mail import rfq_sender
 
 
 def test_get_attachments():
@@ -37,7 +37,7 @@ def test_render_template():
         "attachments": [],
     }
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    with patch("scripts.email.rfq_sender.os.path.dirname", return_value=project_root):
+    with patch("scripts.mail.rfq_sender.os.path.dirname", return_value=project_root):
         rendered = rfq_sender.render_template("cover_letter.j2", context)
     assert "Hello Alice" in rendered
 

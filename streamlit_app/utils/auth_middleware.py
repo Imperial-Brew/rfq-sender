@@ -5,7 +5,7 @@ import sys
 
 # Add parent directory to path
 parent_dir = Path(__file__).parent.parent.parent
-sys.path.append(str(parent_dir))
+sys.path.insert(0, str(parent_dir))
 
 from utils.auth import validate_session
 

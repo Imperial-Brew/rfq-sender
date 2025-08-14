@@ -6,7 +6,8 @@ import yaml
 
 # Add parent directory to path
 parent_dir = Path(__file__).parent.parent.parent
-sys.path.append(str(parent_dir))
+# Prepend project root to sys.path so local 'utils' package wins over any site-packages 'utils'
+sys.path.insert(0, str(parent_dir))
 
 from utils.auth import load_users, login_user, validate_session
 

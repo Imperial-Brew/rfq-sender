@@ -6,7 +6,7 @@ import tempfile
 import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from scripts.email import cli
+from scripts.mail import cli
 
 
 def test_cli_argument_parsing(monkeypatch):

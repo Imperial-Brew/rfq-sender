@@ -7,7 +7,8 @@ import datetime
 
 # Add the parent directory to the path so we can import from other modules
 parent_dir = Path(__file__).parent.parent
-sys.path.append(str(parent_dir))
+# Prepend project root to ensure local modules shadow similarly-named third-party ones
+sys.path.insert(0, str(parent_dir))
 
 # Import utility functions
 from utils.auth import load_users, get_user_role, validate_session

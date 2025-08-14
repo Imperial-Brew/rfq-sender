@@ -8,6 +8,7 @@ from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, 
 from core.email.ews_client import get_exchange_account, extract_rfq_fields
 from core.secrets import get_section  # to grab [company] and [app]
 from core.vendors.vendor_manager import VendorManager
+from core.email.graph_client import create_draft as graph_create, add_file_attachment as graph_attach
 
 # Disable insecure request warnings if needed
 # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) - commented out for debug
@@ -134,34 +135,57 @@ class EmailManager:
         return contact.get('email', ''), subject, body
 
     def create_draft_email(
-        self,
-        recipient: str,
-        subject: str,
-        body: str,
-        attachments: List[str] = None,
-        html_format: bool = True,
-        cc_email: str = None
+            self,
+            recipient: str,
+            subject: str,
+            body: str,
+            attachments: List[str] = None,
+            html_format: bool = True,
+            cc_email: str = None
     ) -> bool:
         """
-        Create a draft email using Exchange Web Services.
-        
-        Args:
-            recipient: Email address of the recipient
-            subject: Email subject
-            body: Email body (HTML or plain text)
-            attachments: List of file paths to attach
-            html_format: Whether the body is HTML (True) or plain text (False)
-            cc_email: Optional CC email address
-            
-        Returns:
-            True if successful, False otherwise
+        Create a draft email using Graph (default) or EWS (fallback).
         """
+        # Decide backend (default: graph)
+        backend = os.getenv("MAIL_BACKEND", "graph").lower()
+
+        # Pull mailbox + default CC from secrets
+        ex_cfg = get_section("exchange")
+        user_upn = ex_cfg.get("username", "")
+        cc = cc_email or ex_cfg.get("cc")
+
+        if backend == "graph":
+            try:
+                # Graph only supports HTML/Text; if caller said plain text, preserve spacing
+                html_body = body if html_format else f"<pre>{body}</pre>"
+
+                msg_id = graph_create(
+                    user_upn=user_upn,
+                    subject=subject,
+                    html_body=html_body,
+                    to=[recipient],
+                    cc=[cc] if cc else None,
+                )
+
+                # Attachments (small vs large handled inside graph_client)
+                if attachments:
+                    for p in attachments:
+                        if os.path.exists(p):
+                            graph_attach(user_upn, msg_id, p)
+                        else:
+                            logger.warning(f"Missing attachment: {p}")
+
+                return True
+            except Exception as e:
+                logger.error(f"Graph draft creation failed for {recipient}: {e}")
+                return False
+
+        # ----- EWS fallback (kept for future OAuth) -----
         try:
             # Ensure we have an account
             if not self.account:
                 self.initialize_exchange()
-            
-            # Create message
+
             m = Message(
                 account=self.account,
                 folder=self.account.drafts,
@@ -170,18 +194,15 @@ class EmailManager:
                 body_type='HTML' if html_format else 'Text',
                 to_recipients=[Mailbox(email_address=recipient)]
             )
-            
-            # Add CC if specified
-            if cc_email:
-                m.cc_recipients = [Mailbox(email_address=cc_email)]
-            
-            # Add attachments
+
+            if cc:
+                m.cc_recipients = [Mailbox(email_address=cc)]
+
             if attachments:
                 for file_path in attachments:
                     if os.path.exists(file_path):
                         with open(file_path, 'rb') as f:
                             content = f.read()
-                        
                         file_attachment = FileAttachment(
                             name=os.path.basename(file_path),
                             content=content
@@ -189,16 +210,15 @@ class EmailManager:
                         m.attach(file_attachment)
                     else:
                         logger.warning(f"Missing attachment: {file_path}")
-            
-            # Save the draft
+
             m.save()
-            
             return True
+
         except FileNotFoundError as e:
-            logger.error(f"File not found: {str(e)}")
+            logger.error(f"File not found: {e}")
             return False
         except Exception as e:
-            logger.error(f"Error creating draft email to {recipient}: {str(e)}")
+            logger.error(f"Error creating draft email to {recipient}: {e}")
             return False
     
     def send_email(

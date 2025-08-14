@@ -23,7 +23,7 @@ from utils.specs import (
     spec_exists,
     load_familiar_specs
 )
-from utils.email import (
+from utils.rfq_email import (
     load_vendors,
     find_vendors_for_process,
     find_vendors_for_process_and_spec,

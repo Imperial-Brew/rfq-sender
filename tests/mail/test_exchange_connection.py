@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Import the necessary modules
 from core.config import ExchangeConfig, init_config
-from utils.email import initialize_exchange
+from utils.rfq_email import initialize_exchange
 
 # Initialize configuration
 init_config()

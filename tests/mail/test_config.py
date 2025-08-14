@@ -2,7 +2,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from scripts.email import config as email_config
+from scripts.mail import config as email_config
 
 
 def test_load_config():

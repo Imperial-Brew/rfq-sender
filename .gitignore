@@ -15,6 +15,7 @@ lib/
 lib64/
 parts/
 sdist/
+.streamlit/
 var/
 *.egg-info/
 .installed.cfg
@@ -32,10 +33,14 @@ ENV/
 
 # Project specific
 .env
+!.env.example
 logs/
+logs.csv
+*.log
 temp/
 data/*.db
 scripts/0__config.json
+scripts/box/0__config.json
 .streamlit/secrets.toml
 
 # Windows
@@ -49,3 +54,12 @@ $RECYCLE.BIN/
 .AppleDouble
 .LSOverride
 ._*
+
+# Caches and tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+.venv/

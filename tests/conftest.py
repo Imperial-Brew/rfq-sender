@@ -1,29 +1,20 @@
 # tests/conftest.py
 import os
 from pathlib import Path
-
-# Python 3.12 has tomllib built-in
-import tomllib  # noqa: F401
+import tomllib  # py3.11+
 
 def pytest_sessionstart(session):
-    proj_root = Path(__file__).resolve().parents[1]
-    secrets_path = proj_root / ".streamlit" / "secrets.toml"
-    if not secrets_path.exists():
-        # Optional: skip secret-dependent tests when file not present
+    p = Path(__file__).resolve().parents[1] / ".streamlit" / "secrets.toml"
+    if not p.exists():
         return
+    data = tomllib.loads(p.read_text(encoding="utf-8"))
 
-    data = tomllib.loads(secrets_path.read_text(encoding="utf-8"))
     ex = data.get("exchange", {})
-    comp = data.get("company", {})
-    app = data.get("app", {})
-
-    # Exchange creds → env so ews_client can read them without Streamlit
     os.environ.setdefault("EXCHANGE_USERNAME", ex.get("username", ""))
     os.environ.setdefault("EXCHANGE_PASSWORD", ex.get("password", ""))
     os.environ.setdefault("EXCHANGE_SERVER",   ex.get("server", "outlook.office365.com"))
-    if "cc" in ex:
-        os.environ.setdefault("EXCHANGE_CC", ex["cc"])
 
-    # Optional: company/app to env if your tests/templates expect them
-    os.environ.setdefault("COMPANY_NAME", comp.get("name", ""))
-    os.environ.setdefault("APP_SUBJECT_PREFIX", app.get("subject_prefix", ""))
+    az = data.get("azure", {})
+    os.environ.setdefault("AZURE_TENANT_ID", az.get("tenant_id", ""))
+    os.environ.setdefault("AZURE_CLIENT_ID", az.get("client_id", ""))
+    os.environ.setdefault("AZURE_CLIENT_SECRET", az.get("client_secret", ""))
