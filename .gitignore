@@ -62,4 +62,5 @@ $RECYCLE.BIN/
 .tox/
 .coverage
 .coverage.*
-.venv/
+.venv/.streamlit/secrets.toml
+.streamlit/secrets.toml
