@@ -111,7 +111,7 @@ class EmailManager:
         prefix = app_cfg.get("subject_prefix", "")
         subject = f"{prefix}RFQ: {fields['part_number']} - {fields['process']}"
 
-        company = {**self.company_info, **get_section("company")},
+        company = {**self.company_info, **get_section("company")}
 
         # Build the template context (what the Jinja file renders with)
         context = {
@@ -178,7 +178,8 @@ class EmailManager:
                 return True
             except Exception as e:
                 logger.error(f"Graph draft creation failed for {recipient}: {e}")
-                return False
+                # Intentionally fall through to EWS as a fallback
+                backend = "ews"
 
         # ----- EWS fallback (kept for future OAuth) -----
         try:
@@ -241,10 +242,9 @@ class EmailManager:
             True if draft created successfully, False otherwise
         """
         try:
-            # Ensure we have an account
-            if not self.account:
-                self.initialize_exchange()
-            
+            # Decide backend to avoid unnecessary EWS initialization
+            backend = os.getenv("MAIL_BACKEND", "graph").lower()
+
             # Get CC email if specified
             cc_email = self.exchange_settings.get('cc', None)
             
@@ -295,9 +295,10 @@ class EmailManager:
                 vendor_options_file=vendor_options_file if vendor_options_file and os.path.exists(vendor_options_file) else None
             )
             
-            # Ensure we have an account
-            if not self.account:
-                self.initialize_exchange()
+            # Initialize EWS account only if backend is 'ews'
+            if os.getenv("MAIL_BACKEND", "graph").lower() == "ews":
+                if not self.account:
+                    self.initialize_exchange()
             
             # Process each item in the queue
             successful = 0
