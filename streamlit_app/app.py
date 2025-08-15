@@ -11,7 +11,7 @@ parent_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(parent_dir))
 
 # Import utility functions
-from utils.auth import load_users, get_user_role, validate_session
+from streamlit_app.utils.auth_shim import load_users, get_user_role, validate_session
 from streamlit_app.components.logout_button import logout_button
 from utils.logging import get_logger, configure_root_logger
 

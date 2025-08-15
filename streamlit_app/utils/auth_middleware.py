@@ -7,7 +7,7 @@ import sys
 parent_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(parent_dir))
 
-from utils.auth import validate_session
+from streamlit_app.utils.auth_shim import validate_session
 
 
 def require_authentication(role=None):

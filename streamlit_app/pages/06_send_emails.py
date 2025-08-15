@@ -15,7 +15,7 @@ sys.path.append(str(parent_dir))
 
 # Import from project modules
 from core.config import Paths, CompanyInfo, LoggingConfig, init_config
-from utils.auth import get_user_role
+from streamlit_app.utils.auth_shim import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
 from scripts.utils.spec_check import SpecProcessValidator
 
