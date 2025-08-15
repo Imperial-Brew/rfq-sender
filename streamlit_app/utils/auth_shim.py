@@ -20,11 +20,13 @@ try:
     )
 except Exception as e:
     # Provide minimal fallbacks to avoid hard crashes if import fails
+    _IMPORT_ERR = f"{type(e).__name__}: {e}"
+
     def load_users(path):
-        raise ImportError(f"Failed to import utils.auth.load_users: {e}")
+        raise ImportError(f"Failed to import utils.auth.load_users: {_IMPORT_ERR}")
 
     def login_user(users, email, password):
-        raise ImportError(f"Failed to import utils.auth.login_user: {e}")
+        raise ImportError(f"Failed to import utils.auth.login_user: {_IMPORT_ERR}")
 
     def validate_session(token, expiry):
         return False
@@ -33,13 +35,13 @@ except Exception as e:
         return user.get("role", "viewer")
 
     def hash_password(password: str) -> str:
-        raise ImportError(f"Failed to import utils.auth.hash_password: {e}")
+        raise ImportError(f"Failed to import utils.auth.hash_password: {_IMPORT_ERR}")
 
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        raise ImportError(f"Failed to import utils.auth.verify_password: {e}")
+        raise ImportError(f"Failed to import utils.auth.verify_password: {_IMPORT_ERR}")
 
     def create_session_token() -> str:
-        raise ImportError(f"Failed to import utils.auth.create_session_token: {e}")
+        raise ImportError(f"Failed to import utils.auth.create_session_token: {_IMPORT_ERR}")
 
     def logout_user(user):
         pass
