@@ -10,9 +10,11 @@ The Box integration has been successfully implemented to handle file attachments
    - Test scripts verify functionality
 
 2. **Credentials Management**:
-   - Box client ID and client secret are stored in `scripts/0__config.json`
-   - Box access token and refresh token are stored in environment variables (`.env` file)
-   - Tokens are refreshed automatically and stored in environment variables
+   - Uses Box JWT (Server Authentication) only. No OAuth access/refresh tokens.
+   - Provide credentials via one of the following:
+     - Secrets: `[box].jwt_json` in Streamlit secrets (preferred on Streamlit Cloud)
+     - File path: set `[box].config_path` (flattened to `BOX_CONFIG_PATH`) to an absolute path of `0__config.json` on the server
+   - The SDK generates and refreshes JWT tokens automatically; no tokens are stored in `.env`. 
 
 3. **Enhanced Security**:
    - Password protection for shared links (optional)

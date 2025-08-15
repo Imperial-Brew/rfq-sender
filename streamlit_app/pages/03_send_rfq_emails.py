@@ -744,7 +744,28 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                         # Initialize Box
                         box = BoxIntegration(logger=logger)
                         if not box or not box.client:
-                            st.error("Box initialization failed. Check scripts\\box\\0__config.json and enterprise authorization.")
+                            # Surface diagnostics to help user resolve missing config
+                            diag = {}
+                            try:
+                                if box and hasattr(box, "diagnostics"):
+                                    diag = box.diagnostics()
+                                elif box:
+                                    diag = {
+                                        "tried_paths": getattr(box, "tried_paths", []),
+                                        "config_path": getattr(box, "config_path", None),
+                                        "last_error": getattr(box, "last_error", ""),
+                                        "client_initialized": bool(getattr(box, "client", None)),
+                                    }
+                            except Exception as _e:
+                                diag = {"client_initialized": False, "last_error": str(_e)}
+                            st.error("Box initialization failed. Provide [box].jwt_json in Streamlit Secrets or set BOX_CONFIG_PATH to your 0__config.json. See diagnostics below.")
+                            st.write({
+                                "config_path": diag.get("config_path"),
+                                "tried_paths": diag.get("tried_paths"),
+                                "client_initialized": diag.get("client_initialized"),
+                                "last_error": diag.get("last_error"),
+                                "BOX_JWT_JSON_present": bool(os.environ.get("BOX_JWT_JSON", "")),
+                            })
                             return
 
                         # Work on a slice so we can map back by index
@@ -835,7 +856,27 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                             # Initialize Box (JWT)
                             box = BoxIntegration(logger=logger)
                             if not box or not box.client:
-                                st.error("Box initialization failed. Check scripts\\box\\0__config.json or set BOX_CONFIG_PATH in settings.")
+                                diag = {}
+                                try:
+                                    if box and hasattr(box, "diagnostics"):
+                                        diag = box.diagnostics()
+                                    elif box:
+                                        diag = {
+                                            "tried_paths": getattr(box, "tried_paths", []),
+                                            "config_path": getattr(box, "config_path", None),
+                                            "last_error": getattr(box, "last_error", ""),
+                                            "client_initialized": bool(getattr(box, "client", None)),
+                                        }
+                                except Exception as _e:
+                                    diag = {"client_initialized": False, "last_error": str(_e)}
+                                st.error("Box initialization failed. Provide [box].jwt_json in Streamlit Secrets or set BOX_CONFIG_PATH to your 0__config.json. See diagnostics below.")
+                                st.write({
+                                    "config_path": diag.get("config_path"),
+                                    "tried_paths": diag.get("tried_paths"),
+                                    "client_initialized": diag.get("client_initialized"),
+                                    "last_error": diag.get("last_error"),
+                                    "BOX_JWT_JSON_present": bool(os.environ.get("BOX_JWT_JSON", "")),
+                                })
                                 return
 
                             # Process only selected parts
@@ -999,7 +1040,27 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                         with st.spinner("Creating Box folders, uploading files, and updating CSV for entire queue..."):
                             box = BoxIntegration(logger=logger)
                             if not box or not box.client:
-                                st.error("Box initialization failed. Check scripts\\box\\0__config.json and enterprise authorization.")
+                                diag = {}
+                                try:
+                                    if box and hasattr(box, "diagnostics"):
+                                        diag = box.diagnostics()
+                                    elif box:
+                                        diag = {
+                                            "tried_paths": getattr(box, "tried_paths", []),
+                                            "config_path": getattr(box, "config_path", None),
+                                            "last_error": getattr(box, "last_error", ""),
+                                            "client_initialized": bool(getattr(box, "client", None)),
+                                        }
+                                except Exception as _e:
+                                    diag = {"client_initialized": False, "last_error": str(_e)}
+                                st.error("Box initialization failed. Provide [box].jwt_json in Streamlit Secrets or set BOX_CONFIG_PATH to your 0__config.json. See diagnostics below.")
+                                st.write({
+                                    "config_path": diag.get("config_path"),
+                                    "tried_paths": diag.get("tried_paths"),
+                                    "client_initialized": diag.get("client_initialized"),
+                                    "last_error": diag.get("last_error"),
+                                    "BOX_JWT_JSON_present": bool(os.environ.get("BOX_JWT_JSON", "")),
+                                })
                                 return
 
                             box_results = []
@@ -1277,7 +1338,10 @@ def display_email_settings():
         # Show current BOX_CONFIG_PATH
         current_path = os.environ.get("BOX_CONFIG_PATH", "")
         st.text(f"Current BOX_CONFIG_PATH: {current_path or '(not set)'}")
-        st.caption("Search order: 1) BOX_CONFIG_PATH  2) scripts\\box\\0__config.json  3) scripts\\0__config.json")
+        # Also indicate if BOX_JWT_JSON (full credentials in secrets) is present
+        jwt_json_env = os.environ.get("BOX_JWT_JSON", "")
+        st.text(f"BOX_JWT_JSON present: {'yes' if jwt_json_env else 'no'}" + (f" (len={len(jwt_json_env)})" if jwt_json_env else ""))
+        st.caption("Search order: 1) BOX_JWT_JSON (secrets)  2) BOX_CONFIG_PATH  3) scripts\\box\\0__config.json  4) scripts\\0__config.json")
 
         # Allow session override for BOX_CONFIG_PATH
         new_path = st.text_input("Set/override BOX_CONFIG_PATH for this session", value=current_path)
@@ -1328,6 +1392,7 @@ def display_email_settings():
                     "tried_paths": diag.get("tried_paths"),
                     "client_initialized": diag.get("client_initialized"),
                     "last_error": diag.get("last_error"),
+                    "BOX_JWT_JSON_present": bool(os.environ.get("BOX_JWT_JSON", "")),
                 })
             except Exception as e:
                 st.error(f"Box test failed: {e}")
