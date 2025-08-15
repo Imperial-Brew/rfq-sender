@@ -1,4 +1,6 @@
-# Streamlit Secrets Implementation Summary
+# Streamlit Secrets Implementation Summary (Legacy Notes)
+
+> Note: Since the migration to Microsoft Graph, the ExchangeConfig class is deprecated and should not be used in new code. Current configuration uses .streamlit/secrets.toml with [exchange], [azure], [company], and [app] sections. See docs/implementation/graph_migration.md for the up-to-date configuration model.
 
 ## Issue Description
 

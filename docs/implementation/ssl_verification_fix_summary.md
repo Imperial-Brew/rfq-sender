@@ -1,4 +1,6 @@
-# SSL Verification Fix Summary
+# SSL Verification Fix Summary (Legacy)
+
+> Note: This document describes a legacy EWS workaround that is no longer used. The application now uses Microsoft Graph exclusively for mail, and the insecure TLS override paths have been removed. See docs/implementation/graph_migration.md for the current design.
 
 ## Issue Description
 

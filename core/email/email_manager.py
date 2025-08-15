@@ -4,9 +4,8 @@ import jinja2
 import logging
 from typing import Dict, List, Optional, Tuple, Any, Mapping, Union
 from dotenv import load_dotenv
-from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
-from core.email.ews_client import get_exchange_account, extract_rfq_fields
 from core.secrets import get_section  # to grab [company] and [app]
+from core.email.utils import extract_rfq_fields
 from core.vendors.vendor_manager import VendorManager
 from core.email.graph_client import create_draft as graph_create, add_file_attachment as graph_attach
 
@@ -25,17 +24,15 @@ class EmailManager:
     Manages email operations for RFQ emails.
     
     This class provides functionality to:
-    1. Connect to Exchange server
-    2. Render email templates
-    3. Create and send RFQ emails
-    4. Process the queue and send emails to vendors
+    1. Creates draft emails via Microsoft Graph.
+    2. Render email templates using Jinja2.
     """
     
     def __init__(
         self,
         template_path: str = None,
         exchange_settings: Dict[str, Any] = None,
-        company_info: Dict[str, Any] = None
+        company_info: Dict[str, Any] = None,
     ):
         """
         Initialize the email manager.
@@ -48,14 +45,8 @@ class EmailManager:
         self.template_path = template_path
         self.exchange_settings = exchange_settings or {}
         self.company_info = company_info or {}
-        self.account = None
-        
-        # Load environment variables
+        # Graph only; no EWS account
         load_dotenv()
-
-    def initialize_exchange(self):
-        self.account = get_exchange_account(self.exchange_settings)
-        return self.account
 
     def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
         """
@@ -135,91 +126,49 @@ class EmailManager:
         return contact.get('email', ''), subject, body
 
     def create_draft_email(
-            self,
-            recipient: str,
-            subject: str,
-            body: str,
-            attachments: List[str] = None,
-            html_format: bool = True,
-            cc_email: str = None
+        self,
+        recipient: str,
+        subject: str,
+        body: str,
+        attachments: List[str] = None,
+        html_format: bool = True,
+        cc_email: str = None,
     ) -> bool:
         """
-        Create a draft email using Graph (default) or EWS (fallback).
+        Create a draft email using Microsoft Graph only.
         """
-        # Decide backend (default: graph)
-        backend = os.getenv("MAIL_BACKEND", "graph").lower()
-
-        # Pull mailbox + default CC from secrets
-        ex_cfg = get_section("exchange")
-        user_upn = ex_cfg.get("username", "")
-        cc = cc_email or ex_cfg.get("cc")
-
-        if backend == "graph":
-            try:
-                # Graph only supports HTML/Text; if caller said plain text, preserve spacing
-                html_body = body if html_format else f"<pre>{body}</pre>"
-
-                msg_id = graph_create(
-                    user_upn=user_upn,
-                    subject=subject,
-                    html_body=html_body,
-                    to=[recipient],
-                    cc=[cc] if cc else None,
-                )
-
-                # Attachments (small vs large handled inside graph_client)
-                if attachments:
-                    for p in attachments:
-                        if os.path.exists(p):
-                            graph_attach(user_upn, msg_id, p)
-                        else:
-                            logger.warning(f"Missing attachment: {p}")
-
-                return True
-            except Exception as e:
-                logger.error(f"Graph draft creation failed for {recipient}: {e}")
-                # Intentionally fall through to EWS as a fallback
-                backend = "ews"
-
-        # ----- EWS fallback (kept for future OAuth) -----
         try:
-            # Ensure we have an account
-            if not self.account:
-                self.initialize_exchange()
+            # Pull mailbox + default CC from secrets
+            ex_cfg = get_section("exchange")
+            user_upn = ex_cfg.get("username", "")
+            cc = cc_email or ex_cfg.get("cc")
+            if not user_upn:
+                logger.error("Missing [exchange].username (UPN) — cannot create draft")
+                return False
+            if not recipient or "@" not in recipient:
+                logger.warning(f"Skipping draft: invalid recipient '{recipient}'")
+                return False
 
-            m = Message(
-                account=self.account,
-                folder=self.account.drafts,
+            html_body = body if html_format else f"<pre>{body}</pre>"
+
+            msg_id = graph_create(
+                user_upn=user_upn,
                 subject=subject,
-                body=body,
-                body_type='HTML' if html_format else 'Text',
-                to_recipients=[Mailbox(email_address=recipient)]
+                html_body=html_body,
+                to=[recipient],
+                cc=[cc] if cc else None,
             )
 
-            if cc:
-                m.cc_recipients = [Mailbox(email_address=cc)]
-
             if attachments:
-                for file_path in attachments:
-                    if os.path.exists(file_path):
-                        with open(file_path, 'rb') as f:
-                            content = f.read()
-                        file_attachment = FileAttachment(
-                            name=os.path.basename(file_path),
-                            content=content
-                        )
-                        m.attach(file_attachment)
+                for p in attachments:
+                    if os.path.exists(p):
+                        graph_attach(user_upn, msg_id, p)
                     else:
-                        logger.warning(f"Missing attachment: {file_path}")
+                        logger.warning(f"Missing attachment: {p}")
 
-            m.save()
             return True
-
-        except FileNotFoundError as e:
-            logger.error(f"File not found: {e}")
-            return False
         except Exception as e:
-            logger.error(f"Error creating draft email to {recipient}: {e}")
+            logger.error(f"Graph draft creation failed for {recipient}: {e}")
             return False
     
     def send_email(
@@ -227,42 +176,22 @@ class EmailManager:
         recipient: str,
         subject: str,
         body: str,
-        attachments: List[str] = None
+        attachments: List[str] = None,
     ) -> bool:
-        """
-        Create a draft email using Exchange Web Services.
-        
-        Args:
-            recipient: Email address of the recipient
-            subject: Email subject
-            body: Email body (HTML)
-            attachments: List of file paths to attach
-            
-        Returns:
-            True if draft created successfully, False otherwise
-        """
         try:
-            # Decide backend to avoid unnecessary EWS initialization
-            backend = os.getenv("MAIL_BACKEND", "graph").lower()
-
-            # Get CC email if specified
             cc_email = self.exchange_settings.get('cc', None)
-            
-            # Create draft email
             success = self.create_draft_email(
                 recipient=recipient,
                 subject=subject,
                 body=body,
                 attachments=attachments,
                 cc_email=cc_email,
-                html_format=True
+                html_format=True,
             )
-            
             if success:
                 logger.info(f"Draft email created successfully for {recipient}")
             else:
                 logger.warning(f"Failed to create draft email for {recipient}")
-                
             return success
         except Exception as e:
             logger.error(f"Error creating draft email for {recipient}: {str(e)}")
@@ -294,11 +223,6 @@ class EmailManager:
                 vendor_file=vendor_file,
                 vendor_options_file=vendor_options_file if vendor_options_file and os.path.exists(vendor_options_file) else None
             )
-            
-            # Initialize EWS account only if backend is 'ews'
-            if os.getenv("MAIL_BACKEND", "graph").lower() == "ews":
-                if not self.account:
-                    self.initialize_exchange()
             
             # Process each item in the queue
             successful = 0

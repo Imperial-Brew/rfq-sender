@@ -9,7 +9,7 @@ import os  # Still needed for path operations
 from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
 # Import the vendor manager and config
 from core.vendors.vendor_manager import VendorManager
-from core.config import Paths, ExchangeConfig, CompanyInfo
+from core.config import Paths, CompanyInfo
 from core.email.ews_client import get_exchange_account, extract_rfq_fields
 from core.secrets import get_section
 
@@ -295,13 +295,13 @@ def send_email(
     try:
         # Use config if exchange_settings not provided
         if exchange_settings is None:
-            exchange_settings = ExchangeConfig.get_settings()
+            exchange_settings = get_section("exchange")
             
         # Initialize Exchange connection
         account = initialize_exchange(exchange_settings)
         
         # Get CC email if specified
-        cc_email = exchange_settings.get('cc', ExchangeConfig.get_cc_email())
+        cc_email = exchange_settings.get('cc', get_section("exchange").get('cc'))
         
         # Create draft email
         success = create_draft_email(
@@ -353,7 +353,7 @@ def process_queue_and_send_emails(
     queue_file = queue_file or Paths.QUEUE_PATH
     vendor_file = vendor_file or Paths.VENDOR_FILE
     template_path = template_path or Paths.EMAIL_TEMPLATE_PATH
-    exchange_settings = exchange_settings or ExchangeConfig.get_settings()
+    exchange_settings = exchange_settings or get_section("exchange")
     company_info = company_info or CompanyInfo.get_info()
     vendor_options_file = vendor_options_file or Paths.VENDOR_OPTIONS_FILE
     contacts_file = contacts_file or "docs/OS/contacts.csv"

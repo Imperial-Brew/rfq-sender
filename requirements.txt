@@ -10,10 +10,6 @@ requests>=2.31.0  # HTTP requests
 pandas>=2.0.0  # Data processing
 boxsdk[jwt]>=3.9.2  # Box SDK with JWTAuth support
 
-# Email handling
-exchangelib==5.5.1  # For Exchange integration (specific version to avoid compatibility issues)
-# pywin32>=305  # For Outlook integration (Windows only, no longer used)
-
 # Optional but recommended
 black>=23.3.0  # Code formatting
 flake8>=6.0.0  # Linting

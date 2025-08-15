@@ -43,7 +43,8 @@ import urllib3
 
 # Add parent directory to path to import from core
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from core.config import ExchangeConfig, Paths, LoggingConfig, init_config
+from core.config import Paths, LoggingConfig, init_config
+from core.secrets import get_section
 
 # Initialize configuration
 init_config()
@@ -342,9 +343,10 @@ def initialize_exchange(logger: logging.Logger = None) -> Account:
     
     try:
         # Get credentials from config using getter methods
-        username = ExchangeConfig.get_username()
-        password = ExchangeConfig.get_password()
-        server = ExchangeConfig.get_server()
+        ex_cfg = get_section("exchange")
+        username = ex_cfg.get("username", "")
+        password = ""
+        server = ""
         
         if not username or not password:
             error_msg = "Exchange credentials not found in configuration"

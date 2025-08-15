@@ -234,67 +234,32 @@ class Paths:
     # Ensure logs directory exists
     os.makedirs(LOGS_DIR, exist_ok=True)
 
-# Exchange settings
 class ExchangeConfig:
-    """Container for Exchange email configuration."""
-    
+    """Deprecated: retained for UPN+CC only. EWS credentials are ignored."""
     @classmethod
     def get_username(cls):
         if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_USERNAME' in st.secrets:
             return st.secrets['EXCHANGE_USERNAME']
         return os.environ.get("EXCHANGE_USERNAME", "")
-    
-    @classmethod
-    def get_password(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_PASSWORD' in st.secrets:
-            return st.secrets['EXCHANGE_PASSWORD']
-        return os.environ.get("EXCHANGE_PASSWORD", "")
-    
-    @classmethod
-    def get_server(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_SERVER' in st.secrets:
-            return st.secrets['EXCHANGE_SERVER']
-        return os.environ.get("EXCHANGE_SERVER", "outlook.office365.com")
-    
-    @classmethod
-    def get_from_email(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_FROM_EMAIL' in st.secrets:
-            return st.secrets['EXCHANGE_FROM_EMAIL']
-        return os.environ.get("EXCHANGE_FROM_EMAIL", "")
-    
+
     @classmethod
     def get_cc_email(cls):
         if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'EXCHANGE_CC_EMAIL' in st.secrets:
             return st.secrets['EXCHANGE_CC_EMAIL']
         return os.environ.get("EXCHANGE_CC_EMAIL", "")
-    
+
     @classmethod
     def get_settings(cls) -> Dict[str, str]:
-        """
-        Get Exchange settings as a dictionary.
-        
-        Returns:
-            Dictionary with Exchange settings
-        """
         return {
             "username": cls.get_username(),
-            "from_email": cls.get_from_email(),
-            "cc": cls.get_cc_email()
+            "from_email": cls.get_username(),  # UPN serves as mailbox address
+            "cc": cls.get_cc_email(),
         }
-    
+
     @classmethod
     def validate(cls) -> bool:
-        """
-        Validate that required Exchange settings are present.
-        
-        Returns:
-            True if all required settings are present, False otherwise
-        """
         if not cls.get_username():
-            logger.warning("EXCHANGE_USERNAME is not set")
-            return False
-        if not cls.get_password():
-            logger.warning("EXCHANGE_PASSWORD is not set")
+            logger.warning("EXCHANGE_USERNAME (UPN) is not set")
             return False
         return True
 
@@ -535,9 +500,9 @@ def init_config() -> None:
     # Track validation status
     validation_issues = []
     
-    # Validate Exchange settings
-    if not ExchangeConfig.validate():
-        validation_issues.append("Exchange configuration is incomplete")
+    # Validate Exchange settings (deprecated: ExchangeConfig removed/unused)
+    # if not ExchangeConfig.validate():
+    #     validation_issues.append("Exchange configuration is incomplete")
     
     # Validate file paths
     validate_file_paths(validation_issues)

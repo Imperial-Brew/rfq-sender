@@ -101,9 +101,49 @@ rfq-sender/
    - Edit `.env` with your actual configuration values
 5. Configure vendor and email settings in the config directory
 
+## Mail backend (Microsoft Graph)
+
+The app now uses Microsoft Graph exclusively to create Draft emails. EWS/SMTP settings are no longer used by the mail code paths.
+
+- Configure your mailbox UPN and optional default CC under .streamlit/secrets.toml → [exchange].
+- Configure your Azure app credentials under .streamlit/secrets.toml → [azure].
+- Company information used in email templates is under .streamlit/secrets.toml → [company].
+- Subject prefix is under .streamlit/secrets.toml → [app].
+
+Sample .streamlit/secrets.toml:
+
+[exchange]
+username = "user@yourdomain.com"
+cc       = "quotes@yourdomain.com"
+
+[azure]
+tenant_id     = "<tenant-guid>"
+client_id     = "<app-client-id>"
+client_secret = "<app-client-secret>"
+
+[company]
+name         = "Your Company"
+sender_name  = "Your Name"
+sender_email = "user@yourdomain.com"
+sender_title = "Estimating Manager"
+sender_phone = "555-555-5555"
+
+[app]
+subject_prefix = "[RFQ-]"
+
+Quick smoke test (creates a Draft in the configured mailbox):
+
+PowerShell:
+
+python .\scripts\smoke_graph.py
+
+See docs/implementation/graph_migration.md for details.
+
 ## Environment Variables
 
-The application uses environment variables for sensitive configuration such as email credentials. These are stored in a `.env` file which is not committed to the repository for security reasons.
+Note: For email, the Graph backend uses .streamlit/secrets.toml (see section above). The SMTP/Exchange env vars below are legacy and retained for historical reference.
+
+The application uses environment variables for other sensitive configuration. These may be stored in a `.env` file which is not committed to the repository for security reasons.
 
 Required environment variables:
 

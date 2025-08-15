@@ -1,8 +1,8 @@
 # core/email/graph_client.py
 from __future__ import annotations
+from core.secrets import get_section
 import base64, os, time, requests, logging
 from typing import List, Optional, Dict, Any
-from core.secrets import get_section
 
 log = logging.getLogger(__name__)
 GRAPH = "https://graph.microsoft.com/v1.0"
@@ -70,3 +70,64 @@ def add_file_attachment(user_upn: str, message_id: str, path: str) -> None:
         _add_small_attachment(user_upn, message_id, path)
     else:
         _add_large_attachment(user_upn, message_id, path)
+
+def _add_small_attachment(user_upn: str, message_id: str, path: str) -> None:
+    headers = {**_auth_headers(), "Content-Type": "application/json"}
+    with open(path, "rb") as f:
+        content_bytes = f.read()
+    payload = {
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        "name": os.path.basename(path),
+        "contentBytes": base64.b64encode(content_bytes).decode("ascii"),
+        "contentType": _guess_mime(path),
+    }
+    url = f"{GRAPH}/users/{user_upn}/messages/{message_id}/attachments"
+    r = requests.post(url, headers=headers, json=payload, timeout=60)
+    r.raise_for_status()
+
+def _add_large_attachment(user_upn: str, message_id: str, path: str) -> None:
+    # Create upload session
+    headers = _auth_headers()
+    url = f"{GRAPH}/users/{user_upn}/messages/{message_id}/attachments/createUploadSession"
+    payload = {"AttachmentItem": {
+        "attachmentType": "file",
+        "name": os.path.basename(path),
+        "size": os.path.getsize(path),
+        "contentType": _guess_mime(path),
+    }}
+    r = requests.post(url, headers=headers, json=payload, timeout=30)
+    r.raise_for_status()
+    upload_url = r.json()["uploadUrl"]
+
+    # Chunked upload (e.g., 5 MB chunks)
+    chunk_size = 5 * 1024 * 1024
+    total = os.path.getsize(path)
+    with open(path, "rb") as f:
+        start = 0
+        while True:
+            data = f.read(chunk_size)
+            if not data:
+                break
+            end = start + len(data) - 1
+            headers = {
+                "Content-Length": str(len(data)),
+                "Content-Range": f"bytes {start}-{end}/{total}",
+            }
+            rr = requests.put(upload_url, headers=headers, data=data, timeout=120)
+            # 200/201/202 are OK during upload session
+            if rr.status_code not in (200, 201, 202):
+                rr.raise_for_status()
+            start = end + 1
+
+def _guess_mime(path: str) -> str:
+    # Minimal mapping; extend if needed
+    ext = os.path.splitext(path)[1].lower()
+    return {
+        ".pdf": "application/pdf",
+        ".csv": "text/csv",
+        ".txt": "text/plain",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }.get(ext, "application/octet-stream")

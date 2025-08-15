@@ -14,7 +14,9 @@ parent_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(parent_dir))
 
 # Import configuration and utility functions
-from core.config import Paths, ExchangeConfig, CompanyInfo, LoggingConfig, init_config
+from core.config import Paths, CompanyInfo, LoggingConfig, init_config
+from core.secrets import get_section
+from core.email.email_manager import EmailManager
 from utils.auth import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
 from scripts.utils.spec_check import SpecProcessValidator
@@ -401,88 +403,22 @@ def create_draft_email(recipient: str,
                       cc: List[str] = None,
                       exchange_settings: Dict[str, Any] = None) -> bool:
     """
-    Create a draft email in Outlook using Exchange Web Services.
-    
-    Args:
-        recipient: Email address of the recipient
-        subject: Email subject
-        body: HTML email body
-        attachments: Optional list of file paths to attach
-        cc: Optional list of CC email addresses
-        exchange_settings: Dictionary with Exchange settings
-        
-    Returns:
-        True if draft was created successfully, False otherwise
+    Create a draft email using Microsoft Graph (no EWS).
     """
     try:
-        # Get Exchange settings if not provided
-        if exchange_settings is None:
-            exchange_settings = {
-                'server': ExchangeConfig.get_server(),
-                'username': ExchangeConfig.get_username(),
-                'password': ExchangeConfig.get_password(),
-                'from_email': ExchangeConfig.get_from_email()
-            }
-        
-        # Import exchangelib here to avoid import errors if not installed
-        from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
-        from exchangelib.protocol import BaseProtocol, NoVerifyHTTPAdapter
-        
-        # Configure SSL verification
-        BaseProtocol.HTTP_ADAPTER_CLS = NoVerifyHTTPAdapter
-        
-        # Set up credentials and account
-        credentials = Credentials(
-            username=exchange_settings.get('username'),
-            password=exchange_settings.get('password')
-        )
-        
-        config = Configuration(
-            server=exchange_settings.get('server'),
-            credentials=credentials
-        )
-        
-        account = Account(
-            primary_smtp_address=exchange_settings.get('from_email'),
-            config=config,
-            autodiscover=False,
-            access_type=DELEGATE
-        )
-        
-        # Create a new message
-        m = Message(
-            account=account,
-            folder=account.drafts,
+        # Graph-only: pull user UPN/CC from secrets
+        ex_cfg = get_section("exchange")
+        mgr = EmailManager(exchange_settings={"cc": ex_cfg.get("cc")})
+        return mgr.create_draft_email(
+            recipient=recipient,
             subject=subject,
             body=body,
-            body_type='HTML',
-            to_recipients=[Mailbox(email_address=recipient)]
+            attachments=attachments,
+            cc_email=(cc[0] if isinstance(cc, list) and cc else ex_cfg.get("cc")),
+            html_format=True,
         )
-        
-        # Add CC recipients if provided
-        if cc:
-            m.cc_recipients = [Mailbox(email_address=email) for email in cc if email]
-        
-        # Add attachments if provided
-        if attachments:
-            for file_path in attachments:
-                if os.path.exists(file_path):
-                    with open(file_path, 'rb') as f:
-                        content = f.read()
-                    
-                    file_attachment = FileAttachment(
-                        name=os.path.basename(file_path),
-                        content=content
-                    )
-                    m.attach(file_attachment)
-        
-        # Save as draft
-        m.save()
-        
-        return True
-    
     except Exception as e:
-        logger.error(f"Error creating draft email: {str(e)}")
+        logger.error(f"Error creating draft email (Graph): {str(e)}")
         return False
 
 
@@ -666,17 +602,15 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                             company_info.update({
                                 "sender_name": user["name"],
                                 "sender_title": user.get("title", "Estimator"),
-                                "sender_email": user.get("email", ExchangeConfig.get_from_email()),
+                                "sender_email": user.get("email", get_section("exchange").get("username", "")),
                                 "sender_phone": user.get("phone", CompanyInfo.get_sender_phone())
                             })
                             
-                            # Get exchange settings
+                            # Get exchange settings (Graph only)
+                            ex_cfg = get_section("exchange")
                             exchange_settings = {
-                                "server": ExchangeConfig.get_server(),
-                                "username": ExchangeConfig.get_username(),
-                                "password": ExchangeConfig.get_password(),
-                                "from_email": ExchangeConfig.get_from_email(),
-                                "cc": ExchangeConfig.get_cc_email()
+                                "username": ex_cfg.get("username", ""),
+                                "cc": ex_cfg.get("cc")
                             }
                             
                             # Process only selected parts
@@ -786,17 +720,15 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                             company_info.update({
                                 "sender_name": user["name"],
                                 "sender_title": user.get("title", "Estimator"),
-                                "sender_email": user.get("email", ExchangeConfig.get_from_email()),
+                                "sender_email": user.get("email", get_section("exchange").get("username", "")),
                                 "sender_phone": user.get("phone", CompanyInfo.get_sender_phone())
                             })
                             
-                            # Get exchange settings
+                            # Get exchange settings (Graph only)
+                            ex_cfg = get_section("exchange")
                             exchange_settings = {
-                                "server": ExchangeConfig.get_server(),
-                                "username": ExchangeConfig.get_username(),
-                                "password": ExchangeConfig.get_password(),
-                                "from_email": ExchangeConfig.get_from_email(),
-                                "cc": ExchangeConfig.get_cc_email()
+                                "username": ex_cfg.get("username", ""),
+                                "cc": ex_cfg.get("cc")
                             }
                             
                             # Process the entire queue
@@ -917,12 +849,10 @@ def display_email_settings():
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("**Exchange Settings**")
-            st.text(f"Exchange Server: {ExchangeConfig.get_server()}")
-            st.text(f"Exchange Username: {ExchangeConfig.get_username()}")
-            st.text(f"From Email: {ExchangeConfig.get_from_email()}")
-            # Don't display password for security reasons
-            st.text(f"Password: {'*' * 8 if ExchangeConfig.get_password() else 'Not set'}")
+            st.markdown("**Mailbox Settings (Graph)**")
+            ex_cfg = get_section("exchange")
+            st.text(f"Mailbox (UPN): {ex_cfg.get('username', '')}")
+            st.text(f"Default CC: {ex_cfg.get('cc', '')}")
         
         with col2:
             st.markdown("**Company Settings**")
@@ -934,21 +864,17 @@ def display_email_settings():
     # Test email button
     if st.button("Create Test Email Draft"):
         try:
-            # Get Exchange settings
-            exchange_settings = {
-                "server": ExchangeConfig.get_server(),
-                "username": ExchangeConfig.get_username(),
-                "password": ExchangeConfig.get_password(),
-                "from_email": ExchangeConfig.get_from_email(),
-                "cc": ExchangeConfig.get_cc_email()
-            }
+            # Mailbox settings (Graph)
+            ex_cfg = get_section("exchange")
+            to_addr = ex_cfg.get("username", "")
+            cc_addr = ex_cfg.get("cc")
             
             # Create a test email
             test_email = {
-                "to": ExchangeConfig.get_from_email(),
+                "to": to_addr,
                 "subject": "Test RFQ Email",
                 "body": "<h1>Test Email</h1><p>This is a test email from the RFQ Sender application.</p>",
-                "cc": [],
+                "cc": [cc_addr] if cc_addr else [],
                 "attachments": []
             }
             
@@ -957,7 +883,6 @@ def display_email_settings():
                 recipient=test_email["to"],
                 subject=test_email["subject"],
                 body=test_email["body"],
-                exchange_settings=exchange_settings
             ):
                 st.success("Test email draft created successfully in Outlook!")
                 logger.info("Test email draft created successfully in Outlook")
