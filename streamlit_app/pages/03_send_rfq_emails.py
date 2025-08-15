@@ -1301,8 +1301,24 @@ def display_email_settings():
         if st.button("Test Box Connection"):
             try:
                 box = BoxIntegration(logger=logger)
-                diag = box.diagnostics() if box else {"client_initialized": False, "last_error": "Box object not created"}
-                if box and box.client:
+                # Safely gather diagnostics even if older BoxIntegration lacks .diagnostics()
+                diag = {}
+                try:
+                    if box and hasattr(box, "diagnostics"):
+                        diag = box.diagnostics()
+                    elif box:
+                        diag = {
+                            "tried_paths": getattr(box, "tried_paths", []),
+                            "config_path": getattr(box, "config_path", None),
+                            "last_error": getattr(box, "last_error", ""),
+                            "client_initialized": bool(getattr(box, "client", None)),
+                            "user": getattr(box, "_user_identity", ""),
+                        }
+                    else:
+                        diag = {"client_initialized": False, "last_error": "Box object not created"}
+                except Exception as _e:
+                    diag = {"client_initialized": bool(box and getattr(box, "client", None)), "last_error": str(_e)}
+                if box and getattr(box, "client", None):
                     st.success(f"Authenticated to Box as {diag.get('user','')}\nConfig: {diag.get('config_path','')}")
                 else:
                     st.error("Box initialization failed.")
