@@ -233,51 +233,55 @@ def find_vendors_for_process_spec(vendor_info: Dict[str, Dict[str, Any]],
     
     matching_vendors = []
     
+    process_only_vendors = []
     for vendor_id, vendor_data in vendor_info.items():
         if 'processes' not in vendor_data:
             continue
-            
-        # Check if vendor can handle this process
+        
         can_handle_process = False
         can_handle_spec = normalized_spec is None  # If no spec is provided, default to True
         
         for vendor_process in vendor_data['processes']:
-            # Skip if process name is missing
             if not vendor_process or 'name' not in vendor_process:
                 continue
-                
-            # Normalize vendor process name
             vendor_process_name = normalize_process_spec(vendor_process['name'], validator)
-            
-            # Check if process matches
             if vendor_process_name == normalized_process:
                 can_handle_process = True
-                
                 # If spec is provided, check if vendor can handle it
                 if normalized_spec and 'specs' in vendor_process and vendor_process['specs']:
                     for vendor_spec in vendor_process['specs']:
                         if not vendor_spec:
                             continue
-                            
-                        # Normalize vendor spec name
-                        vendor_spec_name = normalize_process_spec(vendor_spec, validator)
-                        
+                        if isinstance(vendor_spec, dict):
+                            raw_spec = vendor_spec.get('number') or vendor_spec.get('name') or ''
+                        else:
+                            raw_spec = vendor_spec
+                        vendor_spec_name = normalize_process_spec(raw_spec, validator)
                         if vendor_spec_name == normalized_spec:
                             can_handle_spec = True
                             break
-                
-                # If we found a match for both process and spec (or no spec was required),
-                # we can stop checking other processes
+                # If we found a match for both process and spec (or no spec was required), stop checking
                 if can_handle_process and can_handle_spec:
                     break
         
-        # Add vendor to matching vendors if they can handle both process and spec
+        # Track process-capable vendors for fallback
+        if can_handle_process and not process_only_vendors:
+            # we will fill later after loop to avoid repeated copies
+            pass
+        
         if can_handle_process and can_handle_spec:
-            # Create a copy of vendor data to avoid modifying the original
             vendor_copy = vendor_data.copy()
-            # Add vendor_id to the copy for reference
             vendor_copy['id'] = vendor_id
             matching_vendors.append(vendor_copy)
+        elif can_handle_process and normalized_spec is not None:
+            # remember for fallback when spec provided but no matches
+            vendor_copy = vendor_data.copy()
+            vendor_copy['id'] = vendor_id
+            process_only_vendors.append(vendor_copy)
+    
+    # Fallback: if spec given but no exact spec matches, return process-only vendors
+    if normalized_spec is not None and not matching_vendors and process_only_vendors:
+        return process_only_vendors
     
     return matching_vendors
 
