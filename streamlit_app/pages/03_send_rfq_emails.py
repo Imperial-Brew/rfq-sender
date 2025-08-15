@@ -277,7 +277,8 @@ def upload_and_share_for_part(
     - Creates RFQs/[qt/so #]/[Part_Number]
     - Uploads attachments to the part folder
     - Detects CUI/ITAR to optionally add password protection
-    - Returns a dict with: share_link, password, is_cui, part_folder, quote_folder, rfqs_root
+    - Returns a dict with: share_link, password, is_cui, part_folder, quote_folder, rfqs_root,
+      files_uploaded, file_manifest, unshared_at
     """
     qt_so = row.get("qt/so #", "")
     part_number = row.get("part_number", "")
@@ -289,12 +290,22 @@ def upload_and_share_for_part(
         return {"error": f"Failed to prepare Box folder for {part_number}"}
 
     # Upload files first (if present)
+    files_uploaded = 0
+    manifest = []
     if attachments:
         box.upload_files(attachments, part_folder)
+        files_uploaded = len(attachments)
+        manifest = [os.path.basename(p) for p in attachments]
 
     # Decide protection
     is_cui = detect_cui_itar(row)
     password = generate_password() if is_cui else None
+
+    # Compute expiration timestamp for recording (Box returns link; we record intended expiry)
+    unshared_at = None
+    if default_expire_days and default_expire_days > 0:
+        from datetime import timedelta
+        unshared_at = (datetime.now() + timedelta(days=default_expire_days)).isoformat()
 
     share_link = box.create_share_link(
         part_folder,
@@ -310,6 +321,10 @@ def upload_and_share_for_part(
         "part_folder": part_folder,
         "quote_folder": quote_folder,
         "rfqs_root": rfqs_root,
+        "files_uploaded": files_uploaded,
+        "file_manifest": ";".join(manifest) if manifest else "",
+        "box_access": access,
+        "unshared_at": unshared_at,
     }
 
 
@@ -721,6 +736,74 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                     use_container_width=True,
                     hide_index=True
                 )
+
+            # New: Create/Update Box for selected parts
+            if st.button("Create/Update Box Folders/Links for Selected Parts", disabled=len(selected_indices) == 0):
+                try:
+                    with st.spinner("Creating Box folders, uploading files, and updating CSV..."):
+                        # Initialize Box
+                        box = BoxIntegration(logger=logger)
+                        if not box or not box.client:
+                            st.error("Box initialization failed. Check scripts\\box\\0__config.json and enterprise authorization.")
+                            return
+
+                        # Work on a slice so we can map back by index
+                        selected_parts_df = queue.iloc[selected_indices]
+                        box_results = []
+
+                        for idx, row in selected_parts_df.iterrows():
+                            part_number = row.get("part_number", "")
+                            # Collect local files
+                            attachments = []
+                            if 'file_location' in row and row['file_location']:
+                                attachments = get_file_attachments(row['file_location'], logger)
+
+                            # Upload to Box and create share link
+                            upload_result = upload_and_share_for_part(
+                                box=box,
+                                row=row,
+                                attachments=attachments,
+                                access="company",
+                                default_expire_days=30,
+                            )
+
+                            if upload_result.get("error"):
+                                logger.warning(upload_result["error"])
+                                box_results.append({
+                                    "part_number": part_number,
+                                    "status": "Error",
+                                    "detail": upload_result.get("error"),
+                                })
+                                continue
+
+                            # Persist to queue DataFrame
+                            queue.loc[idx, 'box_rfq_root_id'] = getattr(upload_result.get('rfqs_root'), 'id', '')
+                            queue.loc[idx, 'box_quote_folder_id'] = getattr(upload_result.get('quote_folder'), 'id', '')
+                            queue.loc[idx, 'box_part_folder_id'] = getattr(upload_result.get('part_folder'), 'id', '')
+                            queue.loc[idx, 'box_share_link'] = upload_result.get('share_link', '') or ''
+                            queue.loc[idx, 'box_access'] = upload_result.get('box_access', '')
+                            queue.loc[idx, 'box_password'] = upload_result.get('password', '') or ''
+                            queue.loc[idx, 'box_unshared_at'] = upload_result.get('unshared_at', '') or ''
+                            queue.loc[idx, 'box_last_updated'] = datetime.now().isoformat()
+                            queue.loc[idx, 'files_uploaded'] = upload_result.get('files_uploaded', 0)
+                            queue.loc[idx, 'file_manifest'] = upload_result.get('file_manifest', '')
+
+                            box_results.append({
+                                "part_number": part_number,
+                                "status": "Updated",
+                                "box_part_folder_id": queue.loc[idx, 'box_part_folder_id'],
+                                "share_link": queue.loc[idx, 'box_share_link'],
+                            })
+
+                        # Save CSV
+                        queue.to_csv(queue_file, index=False)
+                        results_df = pd.DataFrame(box_results)
+                        st.success(f"Updated Box info for {len(results_df)} selected part(s).")
+                        st.dataframe(results_df, use_container_width=True, hide_index=True)
+                        logger.info(f"Box folders/links updated for {len(results_df)} selected parts")
+                except Exception as e:
+                    st.error(f"Error creating Box folders or updating CSV: {str(e)}")
+                    logger.error(f"Error creating Box folders or updating CSV: {str(e)}")
             
             # Process selected parts
             col1, col2 = st.columns(2)
@@ -861,6 +944,66 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                         logger.error(f"Error creating RFQ email drafts: {str(e)}")
             
             with col2:
+                # New: Create/Update Box for entire queue
+                if st.button("Create/Update Box for Entire Queue"):
+                    try:
+                        with st.spinner("Creating Box folders, uploading files, and updating CSV for entire queue..."):
+                            box = BoxIntegration(logger=logger)
+                            if not box or not box.client:
+                                st.error("Box initialization failed. Check scripts\\box\\0__config.json and enterprise authorization.")
+                                return
+
+                            box_results = []
+                            for idx, row in queue.iterrows():
+                                part_number = row.get("part_number", "")
+                                attachments = []
+                                if 'file_location' in row and row['file_location']:
+                                    attachments = get_file_attachments(row['file_location'], logger)
+
+                                upload_result = upload_and_share_for_part(
+                                    box=box,
+                                    row=row,
+                                    attachments=attachments,
+                                    access="company",
+                                    default_expire_days=30,
+                                )
+
+                                if upload_result.get("error"):
+                                    logger.warning(upload_result["error"])
+                                    box_results.append({
+                                        "part_number": part_number,
+                                        "status": "Error",
+                                        "detail": upload_result.get("error"),
+                                    })
+                                    continue
+
+                                queue.loc[idx, 'box_rfq_root_id'] = getattr(upload_result.get('rfqs_root'), 'id', '')
+                                queue.loc[idx, 'box_quote_folder_id'] = getattr(upload_result.get('quote_folder'), 'id', '')
+                                queue.loc[idx, 'box_part_folder_id'] = getattr(upload_result.get('part_folder'), 'id', '')
+                                queue.loc[idx, 'box_share_link'] = upload_result.get('share_link', '') or ''
+                                queue.loc[idx, 'box_access'] = upload_result.get('box_access', '')
+                                queue.loc[idx, 'box_password'] = upload_result.get('password', '') or ''
+                                queue.loc[idx, 'box_unshared_at'] = upload_result.get('unshared_at', '') or ''
+                                queue.loc[idx, 'box_last_updated'] = datetime.now().isoformat()
+                                queue.loc[idx, 'files_uploaded'] = upload_result.get('files_uploaded', 0)
+                                queue.loc[idx, 'file_manifest'] = upload_result.get('file_manifest', '')
+
+                                box_results.append({
+                                    "part_number": part_number,
+                                    "status": "Updated",
+                                    "box_part_folder_id": queue.loc[idx, 'box_part_folder_id'],
+                                    "share_link": queue.loc[idx, 'box_share_link'],
+                                })
+
+                            queue.to_csv(queue_file, index=False)
+                            results_df = pd.DataFrame(box_results)
+                            st.success(f"Updated Box info for {len(results_df)} part(s) in entire queue.")
+                            st.dataframe(results_df, use_container_width=True, hide_index=True)
+                            logger.info(f"Box folders/links updated for entire queue: {len(results_df)} parts")
+                    except Exception as e:
+                        st.error(f"Error creating Box folders or updating CSV for entire queue: {str(e)}")
+                        logger.error(f"Error creating Box folders or updating CSV for entire queue: {str(e)}")
+
                 if st.button("Create Drafts for Entire Queue"):
                     if role not in ["admin", "editor"]:
                         st.warning("You need admin or editor privileges to send emails.")
