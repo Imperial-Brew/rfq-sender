@@ -17,9 +17,13 @@ sys.path.append(str(parent_dir))
 from core.config import Paths, CompanyInfo, LoggingConfig, init_config
 from core.secrets import get_section
 from core.email.email_manager import EmailManager
+from core.vendors.vendor_manager import VendorManager
 from streamlit_app.utils.auth_shim import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
 from scripts.utils.spec_check import SpecProcessValidator
+from scripts.box.box_integration import BoxIntegration
+import secrets
+import string
 
 # Check authentication
 if not require_authentication():
@@ -207,6 +211,134 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
 
     return queue, vendor_info
 
+def detect_cui_itar(row: pd.Series) -> bool:
+    """
+    Prefer explicit cui_itar column if present; otherwise fall back to heuristic
+    scanning of spec/process/callout/material for 'CUI' or 'ITAR'.
+    """
+    try:
+        flag = row.get('cui_itar', None)
+        if isinstance(flag, str):
+            s = flag.strip().upper()
+            if s in ("TRUE", "YES", "Y", "1"):  # treat any truthy token as True
+                return True
+            if s in ("FALSE", "NO", "N", "0"):  # explicit false
+                return False
+        elif isinstance(flag, bool):
+            return bool(flag)
+    except Exception:
+        pass
+
+    fields_to_scan = [
+        str(row.get('spec', '')),
+        str(row.get('process', '')),
+        str(row.get('callout', '')),
+        str(row.get('material', '')),
+    ]
+    text = " ".join(fields_to_scan).upper()
+    return ("CUI" in text) or ("ITAR" in text)
+
+
+def generate_password(length: int = 14) -> str:
+    """Generate a random, email-friendly password."""
+    alphabet = string.ascii_letters + string.digits + "-_@#"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+def ensure_rfq_part_folder(box: "BoxIntegration", qt_so: str, part_number: str):
+    """
+    Ensure Box folders exist for 'RFQs/[qt/so #]/[Part_Number]'.
+    Returns (rfqs_root, quote_folder, part_folder) or (None, None, None) on failure.
+    """
+    rfqs_root = box.create_folder("RFQs", parent_folder_id="0")
+    if not rfqs_root:
+        return None, None, None
+
+    quote_name = str(qt_so).strip() if qt_so else str(part_number).strip()
+    quote_folder = box.create_folder(quote_name, parent_folder_id=rfqs_root.id)
+    if not quote_folder:
+        return rfqs_root, None, None
+
+    part_folder = box.create_folder(str(part_number).strip(), parent_folder_id=quote_folder.id)
+    if not part_folder:
+        return rfqs_root, quote_folder, None
+
+    return rfqs_root, quote_folder, part_folder
+
+
+def upload_and_share_for_part(
+    box: "BoxIntegration",
+    row: pd.Series,
+    attachments: List[str],
+    access: str = "open",          # Consider "company" for internal-only links
+    default_expire_days: int = 30,
+):
+    """
+    - Creates RFQs/[qt/so #]/[Part_Number]
+    - Uploads attachments to the part folder
+    - Detects CUI/ITAR to optionally add password protection
+    - Returns a dict with: share_link, password, is_cui, part_folder, quote_folder, rfqs_root
+    """
+    qt_so = row.get("qt/so #", "")
+    part_number = row.get("part_number", "")
+    if not part_number:
+        return {"error": "Missing part_number"}
+
+    rfqs_root, quote_folder, part_folder = ensure_rfq_part_folder(box, qt_so, part_number)
+    if not part_folder:
+        return {"error": f"Failed to prepare Box folder for {part_number}"}
+
+    # Upload files first (if present)
+    if attachments:
+        box.upload_files(attachments, part_folder)
+
+    # Decide protection
+    is_cui = detect_cui_itar(row)
+    password = generate_password() if is_cui else None
+
+    share_link = box.create_share_link(
+        part_folder,
+        access=access,
+        password=password,
+        expire_days=default_expire_days,
+    )
+
+    return {
+        "share_link": share_link,
+        "password": password,
+        "is_cui": is_cui,
+        "part_folder": part_folder,
+        "quote_folder": quote_folder,
+        "rfqs_root": rfqs_root,
+    }
+
+
+def inject_box_link_into_body(html_body: str, share_link: str, is_cui: bool) -> str:
+    """Append a styled Box link section to the existing HTML email body."""
+    if not share_link:
+        return html_body
+
+    banner = f"""
+    <div style="margin-top:16px;padding:14px;border:1px solid #d0d7de;border-radius:8px;background:#f6f8fa;">
+      <div style="font-size:16px;font-weight:600;margin-bottom:6px;">
+        RFQ Files in Box { '(Password Protected)' if is_cui else '' }
+      </div>
+      <div>
+        <a href="{share_link}" style="display:inline-block;padding:10px 14px;background:#2d7ff9;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+          Open RFQ Folder
+        </a>
+      </div>
+      <div style="margin-top:8px;color:#57606a;font-size:13px;">
+        If you have trouble opening the link, copy and paste this URL into your browser:<br/>
+        <code style="font-size:12px;">{share_link}</code>
+      </div>
+    </div>
+    """
+    if "</body>" in html_body:
+        return html_body.replace("</body>", banner + "\n</body>")
+    if "</html>" in html_body:
+        return html_body.replace("</html>", banner + "\n</html>")
+    return html_body + banner
 
 def find_vendors_for_process_spec(vendor_info: Dict[str, Dict[str, Any]], 
                                  process: str, 
@@ -638,13 +770,30 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                 )
                                 
                                 if not matching_vendors:
-                                    results.append({
-                                        "part_number": part_number,
-                                        "process": process,
-                                        "status": "No vendors found",
-                                        "emails_sent": 0
-                                    })
-                                    continue
+                                    # Fallback: use VendorManager (config/vendors.json + contacts.csv)
+                                    try:
+                                        vm = VendorManager()
+                                        vm_matches = vm.find_vendors_for_process_and_spec(process, spec)
+                                        transformed = []
+                                        for v in vm_matches:
+                                            contact = vm.get_primary_contact(v)
+                                            if contact and contact.get('email'):
+                                                transformed.append({
+                                                    'email': contact.get('email', ''),
+                                                    'vendor_name': v.get('name', ''),
+                                                    'first_name': contact.get('first_name', '') or contact.get('name', '')
+                                                })
+                                        matching_vendors = transformed
+                                    except Exception as _e:
+                                        logger.debug(f"VendorManager fallback error for {process}/{spec}: {_e}")
+                                    if not matching_vendors:
+                                        results.append({
+                                            "part_number": part_number,
+                                            "process": process,
+                                            "status": "No vendors found",
+                                            "emails_sent": 0
+                                        })
+                                        continue
                                 
                                 # Send emails to each vendor
                                 emails_sent = 0
@@ -755,13 +904,30 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                 )
                                 
                                 if not matching_vendors:
-                                    results.append({
-                                        "part_number": part_number,
-                                        "process": process,
-                                        "status": "No vendors found",
-                                        "emails_sent": 0
-                                    })
-                                    continue
+                                    # Fallback: use VendorManager (config/vendors.json + contacts.csv)
+                                    try:
+                                        vm = VendorManager()
+                                        vm_matches = vm.find_vendors_for_process_and_spec(process, spec)
+                                        transformed = []
+                                        for v in vm_matches:
+                                            contact = vm.get_primary_contact(v)
+                                            if contact and contact.get('email'):
+                                                transformed.append({
+                                                    'email': contact.get('email', ''),
+                                                    'vendor_name': v.get('name', ''),
+                                                    'first_name': contact.get('first_name', '') or contact.get('name', '')
+                                                })
+                                        matching_vendors = transformed
+                                    except Exception as _e:
+                                        logger.debug(f"VendorManager fallback error for {process}/{spec}: {_e}")
+                                    if not matching_vendors:
+                                        results.append({
+                                            "part_number": part_number,
+                                            "process": process,
+                                            "status": "No vendors found",
+                                            "emails_sent": 0
+                                        })
+                                        continue
                                 
                                 # Send emails to each vendor
                                 emails_sent = 0

@@ -77,6 +77,16 @@ def display_add_to_queue_form(user):
             help="Enter the location of the files to be quoted"
         )
         
+        # New fields: Quote/Sales Order # and ITAR/CUI flag
+        qt_so = st.text_input(
+            "Quote/Sales Order # (qt/so #)",
+            help="Enter the quote or sales order identifier (e.g., QT57267 or SO12345)"
+        )
+        cui_itar_flag = st.checkbox(
+            "Contains ITAR/CUI",
+            help="Check if the RFQ contains ITAR/CUI sensitive information"
+        )
+        
         notes = st.text_area(
             "Notes", 
             help="Enter any additional notes or instructions"
@@ -100,7 +110,9 @@ def display_add_to_queue_form(user):
                         "quantities": quantity.strip(),
                         "file_location": file_location.strip(),
                         "notes": notes.strip(),
-                        "submitted_by": user["name"]
+                        "submitted_by": user["name"],
+                        "qt/so #": qt_so.strip(),
+                        "cui_itar": "TRUE" if cui_itar_flag else "FALSE",
                     })
                     st.success("✅ Part added to queue!")
                     logger.info(f"Part {part_number} added to queue by {user['name']}")

@@ -85,6 +85,17 @@ def add_to_queue(path, entry: dict):
     """
     logger.info(f"Adding new entry to queue at {path}")
     try:
+        # Normalize new fields: 'qt/so #' and 'cui_itar'
+        qt_so = (entry.get('qt/so #') or '').strip()
+        entry['qt/so #'] = qt_so
+        # Normalize ITAR/CUI to string TRUE/FALSE
+        cui_val = entry.get('cui_itar', '')
+        if isinstance(cui_val, bool):
+            entry['cui_itar'] = 'TRUE' if cui_val else 'FALSE'
+        else:
+            s = str(cui_val).strip().upper()
+            entry['cui_itar'] = 'TRUE' if s in ('TRUE', 'YES', 'Y', '1') else ('FALSE' if s else '')
+        
         # Load existing queue
         df = load_queue(path)
         
