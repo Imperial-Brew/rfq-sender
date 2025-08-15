@@ -832,6 +832,12 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                 "cc": ex_cfg.get("cc")
                             }
                             
+                            # Initialize Box (JWT)
+                            box = BoxIntegration(logger=logger)
+                            if not box or not box.client:
+                                st.error("Box initialization failed. Check scripts\\box\\0__config.json or set BOX_CONFIG_PATH in settings.")
+                                return
+
                             # Process only selected parts
                             selected_parts_df = queue.iloc[selected_indices]
                             results = []
@@ -902,23 +908,66 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                             company_info=company_info
                                         )
                                         
-                                        # Get file attachments
+                                        # Collect local files for Box upload
                                         attachments = []
                                         if 'file_location' in row and row['file_location']:
                                             file_path = row['file_location']
                                             attachments = get_file_attachments(file_path, logger)
-                                        
-                                        # Create draft email
+
+                                        # Upload to Box and create share link (password if CUI/ITAR)
+                                        upload_result = upload_and_share_for_part(
+                                            box=box,
+                                            row=row,
+                                            attachments=attachments,
+                                            access="company",
+                                            default_expire_days=30,
+                                        )
+
+                                        if upload_result.get("error"):
+                                            logger.warning(upload_result["error"]) 
+                                            share_link = None
+                                            is_cui = False
+                                            password = None
+                                        else:
+                                            share_link = upload_result.get("share_link")
+                                            is_cui = upload_result.get("is_cui", False)
+                                            password = upload_result.get("password")
+
+                                        # Inject Box link into the email body
+                                        body_with_link = inject_box_link_into_body(body, share_link, is_cui)
+
+                                        # Create the main draft (no attachments; link in body)
                                         if create_draft_email(
                                             recipient=vendor_email,
                                             subject=subject,
-                                            body=body,
-                                            attachments=attachments,
+                                            body=body_with_link,
+                                            attachments=None,
                                             cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
                                             exchange_settings=exchange_settings
                                         ):
                                             emails_sent += 1
-                                            logger.info(f"Draft email created successfully for {vendor_email} for {part_number}")
+                                            logger.info(f"Draft email (with Box link) created for {vendor_email} for {part_number}")
+
+                                            # If CUI/ITAR, create a second draft containing only the password
+                                            if is_cui and password:
+                                                pwd_subject = f"Password for RFQ Files – {part_number}"
+                                                pwd_body = f"""
+                                                <p>Hello {contact_name or ''},</p>
+                                                <p>The RFQ files you received are password-protected.</p>
+                                                <p><b>Password:</b> <code>{password}</code></p>
+                                                <p>Please send this email about 10 minutes after the RFQ email.</p>
+                                                """
+                                                if create_draft_email(
+                                                    recipient=vendor_email,
+                                                    subject=pwd_subject,
+                                                    body=pwd_body,
+                                                    attachments=None,
+                                                    cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
+                                                    exchange_settings=exchange_settings
+                                                ):
+                                                    logger.info(f"Password draft created for {vendor_email} for {part_number}")
+                                                else:
+                                                    logger.warning(f"Failed to create password draft for {vendor_email} for {part_number}")
                                         else:
                                             logger.warning(f"Failed to create draft email for {vendor_email} for {part_number}")
                                     except Exception as e:
@@ -1027,6 +1076,12 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                 "cc": ex_cfg.get("cc")
                             }
                             
+                            # Initialize Box (JWT)
+                            box = BoxIntegration(logger=logger)
+                            if not box or not box.client:
+                                st.error("Box initialization failed. Check scripts\\box\\0__config.json or set BOX_CONFIG_PATH in settings.")
+                                return
+
                             # Process the entire queue
                             results = []
                             
@@ -1096,23 +1151,66 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                             company_info=company_info
                                         )
                                         
-                                        # Get file attachments
+                                        # Collect local files for Box upload
                                         attachments = []
                                         if 'file_location' in row and row['file_location']:
                                             file_path = row['file_location']
                                             attachments = get_file_attachments(file_path, logger)
-                                        
-                                        # Create draft email
+
+                                        # Upload to Box and create share link (password if CUI/ITAR)
+                                        upload_result = upload_and_share_for_part(
+                                            box=box,
+                                            row=row,
+                                            attachments=attachments,
+                                            access="company",
+                                            default_expire_days=30,
+                                        )
+
+                                        if upload_result.get("error"):
+                                            logger.warning(upload_result["error"]) 
+                                            share_link = None
+                                            is_cui = False
+                                            password = None
+                                        else:
+                                            share_link = upload_result.get("share_link")
+                                            is_cui = upload_result.get("is_cui", False)
+                                            password = upload_result.get("password")
+
+                                        # Inject Box link into the email body
+                                        body_with_link = inject_box_link_into_body(body, share_link, is_cui)
+
+                                        # Create the main draft (no attachments; link in body)
                                         if create_draft_email(
                                             recipient=vendor_email,
                                             subject=subject,
-                                            body=body,
-                                            attachments=attachments,
+                                            body=body_with_link,
+                                            attachments=None,
                                             cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
                                             exchange_settings=exchange_settings
                                         ):
                                             emails_sent += 1
-                                            logger.info(f"Draft email created successfully for {vendor_email} for {part_number}")
+                                            logger.info(f"Draft email (with Box link) created for {vendor_email} for {part_number}")
+
+                                            # If CUI/ITAR, create a second draft containing only the password
+                                            if is_cui and password:
+                                                pwd_subject = f"Password for RFQ Files – {part_number}"
+                                                pwd_body = f"""
+                                                <p>Hello {contact_name or ''},</p>
+                                                <p>The RFQ files you received are password-protected.</p>
+                                                <p><b>Password:</b> <code>{password}</code></p>
+                                                <p>Please send this email about 10 minutes after the RFQ email.</p>
+                                                """
+                                                if create_draft_email(
+                                                    recipient=vendor_email,
+                                                    subject=pwd_subject,
+                                                    body=pwd_body,
+                                                    attachments=None,
+                                                    cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
+                                                    exchange_settings=exchange_settings
+                                                ):
+                                                    logger.info(f"Password draft created for {vendor_email} for {part_number}")
+                                                else:
+                                                    logger.warning(f"Failed to create password draft for {vendor_email} for {part_number}")
                                         else:
                                             logger.warning(f"Failed to create draft email for {vendor_email} for {part_number}")
                                     except Exception as e:
@@ -1173,6 +1271,51 @@ def display_email_settings():
             st.text(f"Sender Name: {CompanyInfo.get_sender_name()}")
             st.text(f"Sender Title: {CompanyInfo.get_sender_title()}")
             st.text(f"Sender Phone: {CompanyInfo.get_sender_phone()}")
+    
+    # New: Box Settings and Diagnostics
+    with st.expander("Box Settings (JWT) and Diagnostics"):
+        # Show current BOX_CONFIG_PATH
+        current_path = os.environ.get("BOX_CONFIG_PATH", "")
+        st.text(f"Current BOX_CONFIG_PATH: {current_path or '(not set)'}")
+        st.caption("Search order: 1) BOX_CONFIG_PATH  2) scripts\\box\\0__config.json  3) scripts\\0__config.json")
+
+        # Allow session override for BOX_CONFIG_PATH
+        new_path = st.text_input("Set/override BOX_CONFIG_PATH for this session", value=current_path)
+        set_env = st.button("Use This Config Path (Session Only)")
+        if set_env:
+            try:
+                if new_path:
+                    os.environ["BOX_CONFIG_PATH"] = new_path
+                    st.success(f"BOX_CONFIG_PATH set for this session: {new_path}")
+                    logger.info(f"BOX_CONFIG_PATH set via UI: {new_path}")
+                else:
+                    if "BOX_CONFIG_PATH" in os.environ:
+                        del os.environ["BOX_CONFIG_PATH"]
+                    st.warning("Cleared BOX_CONFIG_PATH for this session.")
+                    logger.info("BOX_CONFIG_PATH cleared via UI")
+            except Exception as e:
+                st.error(f"Failed to set BOX_CONFIG_PATH: {e}")
+                logger.error(f"Failed to set BOX_CONFIG_PATH: {e}")
+
+        # Test connection
+        if st.button("Test Box Connection"):
+            try:
+                box = BoxIntegration(logger=logger)
+                diag = box.diagnostics() if box else {"client_initialized": False, "last_error": "Box object not created"}
+                if box and box.client:
+                    st.success(f"Authenticated to Box as {diag.get('user','')}\nConfig: {diag.get('config_path','')}")
+                else:
+                    st.error("Box initialization failed.")
+                # Show diagnostics details
+                st.write({
+                    "config_path": diag.get("config_path"),
+                    "tried_paths": diag.get("tried_paths"),
+                    "client_initialized": diag.get("client_initialized"),
+                    "last_error": diag.get("last_error"),
+                })
+            except Exception as e:
+                st.error(f"Box test failed: {e}")
+                logger.error(f"Box test failed: {e}")
     
     # Test email button
     if st.button("Create Test Email Draft"):

@@ -58,59 +58,120 @@ class BoxIntegration:
             logger: Optional logger for logging messages
         """
         self.logger = logger
+        # Diagnostics fields
+        self.tried_paths: list[str] = []
+        self.config_path: Optional[str] = None
+        self.last_error: str = ""
+        self._user_identity: Optional[str] = None
         self.client = self._authenticate()
 
     def _authenticate(self) -> Optional[Client]:
         """
         Authenticate with Box using JWT credentials from 0__config.json file.
 
+        Discovery order for config file:
+        1) Environment variable BOX_CONFIG_PATH (supports Streamlit secrets via core.config)
+        2) scripts\\box\\0__config.json (next to this module)
+        3) scripts\\0__config.json (parent folder fallback)
+
         Returns:
             Box client if authentication is successful, None otherwise
         """
         try:
-            # Get the path to the config file
+            # Discover config path(s)
+            tried: list[str] = []
+            env_path = os.environ.get("BOX_CONFIG_PATH", "").strip()
+
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            config_path = os.path.join(script_dir, "0__config.json")
-            
-            # Check if config file exists
-            if not os.path.exists(config_path):
+            default_path = os.path.join(script_dir, "0__config.json")
+            parent_path = os.path.join(os.path.dirname(script_dir), "0__config.json")
+
+            candidate_paths = []
+            if env_path:
+                candidate_paths.append(env_path)
+            candidate_paths.extend([default_path, parent_path])
+
+            config_path = None
+            for p in candidate_paths:
+                tried.append(p)
+                if p and os.path.exists(p):
+                    config_path = p
+                    break
+
+            # Save diagnostics
+            self.tried_paths = tried
+            self.config_path = config_path
+
+            if not config_path:
+                msg = (
+                    "Box config file not found. Tried: " + "; ".join(tried) +
+                    ". Set BOX_CONFIG_PATH env var (or Streamlit secret box.config_path) "
+                    "to the absolute path of your 0__config.json, or place it in scripts\\box."
+                )
+                self.last_error = msg
                 if self.logger:
-                    self.logger.error(f"Box config file not found: {config_path}")
+                    self.logger.error(msg)
                 else:
-                    print(f"Box config file not found: {config_path}")
+                    print(msg)
                 return None
-            
+
             # Create JWT auth object from config file
+            if self.logger:
+                self.logger.info(f"Using Box config at: {config_path}")
+            else:
+                print(f"Using Box config at: {config_path}")
             auth = JWTAuth.from_settings_file(config_path)
-            
+
             # Create client
             client = Client(auth)
-            
+
             # Test connection by getting current user info
             user = client.user().get()
+            ident = f"{user.name} ({user.login})"
+            self._user_identity = ident
             if self.logger:
-                self.logger.info(f"Authenticated with Box as {user.name} ({user.login})")
+                self.logger.info(f"Authenticated with Box as {ident}")
             else:
-                print(f"Authenticated with Box as {user.name} ({user.login})")
-            
+                print(f"Authenticated with Box as {ident}")
+
             return client
 
         except BoxAPIException as e:
-            error_message = str(e)
+            # Provide clearer diagnostics for common cases
+            status = getattr(e, 'status', None)
+            code = getattr(e, 'code', '') or ''
+            message = str(e)
+            self.last_error = message
+            friendly = None
+            if status in (401, 403) and ("unauthorized" in message.lower() or "not authorized" in message.lower() or code == "unauthorized_app"):
+                friendly = (
+                    "Box app is not authorized by the enterprise admin, or JWT app scopes are insufficient. "
+                    "Ask your Box admin to authorize the Custom App in the Admin Console (Enterprise Settings > Apps)."
+                )
+            elif "invalid_grant" in message.lower() or "private_key" in message.lower() or "jwt" in message.lower():
+                friendly = (
+                    "JWT credential problem. Verify 0__config.json values (publicKeyID, privateKey, passphrase, enterpriseID). "
+                    "You may need to generate a new keypair and update the config."
+                )
             if self.logger:
-                self.logger.error(f"Box API error: {error_message}")
+                self.logger.error(f"Box API error: {message}")
+                if friendly:
+                    self.logger.error(friendly)
             else:
-                print(f"Box API error: {error_message}")
+                print(f"Box API error: {message}")
+                if friendly:
+                    print(friendly)
             return None
 
         except Exception as e:
             error_message = str(e)
+            self.last_error = error_message
             if "private_key" in error_message.lower() or "jwt" in error_message.lower():
                 if self.logger:
-                    self.logger.error(f"Box JWT authentication error: Issue with JWT credentials in 0__config.json file.")
+                    self.logger.error("Box JWT authentication error: Issue with JWT credentials in 0__config.json (or BOX_CONFIG_PATH).")
                     self.logger.error(f"Original error: {error_message}")
                 else:
-                    print(f"Box JWT authentication error: Issue with JWT credentials in 0__config.json file.")
+                    print("Box JWT authentication error: Issue with JWT credentials in 0__config.json (or BOX_CONFIG_PATH).")
                     print(f"Original error: {error_message}")
             else:
                 if self.logger:
@@ -118,6 +179,16 @@ class BoxIntegration:
                 else:
                     print(f"Error authenticating with Box: {error_message}")
             return None
+
+    def diagnostics(self) -> Dict[str, Any]:
+        """Return a snapshot of auth diagnostics for UI logging."""
+        return {
+            "tried_paths": self.tried_paths,
+            "config_path": self.config_path,
+            "last_error": self.last_error,
+            "client_initialized": bool(self.client),
+            "user": self._user_identity or "",
+        }
 
 
     def create_folder(self, folder_name: str, parent_folder_id: str = "0", 

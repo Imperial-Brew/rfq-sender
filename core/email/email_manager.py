@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from core.secrets import get_section  # to grab [company] and [app]
 from core.email.utils import extract_rfq_fields
 from core.vendors.vendor_manager import VendorManager
-from core.email.graph_client import create_draft as graph_create, add_file_attachment as graph_attach
+from core.email.graph_client import create_draft as graph_create
 
 # Disable insecure request warnings if needed
 # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) - commented out for debug
@@ -159,12 +159,9 @@ class EmailManager:
                 cc=[cc] if cc else None,
             )
 
+            # Attachments are deprecated and ignored — all files must be shared via Box links in the email body.
             if attachments:
-                for p in attachments:
-                    if os.path.exists(p):
-                        graph_attach(user_upn, msg_id, p)
-                    else:
-                        logger.warning(f"Missing attachment: {p}")
+                logger.info("Attachments provided to create_draft_email are ignored by policy; use Box upload + shared link instead.")
 
             return True
         except Exception as e:
