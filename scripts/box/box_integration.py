@@ -96,7 +96,25 @@ class BoxIntegration:
                 self.config_path = "<secrets:BOX_JWT_JSON>"
                 if self.logger:
                     self.logger.info("Initializing Box JWT from secrets dictionary (BOX_JWT_JSON)")
-                settings = json.loads(jwt_json)
+                try:
+                    settings = json.loads(jwt_json)
+                except json.JSONDecodeError as je:
+                    # Attempt to sanitize common formatting issue: literal newlines in privateKey
+                    # This occurs when the JSON is pasted into secrets with actual newlines
+                    # inside the "privateKey" value rather than escaped \n sequences.
+                    def _sanitize_jwt_json(text: str) -> str:
+                        import re
+                        def repl(m):
+                            inner = m.group(1)
+                            # Normalize CRLF to LF, then escape newlines; also escape backslashes
+                            inner = inner.replace("\r\n", "\n").replace("\r", "\n")
+                            inner = inner.replace("\\", "\\\\")
+                            inner = inner.replace("\n", r"\n")
+                            return '"privateKey": "' + inner + '"'
+                        # DOTALL to capture across lines
+                        return re.sub(r'"privateKey"\s*:\s*"([\s\S]*?)"', repl, text)
+                    sanitized = _sanitize_jwt_json(jwt_json)
+                    settings = json.loads(sanitized)
                 auth = JWTAuth.from_settings_dictionary(settings)
             else:
                 # Discover config path(s) on disk
