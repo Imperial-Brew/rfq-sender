@@ -43,6 +43,7 @@ from datetime import datetime
 from boxsdk import Client, OAuth2, JWTAuth
 from boxsdk.exception import BoxAPIException
 from boxsdk.object.collaboration import CollaborationRole
+import json
 
 
 class BoxIntegration:
@@ -115,12 +116,19 @@ class BoxIntegration:
                     print(msg)
                 return None
 
-            # Create JWT auth object from config file
-            if self.logger:
-                self.logger.info(f"Using Box config at: {config_path}")
+            # Create JWT auth object (prefer secrets JSON if provided)
+            jwt_json = os.environ.get("BOX_JWT_JSON", "").strip()
+            if jwt_json:
+                if self.logger:
+                    self.logger.info("Initializing Box JWT from secrets dictionary (BOX_JWT_JSON)")
+                settings = json.loads(jwt_json)
+                auth = JWTAuth.from_settings_dictionary(settings)
             else:
-                print(f"Using Box config at: {config_path}")
-            auth = JWTAuth.from_settings_file(config_path)
+                if self.logger:
+                    self.logger.info(f"Using Box config at: {config_path}")
+                else:
+                    print(f"Using Box config at: {config_path}")
+                auth = JWTAuth.from_settings_file(config_path)
 
             # Create client
             client = Client(auth)
