@@ -68,62 +68,66 @@ class BoxIntegration:
 
     def _authenticate(self) -> Optional[Client]:
         """
-        Authenticate with Box using JWT credentials from 0__config.json file.
+        Authenticate with Box using JWT credentials.
 
-        Discovery order for config file:
-        1) Environment variable BOX_CONFIG_PATH (supports Streamlit secrets via core.config)
-        2) scripts\\box\\0__config.json (next to this module)
-        3) scripts\\0__config.json (parent folder fallback)
+        Credentials discovery order:
+        1) BOX_JWT_JSON (full JSON in secrets/env) — no file required
+        2) BOX_CONFIG_PATH (absolute path to 0__config.json)
+        3) scripts\\box\\0__config.json (next to this module)
+        4) scripts\\0__config.json (parent folder fallback)
 
         Returns:
             Box client if authentication is successful, None otherwise
         """
         try:
-            # Discover config path(s)
+            # Prepare diagnostics containers
             tried: list[str] = []
             env_path = os.environ.get("BOX_CONFIG_PATH", "").strip()
+            jwt_json = os.environ.get("BOX_JWT_JSON", "").strip()
 
             script_dir = os.path.dirname(os.path.abspath(__file__))
             default_path = os.path.join(script_dir, "0__config.json")
             parent_path = os.path.join(os.path.dirname(script_dir), "0__config.json")
 
-            candidate_paths = []
-            if env_path:
-                candidate_paths.append(env_path)
-            candidate_paths.extend([default_path, parent_path])
-
-            config_path = None
-            for p in candidate_paths:
-                tried.append(p)
-                if p and os.path.exists(p):
-                    config_path = p
-                    break
-
-            # Save diagnostics
-            self.tried_paths = tried
-            self.config_path = config_path
-
-            if not config_path:
-                msg = (
-                    "Box config file not found. Tried: " + "; ".join(tried) +
-                    ". Set BOX_CONFIG_PATH env var (or Streamlit secret box.config_path) "
-                    "to the absolute path of your 0__config.json, or place it in scripts\\box."
-                )
-                self.last_error = msg
-                if self.logger:
-                    self.logger.error(msg)
-                else:
-                    print(msg)
-                return None
-
-            # Create JWT auth object (prefer secrets JSON if provided)
-            jwt_json = os.environ.get("BOX_JWT_JSON", "").strip()
+            # If JWT JSON is provided via secrets, prefer it and avoid requiring a file
             if jwt_json:
+                tried.extend(["<secrets:BOX_JWT_JSON>", env_path or "(no BOX_CONFIG_PATH)", default_path, parent_path])
+                self.tried_paths = tried
+                self.config_path = "<secrets:BOX_JWT_JSON>"
                 if self.logger:
                     self.logger.info("Initializing Box JWT from secrets dictionary (BOX_JWT_JSON)")
                 settings = json.loads(jwt_json)
                 auth = JWTAuth.from_settings_dictionary(settings)
             else:
+                # Discover config path(s) on disk
+                candidate_paths = []
+                if env_path:
+                    candidate_paths.append(env_path)
+                candidate_paths.extend([default_path, parent_path])
+
+                config_path = None
+                for p in candidate_paths:
+                    tried.append(p)
+                    if p and os.path.exists(p):
+                        config_path = p
+                        break
+
+                # Save diagnostics
+                self.tried_paths = tried
+                self.config_path = config_path
+
+                if not config_path:
+                    msg = (
+                        "Box config file not found. Tried: " + "; ".join(tried) +
+                        ". Provide BOX_JWT_JSON in secrets or set BOX_CONFIG_PATH to your 0__config.json, or place it in scripts\\box."
+                    )
+                    self.last_error = msg
+                    if self.logger:
+                        self.logger.error(msg)
+                    else:
+                        print(msg)
+                    return None
+
                 if self.logger:
                     self.logger.info(f"Using Box config at: {config_path}")
                 else:
