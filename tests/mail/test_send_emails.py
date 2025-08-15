@@ -14,7 +14,7 @@ def test_imports():
     try:
         # Try to import the modules used in 06_send_emails.py
         from scripts.utils.spec_check import SpecProcessValidator
-        from core.config import Paths, ExchangeConfig, CompanyInfo, LoggingConfig, init_config
+        from core.config import Paths, CompanyInfo, LoggingConfig, init_config
         
         # Initialize configuration
         init_config()
