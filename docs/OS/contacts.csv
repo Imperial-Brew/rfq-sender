@@ -1,8 +1,8 @@
 Vendor,Contact,First,Last,Email,Phone,type,State,P/S,website
 3P Processing Inc,Robert Pepper,Robert,Pepper,Quotes@3p-p.com,(316) 529-0828,finishing,Kansas,Primary,3p-p.com
-Advanced Aero Coatings,Anthony Byington,Anthony,Byington,andy@aeroaac.com,(817) 280-0467,finishing,Texas,Primary,aeroaac.com
-Advanced Aero Coatings,Mike Forbis,Mike,Forbis,mike@aeroaac.com,(817) 280-0467,finishing,Texas,Secondary,aeroaac.com
-Advanced Aero Coatings,Shana Excell,Shana,Excell,shana@aeroaac.com,(817) 280-0467,finishing,Texas,Secondary,aeroaac.com
+"Advanced Aero Coatings, LLC",Anthony Byington,Anthony,Byington,andy@aeroaac.com,(817) 280-0467,finishing,Texas,Primary,aeroaac.com
+"Advanced Aero Coatings, LLC",Mike Forbis,Mike,Forbis,mike@aeroaac.com,(817) 280-0467,finishing,Texas,Secondary,aeroaac.com
+"Advanced Aero Coatings, LLC",Shana Excell,Shana,Excell,shana@aeroaac.com,(817) 280-0467,finishing,Texas,Secondary,aeroaac.com
 AI Industries,Steve Lanouette,Steve,Lanouette,slanouette@aiindustries.com,(512) 990-3999,finishing,,Primary,aiindustries.com
 AMI Metals,Douglas Ramirez,Douglas,Ramirez,Douglas.ramirez@amimetals.com,,material,,Primary,amimetals.com
 AMI Metals,Melissa Tricinella,Melissa,Tricinella,Melissa.tricinella@amimetals.com,,material,,Secondary,amimetals.com
@@ -38,8 +38,8 @@ Fry Steel,Marissa Valdez,Marissa,Valdez,Marissa.Valdez@frysteel.com,,material,,P
 Fry Steel,Johnathan Garcia,Johnathan,Garcia,Johnathan.Garcia@frysteel.com,,material,,Secondary,frysteel.com
 Gleco Plating,Cory Mouser,Cory,Mouser,cory@glecoplating.com            ,(972) 475-4300,finishing,Texas,Primary,glecoplating.com            
 Hadco Metal,Steve C,Steve,C,stevec@hadco-metal.com;,,material,,Primary,hadco-metal.com;
-"Har-Conn Aerospace, Inc. ",laura coleman,laura,coleman,laura.coleman@hcaerospace.com,,finishing,,Primary,hcaerospace.com
-"Har-Conn Aerospace, Inc. ",Shana Pope,Shana,Pope,shana.excell@hcaerospace.com,,finishing,,Secondary,hcaerospace.com
+"Har-Conn Aerospace, Inc.",laura coleman,laura,coleman,laura.coleman@hcaerospace.com,,finishing,,Primary,hcaerospace.com
+"Har-Conn Aerospace, Inc.",Shana Pope,Shana,Pope,shana.excell@hcaerospace.com,,finishing,,Secondary,hcaerospace.com
 Harrison Electropolishing L.P.,Sales,Harrison Electropolishing L.P.,,sales@harrisonep.com,(832) 467-3099,finishing,Texas,Primary,harrisonep.com
 Harrison Electropolishing L.P.,Matthew Buck,Matthew,Buck,matthewb@harrisonep.com,(832) 467-3100,finishing,Texas,Secondary,harrisonep.com
 Harrison Electropolishing L.P.,Lenny Gonzalez ,Lenny,Gonzalez ,lennyg@harrisonep.com,(832) 467-3100,finishing,Texas,Secondary,harrisonep.com
@@ -77,13 +77,13 @@ Sunshine Metals,Amanda Eisler,Amanda,Eisler,aeisler@sunshinemetals.com,(316) 252
 Sunshine Metals,,Sunshine Metals,,Tburbach@Sunshinemetals.com;,,material,,Secondary,Sunshinemetals.com;
 Supra Alloys,,Supra Alloys,,PFriddle@supraalloys.com;,,material,,Primary,supraalloys.com;
 Supra Alloys,,Supra Alloys,,spatterson@supraalloys.com;,,material,,Secondary,supraalloys.com;
-TechMetals,,TechMetals,,quoting@techmetals.com,(937) 253-5311,finishing,Ohio,Primary,techmetals.com
-TechMetals,Kimberly Jones,Kimberly,Jones,kjones@techmetals.com,(937) 253-5311,finishing,Ohio,Secondary,techmetals.com
-TechMetals,Sidney Burton,Sidney,Burton,sburton@techmetals.com,(937) 253-5311,finishing,,Secondary,techmetals.com
+Tech Metals,,TechMetals,,quoting@techmetals.com,(937) 253-5311,finishing,Ohio,Primary,techmetals.com
+Tech Metals,Kimberly Jones,Kimberly,Jones,kjones@techmetals.com,(937) 253-5311,finishing,Ohio,Secondary,techmetals.com
+Tech Metals,Sidney Burton,Sidney,Burton,sburton@techmetals.com,(937) 253-5311,finishing,,Secondary,techmetals.com
 Texas Heat Treating ,Tito Correa,Tito,Correa,TCorrea@texasheattreating.com,(512) 255-5884,finishing,Texas,Primary,texasheattreating.com
 Titanium Industries,,Titanium Industries,,peastman@titanium.com,,material,,Primary,titanium.com
 Trident Metals,Richard Kollath,Richard,Kollath,richard.kollath@trident-metals.com,(972) 699-3245,material,Texas,Primary,trident-metals.com
-TURNKEY Coatings,Mary-Beth Mccoughey,Mary-Beth,Mccoughey,Sales@turnkeycoatings.com,(832) 623-7397,finishing,Texas,Primary,turnkeycoatings.com
+"Turn-key Coatings, Inc.",Mary-Beth Mccoughey,Mary-Beth,Mccoughey,Sales@turnkeycoatings.com,(832) 623-7397,finishing,Texas,Primary,turnkeycoatings.com
 Ultra Clean Technologies,Elisabete Sarmento,Elisabete,Sarmento,esarmento@uct.com,(510) 566-3824,Weldments,California,Primary,uct.com
 Universal Metals,Greg ,Greg,,Greg@UniversalMetals.com,,material,,Primary,UniversalMetals.com
 Valex,Amanda Allison,Amanda,Allison,amanda.allison@valex.com ,,Weldments,,Primary,valex.com 
