@@ -59,11 +59,12 @@ def display_add_to_queue_form(user):
     st.subheader("Part Details")
     with st.form("rfq_form"):
         col1, col2 = st.columns(2)
-        
+
         with col1:
             part_number = st.text_input("Part Number", help="Enter the part number to be quoted")
+            rev = st.text_input("Rev", help="Enter drawing revision (e.g., A, B, C)")
             callout = st.text_input("Callout", help="Enter the callout text from the drawing")
-            
+
         with col2:
             material = st.text_input("Material", help="Enter the material specification")
             material_family = st.text_input("Material Family", help="Enter the material family (e.g., Aluminum, Steel)")
@@ -103,6 +104,7 @@ def display_add_to_queue_form(user):
                 try:
                     add_to_queue({
                         "part_number": part_number.strip(),
+                        "rev": rev.strip(),
                         "callout": callout.strip(),
                         "process": selected_process.strip(),
                         "spec": spec.strip(),
@@ -249,12 +251,17 @@ def display_queue_data(user, role):
         
         # Use all columns from the dataframe
         columns_to_display = display_df.columns.tolist()
-        
+
+        # Hide legacy RFQ # column if present
+        display_df = display_df.drop(columns=["rfq #", "RFQ #"], errors="ignore")
+
         # Ensure important columns appear first if they exist
-        preferred_order = ["part_number", "process", "spec", "quantities", "priority", "due_date", "status", "submitted_by"]
+        preferred_order = [
+            "part_number", "rev", "process", "spec", "quantities",
+            "priority", "due_date", "status", "submitted_by"
+        ]
         for col in reversed(preferred_order):
             if col in columns_to_display:
-                # Move to front of list
                 columns_to_display.remove(col)
                 columns_to_display.insert(0, col)
         

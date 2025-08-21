@@ -139,9 +139,9 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
 
         # Rename queue columns to match expected names
         queue_column_mapping = {
-            'RFQ #': 'RFQ #',
+            'RFQ #': 'rfq #',  # keep normalized but we will hide it in display
             'Part_Number': 'part_number',
-            'Rev': 'Rev',
+            'Rev': 'rev',  # normalize to lowercase
             'Print Callout': 'callout',
             'process': 'process',
             'spec': 'spec',
@@ -149,7 +149,7 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
             'quantities': 'quantities',
             'file_location': 'file_location',
             'submitted_by': 'submitted_by',
-            'qt/so #': 'qt/so #'
+            'qt/so #': 'qt/so #',
         }
         
         # Rename columns
@@ -707,9 +707,12 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                 display_df["priority"] = display_df["expedited"].apply(
                     lambda x: "⚠️ Expedited" if x else "Standard"
                 )
-            
+
+            display_df = queue.copy()
+            display_df = display_df.drop(columns=["rfq #", "RFQ #"], errors="ignore")
+
             # Reorder and select columns for display
-            columns_to_display = ["part_number", "process", "spec", "quantities"]
+            columns_to_display = ["part_number", "rev", "process", "spec", "quantities"]
             if "priority" in display_df.columns:
                 columns_to_display.append("priority")
             if "due_date" in display_df.columns:

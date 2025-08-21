@@ -137,13 +137,9 @@ def load_queue(path: str | None = None) -> pd.DataFrame:
 
 
 def save_queue(df: pd.DataFrame, path: str | None = None) -> None:
-    """
-    Save the RFQ queue DataFrame.
-    If Box is configured, write via BoxQueueStore with ETag protection; otherwise write to local CSV path.
-    Args:
-        df: DataFrame to save
-        path: Optional local path override; if not provided, uses Paths.QUEUE_PATH
-    """
+    # One-time cleanup: drop legacy RFQ # if present
+    df = df.drop(columns=["rfq #", "RFQ #"], errors="ignore")
+
     store = _get_box_store()
     if store is not None:
         logger.info("Saving queue to Box (BoxQueueStore)")

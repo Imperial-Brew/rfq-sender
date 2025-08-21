@@ -14,6 +14,7 @@ sys.path.insert(0, str(parent_dir))
 from streamlit_app.utils.auth_shim import load_users, get_user_role, validate_session
 from streamlit_app.components.logout_button import logout_button
 from utils.logging import get_logger, configure_root_logger
+from utils.queue import load_queue as load_queue_df
 
 # Configure root logger first (ensures logs directory exists)
 configure_root_logger()
@@ -103,12 +104,13 @@ def display_home_page():
             with col1:
                 st.metric("Specifications", len(specs_df))
 
-        # Display queue count if file exists
-        if queue_file.exists():
-            import pandas as pd
-            queue_df = pd.read_csv(queue_file)
+        # Display queue count (Box-first via utils.queue.load_queue)
+        try:
+            queue_df = load_queue_df()
             with col2:
                 st.metric("Queue Items", len(queue_df))
+        except Exception as e:
+            logger.warning(f"Unable to load queue for metric: {e}")
 
         # Display document count
         with col3:
