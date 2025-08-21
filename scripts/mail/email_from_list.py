@@ -980,7 +980,7 @@ def create_draft_email(
                 error_message = str(e)
                 
                 if "authentication" in error_message.lower() or "credentials" in error_message.lower() or "token" in error_message.lower():
-                    error_hint = "Check Box credentials in the 0__config.json file."
+                    error_hint = "Check Box credentials in .streamlit\\secrets.toml ([box].BOX_JWT_JSON) or BOX_JWT_JSON env."
                 elif "network" in error_message.lower() or "connection" in error_message.lower() or "timeout" in error_message.lower():
                     error_hint = "Check network connection."
                 elif "permission" in error_message.lower() or "access" in error_message.lower():

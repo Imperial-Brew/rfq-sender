@@ -203,6 +203,18 @@ def load_environment(env_file: Optional[str] = None) -> None:
             logger.info(f"SENDER_NAME: {os.environ.get('SENDER_NAME', 'Not set')}")
         else:
             logger.warning("Streamlit secrets not available")
+
+        # Regardless of Streamlit availability, attempt to map [box].BOX_JWT_JSON from secrets file to env
+        try:
+            from core.secrets import get_section as _get_secret_section
+            box_section = _get_secret_section("box") or {}
+            if isinstance(box_section, dict):
+                jwt_json = str(box_section.get("BOX_JWT_JSON", "") or "").strip()
+                if jwt_json:
+                    os.environ["BOX_JWT_JSON"] = jwt_json
+                    logger.info("Set BOX_JWT_JSON from secrets [box].BOX_JWT_JSON")
+        except Exception as map_e:
+            logger.warning(f"Could not map secrets [box].BOX_JWT_JSON to env: {map_e}")
     except Exception as e:
         logger.warning(f"Failed to load environment variables: {str(e)}")
 
