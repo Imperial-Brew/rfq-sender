@@ -83,6 +83,12 @@ def display_vendor_details(vendor):
         
         # Display contacts
         contacts = vendor.get('contacts', [])
+        # If no contacts in vendor JSON, try CSV contacts via VendorManager
+        if not contacts:
+            try:
+                contacts = vendor_manager.get_contacts_for_vendor(vendor.get('name', ''))
+            except Exception:
+                contacts = []
         if contacts:
             for i, contact in enumerate(contacts):
                 st.markdown(f"#### Contact {i+1}")

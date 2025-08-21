@@ -89,6 +89,32 @@ class VendorManager:
             logger.error(f"Error loading vendor options file {vendor_options_file}: {str(e)}")
             return {}
     
+    def _normalize_vendor_name(self, name: str) -> str:
+        """
+        Normalize vendor names to increase matching reliability.
+        - Lowercase
+        - Strip leading/trailing spaces
+        - Replace various hyphens/dashes with a simple '-'
+        - Collapse multiple whitespace to single space
+        - Remove common company suffixes and punctuation (., , Inc, LLC, Co, Corp)
+        """
+        if not name:
+            return ""
+        import re
+        n = str(name).strip().lower()
+        # normalize dashes
+        n = n.replace("\u2013", "-").replace("\u2014", "-").replace("\u2212", "-")
+        # collapse whitespace
+        n = re.sub(r"\s+", " ", n)
+        # remove punctuation commas and periods
+        n = n.replace(",", "").replace(".", "")
+        # remove common suffixes
+        for suf in [" inc", " inc.", " llc", " llc.", " co", " co.", " corp", " corp.", " corporation", " ltd", " ltd."]:
+            if n.endswith(suf):
+                n = n[: -len(suf)]
+                n = n.strip()
+        return n
+    
     def load_contacts(self, contacts_file: str) -> Dict[str, List[Dict[str, Any]]]:
         """
         Load vendor contacts from CSV file.
@@ -100,6 +126,7 @@ class VendorManager:
             Dictionary mapping vendor names to lists of contact dictionaries
         """
         contacts_by_vendor = {}
+        self._contacts_by_norm: Dict[str, List[Dict[str, Any]]] = {}
         
         try:
             if not os.path.exists(contacts_file):
@@ -154,12 +181,22 @@ class VendorManager:
                     'website': safe_str_strip(row.get('website', ''))
                 }
                 
-                # Add to contacts dictionary
+                # Add to contacts dictionary (original key)
                 if vendor_name not in contacts_by_vendor:
                     contacts_by_vendor[vendor_name] = []
                 contacts_by_vendor[vendor_name].append(contact)
+                
+                # Also index by normalized name for robust lookup
+                norm = self._normalize_vendor_name(vendor_name)
+                if norm:
+                    self._contacts_by_norm.setdefault(norm, []).append(contact)
             
             logger.info(f"Loaded {len(contacts_by_vendor)} vendors with contacts from {contacts_file}")
+            # Log distinct normalized vendors as debug for diagnostics
+            try:
+                logger.debug(f"Normalized vendors count: {len(self._contacts_by_norm)}")
+            except Exception:
+                pass
             return contacts_by_vendor
             
         except Exception as e:
@@ -273,6 +310,17 @@ class VendorManager:
                 # If no primary contact found, return the first one
                 if csv_contacts:
                     return csv_contacts[0]
+        
+        # Try normalized name lookup
+        try:
+            norm_contacts = self.get_contacts_for_vendor(vendor_name)
+            if norm_contacts:
+                for contact in norm_contacts:
+                    if contact.get('primary', False):
+                        return contact
+                return norm_contacts[0]
+        except Exception:
+            pass
                     
         # Try partial matching for special cases
         if "Turn-key" in vendor_name:
@@ -354,6 +402,26 @@ class VendorManager:
             pass
         
         return normalized
+    
+    # Public helper to fetch contacts with normalization-aware lookup
+    def get_contacts_for_vendor(self, vendor_name: str) -> List[Dict[str, Any]]:
+        if not vendor_name:
+            return []
+        norm = self._normalize_vendor_name(vendor_name)
+        # Prefer normalized index if available
+        contacts = []
+        try:
+            contacts = self._contacts_by_norm.get(norm, [])
+        except Exception:
+            contacts = []
+        if contacts:
+            return contacts
+        # Fallback to case-insensitive exact match over original keys
+        v_lower = vendor_name.lower()
+        for k, v in self.contacts.items():
+            if k.lower() == v_lower:
+                return v
+        return []
     
     def reload_vendors(self):
         """Reload vendor data from files."""
