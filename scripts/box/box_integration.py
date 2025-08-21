@@ -70,89 +70,69 @@ class BoxIntegration:
         """
         Authenticate with Box using JWT credentials.
 
-        Credentials discovery order:
-        1) BOX_JWT_JSON (full JSON in secrets/env) — no file required
-        2) BOX_CONFIG_PATH (absolute path to 0__config.json)
-        3) scripts\\box\\0__config.json (next to this module)
-        4) scripts\\0__config.json (parent folder fallback)
+        New discovery order (secrets-only):
+        1) st.secrets["box"]["BOX_JWT_JSON"] (Streamlit secrets)
+        2) os.environ["BOX_JWT_JSON"]
 
         Returns:
             Box client if authentication is successful, None otherwise
         """
         try:
-            # Prepare diagnostics containers
             tried: list[str] = []
-            env_path = os.environ.get("BOX_CONFIG_PATH", "").strip()
-            jwt_json = os.environ.get("BOX_JWT_JSON", "").strip()
 
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            default_path = os.path.join(script_dir, "0__config.json")
-            parent_path = os.path.join(os.path.dirname(script_dir), "0__config.json")
+            # Try Streamlit secrets first
+            jwt_json = ""
+            try:
+                import streamlit as st
+                box_secrets = getattr(st, "secrets", {}).get("box", {}) if hasattr(st, "secrets") else {}
+                if isinstance(box_secrets, dict):
+                    jwt_json = str(box_secrets.get("BOX_JWT_JSON", "") or "").strip()
+                    if jwt_json:
+                        tried.append("<st.secrets:box.BOX_JWT_JSON>")
+                        self.config_path = "<secrets:box.BOX_JWT_JSON>"
+            except Exception:
+                # If Streamlit isn't available or secrets access fails, ignore
+                pass
 
-            # If JWT JSON is provided via secrets, prefer it and avoid requiring a file
-            if jwt_json:
-                tried.extend(["<secrets:BOX_JWT_JSON>", env_path or "(no BOX_CONFIG_PATH)", default_path, parent_path])
-                self.tried_paths = tried
-                self.config_path = "<secrets:BOX_JWT_JSON>"
+            # Fallback to environment variable
+            if not jwt_json:
+                env_jwt = os.environ.get("BOX_JWT_JSON", "").strip()
+                if env_jwt:
+                    jwt_json = env_jwt
+                    tried.append("<env:BOX_JWT_JSON>")
+                    self.config_path = "<env:BOX_JWT_JSON>"
+
+            # Record diagnostics
+            self.tried_paths = tried
+
+            if not jwt_json:
+                msg = (
+                    "Box JWT JSON not provided. Set [box].BOX_JWT_JSON in .streamlit\\secrets.toml "
+                    "or export BOX_JWT_JSON as an environment variable."
+                )
+                self.last_error = msg
                 if self.logger:
-                    self.logger.info("Initializing Box JWT from secrets dictionary (BOX_JWT_JSON)")
-                try:
-                    settings = json.loads(jwt_json)
-                except json.JSONDecodeError as je:
-                    # Attempt to sanitize common formatting issue: literal newlines in privateKey
-                    # This occurs when the JSON is pasted into secrets with actual newlines
-                    # inside the "privateKey" value rather than escaped \n sequences.
-                    def _sanitize_jwt_json(text: str) -> str:
-                        import re
-                        def repl(m):
-                            inner = m.group(1)
-                            # Normalize CRLF to LF, then escape newlines; also escape backslashes
-                            inner = inner.replace("\r\n", "\n").replace("\r", "\n")
-                            inner = inner.replace("\\", "\\\\")
-                            inner = inner.replace("\n", r"\n")
-                            return '"privateKey": "' + inner + '"'
-                        # DOTALL to capture across lines
-                        return re.sub(r'"privateKey"\s*:\s*"([\s\S]*?)"', repl, text)
-                    sanitized = _sanitize_jwt_json(jwt_json)
-                    settings = json.loads(sanitized)
-                auth = JWTAuth.from_settings_dictionary(settings)
-            else:
-                # Discover config path(s) on disk
-                candidate_paths = []
-                if env_path:
-                    candidate_paths.append(env_path)
-                candidate_paths.extend([default_path, parent_path])
-
-                config_path = None
-                for p in candidate_paths:
-                    tried.append(p)
-                    if p and os.path.exists(p):
-                        config_path = p
-                        break
-
-                # Save diagnostics
-                self.tried_paths = tried
-                self.config_path = config_path
-
-                if not config_path:
-                    msg = (
-                        "Box config file not found. Tried: " + "; ".join(tried) +
-                        ". Provide BOX_JWT_JSON in secrets or set BOX_CONFIG_PATH to your 0__config.json, or place it in scripts\\box."
-                    )
-                    self.last_error = msg
-                    if self.logger:
-                        self.logger.error(msg)
-                    else:
-                        print(msg)
-                    return None
-
-                if self.logger:
-                    self.logger.info(f"Using Box config at: {config_path}")
+                    self.logger.error(msg)
                 else:
-                    print(f"Using Box config at: {config_path}")
-                auth = JWTAuth.from_settings_file(config_path)
+                    print(msg)
+                return None
 
-            # Create client
+            # Parse JWT JSON (with sanitization fallback)
+            try:
+                settings = json.loads(jwt_json)
+            except json.JSONDecodeError:
+                def _sanitize_jwt_json(text: str) -> str:
+                    import re
+                    def repl(m):
+                        inner = m.group(1)
+                        inner = inner.replace("\r\n", "\n").replace("\r", "\n")
+                        inner = inner.replace("\\", "\\\\")
+                        inner = inner.replace("\n", r"\n")
+                        return '"privateKey": "' + inner + '"'
+                    return re.sub(r'"privateKey"\s*:\s*"([\s\S]*?)"', repl, text)
+                settings = json.loads(_sanitize_jwt_json(jwt_json))
+
+            auth = JWTAuth.from_settings_dictionary(settings)
             client = Client(auth)
 
             # Test connection by getting current user info
@@ -180,8 +160,8 @@ class BoxIntegration:
                 )
             elif "invalid_grant" in message.lower() or "private_key" in message.lower() or "jwt" in message.lower():
                 friendly = (
-                    "JWT credential problem. Verify 0__config.json values (publicKeyID, privateKey, passphrase, enterpriseID). "
-                    "You may need to generate a new keypair and update the config."
+                    "JWT credential problem. Verify your BOX_JWT_JSON fields (publicKeyID, privateKey, passphrase, enterpriseID). "
+                    "You may need to generate a new keypair and update the credentials."
                 )
             if self.logger:
                 self.logger.error(f"Box API error: {message}")
@@ -197,11 +177,12 @@ class BoxIntegration:
             error_message = str(e)
             self.last_error = error_message
             if "private_key" in error_message.lower() or "jwt" in error_message.lower():
+                msg = "Box JWT authentication error: Issue with JWT credentials from secrets or environment."
                 if self.logger:
-                    self.logger.error("Box JWT authentication error: Issue with JWT credentials in 0__config.json (or BOX_CONFIG_PATH).")
+                    self.logger.error(msg)
                     self.logger.error(f"Original error: {error_message}")
                 else:
-                    print("Box JWT authentication error: Issue with JWT credentials in 0__config.json (or BOX_CONFIG_PATH).")
+                    print(msg)
                     print(f"Original error: {error_message}")
             else:
                 if self.logger:

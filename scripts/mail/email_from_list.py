@@ -783,7 +783,7 @@ def create_draft_email(
                 
                 # Check if Box client was initialized successfully
                 if not box.client:
-                    error_msg = "Failed to initialize Box client. Check your Box credentials in the 0__config.json file."
+                    error_msg = "Failed to initialize Box client. Set [box].BOX_JWT_JSON in .streamlit\\secrets.toml or set BOX_JWT_JSON environment variable."
                     if logger:
                         logger.error(error_msg)
                     else:
@@ -799,11 +799,11 @@ def create_draft_email(
                             'size': file_size_mb,
                             'folder': folder_path,
                             'box_uploaded': False,
-                            'error': "Box authentication failed. Check credentials in environment variables."
+                            'error': "Box authentication failed. Provide [box].BOX_JWT_JSON in secrets or BOX_JWT_JSON in env."
                         })
                     
                     # Skip the rest of the Box operations
-                    raise Exception("Box authentication failed. Check credentials in environment variables.")
+                    raise Exception("Box authentication failed. Provide [box].BOX_JWT_JSON in secrets or BOX_JWT_JSON in env.")
                 
                 # Extract part numbers from file paths (assuming files are named with part numbers)
                 # This is a simple implementation - you may need to adjust based on your actual file naming convention
@@ -1848,37 +1848,11 @@ def main() -> None:
         # Log that environment variables were loaded
         logger.info("Loaded environment variables from .env file")
         
-        # Verify Box credentials are present
-        # Check config file for client ID and client secret
-        config_file_path = os.path.join(script_dir, "0__config.json")
-        config_file_exists = os.path.exists(config_file_path)
-        config_credentials_valid = False
-        
-        if config_file_exists:
-            try:
-                import json
-                with open(config_file_path, 'r') as config_file:
-                    config = json.load(config_file)
-                    
-                client_id = config.get('boxAppSettings', {}).get('clientID')
-                client_secret = config.get('boxAppSettings', {}).get('clientSecret')
-                
-                if client_id and client_secret:
-                    config_credentials_valid = True
-                    logger.info("Box client ID and client secret found in 0__config.json")
-                else:
-                    logger.warning("Box client ID or client secret missing from 0__config.json")
-            except Exception as e:
-                logger.warning(f"Error reading 0__config.json: {str(e)}")
-        else:
-            logger.warning(f"Box config file not found: {config_file_path}")
-        
-        # JWT authentication is used for Box, which only requires the 0__config.json file
-        # No environment variables are needed
-        
-        # Log overall status
-        if not config_file_exists or not config_credentials_valid:
-            logger.warning("Box uploads may fail. Please check your 0__config.json file for Box JWT credentials.")
+        # Verify Box credentials are present (secrets-first, no file dependency)
+        from core.secrets import get_section
+        box_secret = (get_section("box").get("BOX_JWT_JSON", "") or os.environ.get("BOX_JWT_JSON", "")).strip()
+        if not box_secret:
+            logger.warning("Box JWT not set. Please set [box].BOX_JWT_JSON in .streamlit\\secrets.toml or export BOX_JWT_JSON.")
 
         # Parse command-line arguments
         args = parse_args()
