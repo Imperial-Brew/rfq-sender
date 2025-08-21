@@ -12,7 +12,8 @@ from datetime import datetime
 
 # Add the parent directory to the path so we can import from other modules
 parent_dir = Path(__file__).parent.parent.parent
-sys.path.append(str(parent_dir))
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 # Import utility functions
 from streamlit_app.utils.db import get_db_connection, add_issue, get_issues, update_issue_status

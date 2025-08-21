@@ -8,7 +8,8 @@ from datetime import datetime
 
 # Add the parent directory to the path so we can import from other modules
 parent_dir = Path(__file__).parent.parent.parent
-sys.path.append(str(parent_dir))
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 # Import configuration and utility functions
 from core.config import Paths, LoggingConfig, init_config
