@@ -610,13 +610,11 @@ def get_file_attachments(file_path: str, logger: logging.Logger = None) -> List[
 
 def setup_page():
     """Configure the page settings."""
-    st.title("Send RFQ Emails")
+    st.title("Email and Box settings")
     st.markdown("""
-    This page allows you to create RFQ email drafts in Outlook for vendors based on parts in the queue.
-    Vendors are automatically matched based on their process and spec capabilities.
+    This page allows you to configure and use email + Box operations for RFQs, including creating draft emails and managing Box folders/links for parts in the queue.
     
-    > **Note:** This tool creates draft emails in your Outlook client. No emails are sent automatically.
-    > You will need to review and manually send each draft from Outlook.
+    > Note: Drafts are created in your Outlook client; you must review and send them manually.
     """)
 
 
