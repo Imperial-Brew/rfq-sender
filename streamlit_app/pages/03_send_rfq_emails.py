@@ -16,6 +16,7 @@ if str(parent_dir) not in sys.path:
 
 # Import configuration and utility functions
 from core.config import Paths, CompanyInfo, LoggingConfig, init_config
+from utils.queue import save_queue, load_queue as load_queue_df
 from core.secrets import get_section
 from core.email.email_manager import EmailManager
 from core.vendors.vendor_manager import VendorManager
@@ -817,8 +818,8 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                 "share_link": queue.loc[idx, 'box_share_link'],
                             })
 
-                        # Save CSV
-                        queue.to_csv(queue_file, index=False)
+                        # Save queue via centralized Box/local handler
+                        save_queue(queue)
                         results_df = pd.DataFrame(box_results)
                         st.success(f"Updated Box info for {len(results_df)} selected part(s).")
                         st.dataframe(results_df, use_container_width=True, hide_index=True)
@@ -1106,7 +1107,7 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                     "share_link": queue.loc[idx, 'box_share_link'],
                                 })
 
-                            queue.to_csv(queue_file, index=False)
+                            save_queue(queue)
                             results_df = pd.DataFrame(box_results)
                             st.success(f"Updated Box info for {len(results_df)} part(s) in entire queue.")
                             st.dataframe(results_df, use_container_width=True, hide_index=True)

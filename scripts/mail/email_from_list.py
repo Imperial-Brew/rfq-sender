@@ -45,6 +45,7 @@ import urllib3
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from core.config import Paths, LoggingConfig, init_config
 from core.secrets import get_section
+from utils.queue import save_queue
 
 # Initialize configuration
 init_config()
@@ -1602,8 +1603,8 @@ def process_queue(
             else:
                 print(f"Saving updated queue data to {queue_file}")
 
-            # Save the queue data back to the CSV file with UTF-8 encoding
-            queue.to_csv(queue_file, index=False, encoding='utf-8')
+            # Save the queue data via centralized handler (Box or local)
+            save_queue(queue)
 
             if logger:
                 logger.info(f"Queue data saved successfully")
