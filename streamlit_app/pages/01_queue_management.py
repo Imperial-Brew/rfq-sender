@@ -165,8 +165,8 @@ def display_queue_data(user, role):
         # Apply filters
         filtered_df = df.copy()
         
-        if part_filter:
-            filtered_df = filtered_df[filtered_df["part_number"].str.contains(part_filter, case=False)]
+        if part_filter and "part_number" in filtered_df.columns:
+            filtered_df = filtered_df[filtered_df["part_number"].astype(str).str.contains(part_filter, case=False)]
         
         if process_filter != "All" and "process" in df.columns:
             filtered_df = filtered_df[filtered_df["process"] == process_filter]
@@ -249,11 +249,11 @@ def display_queue_data(user, role):
                 lambda x: "⚠️ Expedited" if x else "Standard"
             )
         
-        # Use all columns from the dataframe
-        columns_to_display = display_df.columns.tolist()
-
         # Hide legacy RFQ # column if present
         display_df = display_df.drop(columns=["rfq #", "RFQ #"], errors="ignore")
+
+        # Use all columns from the dataframe (after dropping legacy columns)
+        columns_to_display = display_df.columns.tolist()
 
         # Ensure important columns appear first if they exist
         preferred_order = [
