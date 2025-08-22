@@ -81,10 +81,9 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
 
     if not os.path.exists(queue_file):
         if logger:
-            logger.error(f"Queue file not found: {queue_file}")
+            logger.info(f"Local queue file not found at {queue_file}; will try Box/central loader")
         else:
-            print(f"Queue file not found: {queue_file}")
-        raise FileNotFoundError(f"Queue file not found: {queue_file}")
+            print(f"Local queue file not found at {queue_file}; will try Box/central loader")
 
     if logger:
         logger.info(f"Loading contacts data from {contacts_file}")
@@ -111,12 +110,29 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
         raise FileNotFoundError(f"Vendor options file not found: {vendor_options_file}")
 
     try:
-        # Load queue data with UTF-8 encoding and error handling
+        # Load queue using centralized loader (Box-backed if configured)
         try:
-            queue = pd.read_csv(queue_file, encoding='utf-8')
-        except UnicodeDecodeError:
-            # Fall back to cp1252 if UTF-8 fails
-            queue = pd.read_csv(queue_file, encoding='cp1252')
+            queue = load_queue_df()
+            if queue is None or queue.empty:
+                # Fallback to local CSV path if centralized loader returns empty and file exists
+                if os.path.exists(queue_file):
+                    try:
+                        queue = pd.read_csv(queue_file, encoding='utf-8')
+                    except UnicodeDecodeError:
+                        queue = pd.read_csv(queue_file, encoding='cp1252')
+                else:
+                    queue = pd.DataFrame()
+        except Exception as _e:
+            # Fallback to direct CSV read on error
+            if logger:
+                logger.warning(f"load_queue_df failed ({_e}); falling back to CSV at {queue_file}")
+            if os.path.exists(queue_file):
+                try:
+                    queue = pd.read_csv(queue_file, encoding='utf-8')
+                except UnicodeDecodeError:
+                    queue = pd.read_csv(queue_file, encoding='cp1252')
+            else:
+                queue = pd.DataFrame()
 
         # Log the number of items where SENT=YES, but don't filter them out
         if 'SENT' in queue.columns:
