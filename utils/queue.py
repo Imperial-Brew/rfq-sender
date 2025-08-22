@@ -19,14 +19,29 @@ _box_store = None
 
 
 def _get_box_store():
-    """Return an initialized BoxQueueStore if BOX is configured; otherwise None."""
-    global _box_checked, _box_store
-    if _box_checked:
-        return _box_store
+    """Return an initialized BoxQueueStore if BOX is configured; otherwise None.
 
-    _box_checked = True
+    Behavior:
+    - If we already have a working store (with a live Box client), reuse it.
+    - If previous initialization failed, DO NOT negatively cache; retry on each call. This allows
+      runtime configuration changes (e.g., secrets set via Streamlit) to take effect.
+    - Accept configurations where either BOX_QUEUE_FILE_ID or BOX_QUEUE_FOLDER_ID is provided.
+      Fall back to local only when both are missing.
+    """
+    global _box_store
+
+    # Reuse a previously initialized and still-live store
     try:
-        # Prefer explicit env var first
+        if _box_store is not None:
+            bi = getattr(_box_store, "box_integration", None)
+            if bi and getattr(bi, "client", None):
+                return _box_store
+    except Exception:
+        # If anything goes wrong with the cached store, drop it and re-init
+        _box_store = None
+
+    try:
+        # Prefer explicit env vars first
         file_id = os.environ.get("BOX_QUEUE_FILE_ID", "").strip()
         folder_id = os.environ.get("BOX_QUEUE_FOLDER_ID", "").strip()
 
@@ -48,8 +63,9 @@ def _get_box_store():
             except Exception as _e:
                 logger.debug(f"No secrets box section available for queue ids: {_e}")
 
-        if not file_id:
-            logger.info("BOX_QUEUE_FILE_ID not set; using local queue path")
+        # Only fall back to local when we have neither id
+        if not file_id and not folder_id:
+            logger.info("Neither BOX_QUEUE_FILE_ID nor BOX_QUEUE_FOLDER_ID set; using local queue path")
             _box_store = None
             return None
 
@@ -73,7 +89,12 @@ def _get_box_store():
             _box_store = None
             return None
 
-        _box_store = BoxQueueStore(box_integration=box, file_id=file_id or None, folder_id=folder_id or None, logger=logger)
+        _box_store = BoxQueueStore(
+            box_integration=box,
+            file_id=file_id or None,
+            folder_id=folder_id or None,
+            logger=logger,
+        )
         return _box_store
     except Exception as e:
         logger.warning(f"Error preparing Box queue store (fallback to local): {e}")
