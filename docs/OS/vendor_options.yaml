@@ -347,7 +347,7 @@ vendors:
     - number: ASTM B 633
 - name: Pentagon Technologies
   location: CA/NY/TX
-  website: .nan
+  website: https://pen-tec.com/
   processes:
   - name: Surface
     specs:
@@ -365,7 +365,7 @@ vendors:
     - number: 0250-70351
     - number: 0250-20000
 - name: Nxedge Inc.
-  location: Morgan Hill, California; Santa Clara, California; San Carlos, California;
+  location: California
     Boise, Idaho
   website: https://nxedge.com/
   processes:
