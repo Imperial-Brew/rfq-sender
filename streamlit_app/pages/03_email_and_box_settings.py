@@ -347,31 +347,60 @@ def upload_and_share_for_part(
 
 
 def inject_box_link_into_body(html_body: str, share_link: str, is_cui: bool) -> str:
-    """Append a styled Box link section to the existing HTML email body."""
+    """Append a styled Box link section to the existing HTML email body and then append signature."""
     if not share_link:
-        return html_body
+        # Even if no link, ensure signature is appended
+        return append_signature(html_body)
 
     banner = f"""
-    <div style="margin-top:16px;padding:14px;border:1px solid #d0d7de;border-radius:8px;background:#f6f8fa;">
-      <div style="font-size:16px;font-weight:600;margin-bottom:6px;">
+    <div style=\"margin-top:16px;padding:14px;border:1px solid #d0d7de;border-radius:8px;background:#f6f8fa;\">
+      <div style=\"font-size:16px;font-weight:600;margin-bottom:6px;\">
         RFQ Files in Box { '(Password Protected)' if is_cui else '' }
       </div>
       <div>
-        <a href="{share_link}" style="display:inline-block;padding:10px 14px;background:#2d7ff9;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+        <a href=\"{share_link}\" style=\"display:inline-block;padding:10px 14px;background:#2d7ff9;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;\">
           Open RFQ Folder
         </a>
       </div>
-      <div style="margin-top:8px;color:#57606a;font-size:13px;">
+      <div style=\"margin-top:8px;color:#57606a;font-size:13px;\">
         If you have trouble opening the link, copy and paste this URL into your browser:<br/>
-        <code style="font-size:12px;">{share_link}</code>
+        <code style=\"font-size:12px;\">{share_link}</code>
       </div>
     </div>
     """
+    updated = html_body
     if "</body>" in html_body:
-        return html_body.replace("</body>", banner + "\n</body>")
+        updated = html_body.replace("</body>", banner + "\n</body>")
+    elif "</html>" in html_body:
+        updated = html_body.replace("</html>", banner + "\n</html>")
+    else:
+        updated = html_body + banner
+    # Append signature after Box banner
+    return append_signature(updated)
+
+
+def load_signature_html() -> str:
+    """Load the HTML signature from docs/templates/email_signature.html."""
+    try:
+        sig_path = os.path.join(parent_dir, 'docs', 'templates', 'email_signature.html')
+        if os.path.exists(sig_path):
+            with open(sig_path, 'r', encoding='utf-8') as f:
+                return f.read()
+    except Exception as e:
+        logger.debug(f"Could not load email signature: {e}")
+    return ""
+
+
+def append_signature(html_body: str) -> str:
+    """Append the HTML signature at the end of the email body."""
+    signature = load_signature_html()
+    if not signature:
+        return html_body
+    if "</body>" in html_body:
+        return html_body.replace("</body>", signature + "\n</body>")
     if "</html>" in html_body:
-        return html_body.replace("</html>", banner + "\n</html>")
-    return html_body + banner
+        return html_body.replace("</html>", signature + "\n</html>")
+    return html_body + signature
 
 def find_vendors_for_process_spec(vendor_info: Dict[str, Dict[str, Any]], 
                                  process: str, 
@@ -456,16 +485,10 @@ def create_email_body(queue_items: pd.DataFrame,
                      contact_name: str = None,
                      company_info: Dict[str, str] = None) -> str:
     """
-    Create HTML email body for RFQ using Jinja2 templates.
-    
-    Args:
-        queue_items: DataFrame containing queue items for this vendor
-        vendor_name: Name of the vendor
-        contact_name: Optional contact first name for personalized greeting
-        company_info: Dictionary with company information
-        
-    Returns:
-        HTML formatted email body
+    Create HTML email body for RFQ using the docs/templates/cover_letter.j2 template.
+
+    This returns the body without the signature; the signature will be appended
+    after Box link injection to match policy (link appears above signature).
     """
     # Default company info if not provided
     if company_info is None:
@@ -476,93 +499,60 @@ def create_email_body(queue_items: pd.DataFrame,
             'sender_phone': CompanyInfo.get_sender_phone(),
             'sender_email': CompanyInfo.get_sender_email()
         }
-    
-    # Create a Jinja2 environment
-    template_dir = os.path.join(parent_dir, 'config', 'templates')
+
+    # Jinja2 environment for docs/templates
+    template_dir = os.path.join(parent_dir, 'docs', 'templates')
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(template_dir),
         autoescape=jinja2.select_autoescape(['html', 'xml'])
     )
-    
-    # Try to load the template
+
+    # Load cover_letter.j2; if missing, fall back to a minimal greeting
     try:
-        template = env.get_template('config.templates.rfq_email.html')
+        template = env.get_template('cover_letter.j2')
     except jinja2.exceptions.TemplateNotFound:
-        # Fallback to a basic template if the file doesn't exist
-        template_str = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { font-family: Arial, sans-serif; }
-                table { border-collapse: collapse; width: 100%; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                th { background-color: #f2f2f2; }
-            </style>
-        </head>
-        <body>
-            {% if contact_name %}
-            <p>Hello {{ contact_name }},</p>
-            {% else %}
-            <p>Hello,</p>
-            {% endif %}
-            
-            <p>We would like to request a quote for the following part(s):</p>
-            
-            <table>
-                <tr>
-                    <th>Part Number</th>
-                    <th>Process</th>
-                    <th>Spec</th>
-                    <th>Quantities</th>
-                </tr>
-                {% for item in items %}
-                <tr>
-                    <td>{{ item.part_number }}</td>
-                    <td>{{ item.process }}</td>
-                    <td>{{ item.spec }}</td>
-                    <td>{{ item.quantities }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-            
-            <p>Please provide your best pricing and lead time.</p>
-            
-            <p>Thank you,</p>
-            <p>{{ sender_name }}<br>
-            {{ sender_title }}<br>
-            {{ company_name }}<br>
-            {{ sender_phone }}<br>
-            {{ sender_email }}</p>
-        </body>
-        </html>
-        """
-        template = jinja2.Template(template_str)
-    
-    # Prepare items for the template
-    items = []
-    for _, row in queue_items.iterrows():
-        item = {
-            'part_number': row.get('part_number', ''),
-            'process': row.get('process', ''),
-            'spec': row.get('spec', ''),
-            'quantities': row.get('quantities', '')
-        }
-        items.append(item)
-    
-    # Render the template
-    html_content = template.render(
-        items=items,
-        contact_name=contact_name,
-        vendor_name=vendor_name,
-        company_name=company_info.get('name', ''),
-        sender_name=company_info.get('sender_name', ''),
-        sender_title=company_info.get('sender_title', ''),
-        sender_phone=company_info.get('sender_phone', ''),
-        sender_email=company_info.get('sender_email', '')
-    )
-    
-    return html_content
+        # Minimal fallback
+        greeting = f"Hello {contact_name}," if contact_name else "Hello," 
+        return f"<p>{greeting}</p><p>Please see the RFQ details below.</p>"
+
+    # Prepare context expected by cover_letter.j2
+    # Use first row since we generate one email per vendor/part in this UI
+    row = queue_items.iloc[0] if not queue_items.empty else {}
+
+    # Parse quantities if present (string or list); keep simple representation
+    q_val = ''
+    try:
+        q_val = row.get('quantities', '') if isinstance(row, dict) else row.get('quantities')
+    except Exception:
+        q_val = ''
+
+    from datetime import datetime, timedelta
+    due_date = (datetime.now() + timedelta(days=7)).strftime("%B %d, %Y")
+
+    context = {
+        'vendor': {
+            'name': vendor_name,
+            'first_name': contact_name or vendor_name,
+        },
+        'greeting_name': contact_name or vendor_name,
+        'part_no': str(row.get('part_number', '')) if hasattr(row, 'get') else str(getattr(row, 'part_number', '')),
+        'process': str(row.get('process', '')) if hasattr(row, 'get') else str(getattr(row, 'process', '')),
+        'spec': (row.get('spec', None) if hasattr(row, 'get') else getattr(row, 'spec', None)) or None,
+        'quantities': q_val,
+        'attachments': [],  # We use Box link; no direct attachments from this UI
+        'due_date': due_date,
+        'sender_name': company_info.get('sender_name', ''),
+        'sender_email': company_info.get('sender_email', ''),
+        'company_name': company_info.get('name', ''),
+        'sample_table': None,
+    }
+
+    try:
+        return template.render(**context)
+    except Exception as e:
+        logger.warning(f"Failed to render cover_letter.j2: {e}")
+        greeting = f"Hello {contact_name}," if contact_name else "Hello," 
+        return f"<p>{greeting}</p><p>Please see the RFQ details below.</p>"
 
 
 def create_draft_email(recipient: str, 
