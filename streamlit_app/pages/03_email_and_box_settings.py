@@ -1110,12 +1110,11 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
 
                                             # If CUI/ITAR, create a second draft containing only the password
                                             if is_cui and password:
-                                                pwd_subject = f"Password for RFQ Files – {part_number}"
+                                                pwd_subject = f"RFQ Files – {part_number}"
                                                 pwd_body = f"""
                                                 <p>Hello {contact_name or ''},</p>
                                                 <p>The RFQ files you received are password-protected.</p>
                                                 <p><b>Password:</b> <code>{password}</code></p>
-                                                <p>Please send this email about 10 minutes after the RFQ email.</p>
                                                 """
                                                 if create_draft_email(
                                                     recipient=vendor_email,
@@ -1373,12 +1372,11 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
 
                                             # If CUI/ITAR, create a second draft containing only the password
                                             if is_cui and password:
-                                                pwd_subject = f"Password for RFQ Files – {part_number}"
+                                                pwd_subject = f"RFQ Files – {part_number}"
                                                 pwd_body = f"""
                                                 <p>Hello {contact_name or ''},</p>
                                                 <p>The RFQ files you received are password-protected.</p>
                                                 <p><b>Password:</b> <code>{password}</code></p>
-                                                <p>Please send this email about 10 minutes after the RFQ email.</p>
                                                 """
                                                 if create_draft_email(
                                                     recipient=vendor_email,
