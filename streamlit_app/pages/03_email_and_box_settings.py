@@ -486,7 +486,7 @@ def create_email_body(queue_items: pd.DataFrame,
     
     # Try to load the template
     try:
-        template = env.get_template('rfq_email.html')
+        template = env.get_template('config.templates.rfq_email.html')
     except jinja2.exceptions.TemplateNotFound:
         # Fallback to a basic template if the file doesn't exist
         template_str = """
