@@ -46,7 +46,12 @@ This project follows the style guidelines outlined in the [Project Style Guideli
 
 - Write unit tests for new functionality
 - Ensure all tests pass before submitting a pull request
-- Run tests using pytest: `pytest tests/`
+- Run tests using pytest: `pytest -q`
+- Optional quality checks: `flake8`, `black --check .`, `isort --check-only .`
+
+## Release Process
+
+Before maintainers cut a release, see the project [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) for versioning, changelog, testing, packaging, and tagging steps.
 
 ## Documentation
 
