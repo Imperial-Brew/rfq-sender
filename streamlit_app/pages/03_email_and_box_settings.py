@@ -58,7 +58,7 @@ def normalize_process_spec(text: str, validator: SpecProcessValidator = None) ->
     # Use the validator's normalize method
     return validator.normalize(text)
 
-def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, 
+def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
               logger: logging.Logger = None) -> Tuple[pd.DataFrame, Dict[Any, Dict[str, Any]]]:
     """
     Load data from CSV and YAML files and prepare vendor information.
@@ -110,7 +110,7 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
         raise FileNotFoundError(f"Vendor options file not found: {vendor_options_file}")
 
     try:
-        # Load queue using centralized loader (Box-backed if configured)
+        # Load queue using a centralized loader (Box-backed if configured)
         try:
             queue = load_queue_df()
             if queue is None or queue.empty:
@@ -285,11 +285,11 @@ def ensure_rfq_part_folder(box: "BoxIntegration", qt_so: str, part_number: str):
 
 
 def upload_and_share_for_part(
-    box: "BoxIntegration",
-    row: pd.Series,
-    attachments: List[str],
-    access: str = "open",          # Consider "company" for internal-only links
-    default_expire_days: int = 30,
+    box: "BoxIntegration",              # your BoxIntegration instance
+    row: pd.Series,                     # one queue row (pd.Series)
+    attachments: List[str],             # list[str] of file paths to upload
+    access: str = "open",               # "open" for public-with-link, "company" for internal-only
+    default_expire_days: int = 30,      # default expire time in days
 ):
     """
     - Creates RFQs/[qt/so #]/[Part_Number]
@@ -722,7 +722,6 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                     lambda x: "⚠️ Expedited" if x else "Standard"
                 )
 
-            display_df = queue.copy()
             display_df = display_df.drop(columns=["rfq #", "RFQ #"], errors="ignore")
 
             # Reorder and select columns for display
@@ -803,7 +802,7 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                 box=box,
                                 row=row,
                                 attachments=attachments,
-                                access="company",
+                                access="open",
                                 default_expire_days=30,
                             )
 
@@ -979,7 +978,7 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                             box=box,
                                             row=row,
                                             attachments=attachments,
-                                            access="company",
+                                            access="open",
                                             default_expire_days=30,
                                         )
 
@@ -1093,7 +1092,7 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                     box=box,
                                     row=row,
                                     attachments=attachments,
-                                    access="company",
+                                    access="open",
                                     default_expire_days=30,
                                 )
 
@@ -1242,7 +1241,7 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                             box=box,
                                             row=row,
                                             attachments=attachments,
-                                            access="company",
+                                            access="open",
                                             default_expire_days=30,
                                         )
 
