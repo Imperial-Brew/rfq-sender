@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; color:#333; }
+    .container { max-width: 650px; margin:0 auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f2f2f2; }
+    .muted { color:#666; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% if contact_name %}
+      <p>Hello {{ contact_name }},</p>
+    {% else %}
+      <p>Hello,</p>
+    {% endif %}
+
+    <p>We would like to request a quote for the following part(s):</p>
+
+    <table>
+      <tr>
+        <th>Part Number</th>
+        <th>Process</th>
+        <th>Spec</th>
+        <th>Quantities</th>
+      </tr>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.part_number }}</td>
+        <td>{{ item.process }}</td>
+        <td>{{ item.spec }}</td>
+        <td>{{ item.quantities }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    <p>Please provide your best pricing and lead time.</p>
+
+    <p>Thank you,</p>
+    <p>
+      {{ sender_name }}<br/>
+      {{ sender_title }}<br/>
+      {{ company_name }}<br/>
+      {{ sender_phone }}<br/>
+      {{ sender_email }}
+    </p>
+
+    <p class="muted">If the RFQ contains CUI/ITAR, a separate password email may follow.</p>
+  </div>
+</body>
+</html>
