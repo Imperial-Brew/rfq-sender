@@ -480,6 +480,107 @@ def find_vendors_for_process_spec(vendor_info: Dict[str, Dict[str, Any]],
     return matching_vendors
 
 
+def _load_sample_table_header(csv_path: str) -> List[str]:
+    """Load header columns from the sample table CSV; fallback to defaults if missing."""
+    default_header = [
+        "Part Number",
+        "Print Callout",
+        "Process",
+        "Spec",
+        "QTYs",
+        "Unit_Price",
+        "Line Minimum",
+        "Order Minimum",
+        "Lead_Time",
+        "vendor_ref_#",
+    ]
+    try:
+        if csv_path and os.path.exists(csv_path):
+            import csv
+            with open(csv_path, 'r', newline='', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                header = next(reader, None)
+                if header and len(header) >= 5:
+                    return header
+    except UnicodeDecodeError:
+        try:
+            import csv
+            with open(csv_path, 'r', newline='', encoding='cp1252', errors='replace') as f:
+                reader = csv.reader(f)
+                header = next(reader, None)
+                if header and len(header) >= 5:
+                    return header
+        except Exception:
+            pass
+    except Exception:
+        pass
+    return default_header
+
+
+def _build_sample_table_html(row: Any, header: List[str]) -> str:
+    """Build a single-row HTML sample table using provided header and queue row fields."""
+    # Map row fields
+    def _safe(val):
+        try:
+            return '' if val is None or (isinstance(val, float) and pd.isna(val)) else str(val)
+        except Exception:
+            return ''
+    part_number = _safe(row.get('part_number', '') if hasattr(row, 'get') else getattr(row, 'part_number', ''))
+    callout = _safe(row.get('callout', '') if hasattr(row, 'get') else getattr(row, 'callout', ''))
+    process = _safe(row.get('process', '') if hasattr(row, 'get') else getattr(row, 'process', ''))
+    spec = _safe(row.get('spec', '') if hasattr(row, 'get') else getattr(row, 'spec', ''))
+    qtys = _safe(row.get('qty', None) if hasattr(row, 'get') else getattr(row, 'qty', None))
+    if not qtys:
+        qtys = _safe(row.get('quantities', '') if hasattr(row, 'get') else getattr(row, 'quantities', ''))
+
+    # Build cells aligned to expected header names; unknown headers get empty cells
+    values_map = {
+        'part number': part_number,
+        'print callout': callout,
+        'process': process,
+        'spec': spec,
+        'qtys': qtys,
+        'unit_price': '',
+        'line minimum': '',
+        'order minimum': '',
+        'lead_time': '',
+        'vendor_ref_#': '',
+        'vendor_ref': '',
+    }
+    def norm(s: str) -> str:
+        return s.lower().replace(' ', '').replace('-', '').replace('/', '').strip()
+
+    html = ['<table style="border-collapse: collapse; width: 100%;">']
+    # Header row
+    html.append('<tr style="background-color: #f2f2f2; font-weight: bold;">')
+    for col in header:
+        html.append(f'<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">{col}</th>')
+    html.append('</tr>')
+    # Data row
+    html.append('<tr>')
+    for col in header:
+        key = norm(col)
+        val = ''
+        if key in values_map:
+            val = values_map[key]
+        else:
+            # try specific normalized keys
+            if key == 'partnumber':
+                val = part_number
+            elif key == 'printcallout':
+                val = callout
+            elif key == 'leadtime':
+                val = ''
+            elif key == 'qty' or key == 'qtys':
+                val = qtys
+            else:
+                val = ''
+        html.append(f'<td style="border: 1px solid #ddd; padding: 8px;">{val}</td>')
+    html.append('</tr>')
+    html.append('</table>')
+    return ''.join(html)
+
+
 def create_email_body(queue_items: pd.DataFrame, 
                      vendor_name: str, 
                      contact_name: str = None,
@@ -529,6 +630,16 @@ def create_email_body(queue_items: pd.DataFrame,
     from datetime import datetime, timedelta
     due_date = (datetime.now() + timedelta(days=7)).strftime("%B %d, %Y")
 
+    # Attempt to build sample table from CSV header template
+    sample_csv = os.path.join(parent_dir, 'docs', 'templates', 'Sample_Table(Empty)-OS.csv')
+    sample_table_html = None
+    try:
+        header = _load_sample_table_header(sample_csv)
+        sample_table_html = _build_sample_table_html(row, header)
+    except Exception as _e:
+        logger.debug(f"Sample table generation skipped: {_e}")
+        sample_table_html = None
+
     context = {
         'vendor': {
             'name': vendor_name,
@@ -544,7 +655,7 @@ def create_email_body(queue_items: pd.DataFrame,
         'sender_name': company_info.get('sender_name', ''),
         'sender_email': company_info.get('sender_email', ''),
         'company_name': company_info.get('name', ''),
-        'sample_table': None,
+        'sample_table': sample_table_html,
     }
 
     try:
