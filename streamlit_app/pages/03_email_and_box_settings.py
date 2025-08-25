@@ -1044,7 +1044,68 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                         })
                                         continue
                                 
-                                # Send emails to each vendor
+                                # Determine Box link/password ONCE per part
+                                share_link = row.get('box_share_link') or None
+                                password = row.get('box_password') or None
+                                is_cui = detect_cui_itar(row)
+
+                                if not share_link:
+                                    # Collect local files for Box upload once
+                                    attachments_once = []
+                                    if 'file_location' in row and row['file_location']:
+                                        attachments_once = get_file_attachments(row['file_location'], logger)
+
+                                    upload_result_once = upload_and_share_for_part(
+                                        box=box,
+                                        row=row,
+                                        attachments=attachments_once,
+                                        access="open",
+                                        default_expire_days=30,
+                                    )
+
+                                    if upload_result_once.get("error"):
+                                        logger.warning(upload_result_once["error"]) 
+                                        share_link = None
+                                        is_cui = False
+                                        password = None
+                                    else:
+                                        share_link = upload_result_once.get("share_link")
+                                        is_cui = upload_result_once.get("is_cui", is_cui)
+                                        password = upload_result_once.get("password")
+
+                                        # Persist new Box info to the queue for this row
+                                        queue.loc[row.name, 'box_rfq_root_id'] = getattr(upload_result_once.get('rfqs_root'), 'id', '')
+                                        queue.loc[row.name, 'box_quote_folder_id'] = getattr(upload_result_once.get('quote_folder'), 'id', '')
+                                        queue.loc[row.name, 'box_part_folder_id'] = getattr(upload_result_once.get('part_folder'), 'id', '')
+                                        queue.loc[row.name, 'box_share_link'] = share_link or ''
+                                        queue.loc[row.name, 'box_access'] = upload_result_once.get('box_access', '')
+                                        queue.loc[row.name, 'box_password'] = password or ''
+                                        queue.loc[row.name, 'box_unshared_at'] = upload_result_once.get('unshared_at', '') or ''
+                                        queue.loc[row.name, 'box_last_updated'] = datetime.now().isoformat()
+                                        queue.loc[row.name, 'files_uploaded'] = upload_result_once.get('files_uploaded', 0)
+                                        queue.loc[row.name, 'file_manifest'] = upload_result_once.get('file_manifest', '')
+                                        save_queue(queue)
+                                else:
+                                    # If link exists but password missing and it's CUI, ensure we have a password
+                                    if is_cui and not password:
+                                        attachments_once = []
+                                        if 'file_location' in row and row['file_location']:
+                                            attachments_once = get_file_attachments(row['file_location'], logger)
+                                        upload_result_once = upload_and_share_for_part(
+                                            box=box,
+                                            row=row,
+                                            attachments=attachments_once,
+                                            access="open",
+                                            default_expire_days=30,
+                                        )
+                                        if not upload_result_once.get("error"):
+                                            password = upload_result_once.get('password')
+                                            # Keep existing share_link if present, but update stored password
+                                            queue.loc[row.name, 'box_password'] = password or ''
+                                            queue.loc[row.name, 'box_last_updated'] = datetime.now().isoformat()
+                                            save_queue(queue)
+
+                                # Send emails to each vendor using the determined link/password
                                 emails_sent = 0
                                 for vendor in matching_vendors:
                                     try:
@@ -1067,31 +1128,6 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                             contact_name=contact_name,
                                             company_info=company_info
                                         )
-                                        
-                                        # Collect local files for Box upload
-                                        attachments = []
-                                        if 'file_location' in row and row['file_location']:
-                                            file_path = row['file_location']
-                                            attachments = get_file_attachments(file_path, logger)
-
-                                        # Upload to Box and create share link (password if CUI/ITAR)
-                                        upload_result = upload_and_share_for_part(
-                                            box=box,
-                                            row=row,
-                                            attachments=attachments,
-                                            access="open",
-                                            default_expire_days=30,
-                                        )
-
-                                        if upload_result.get("error"):
-                                            logger.warning(upload_result["error"]) 
-                                            share_link = None
-                                            is_cui = False
-                                            password = None
-                                        else:
-                                            share_link = upload_result.get("share_link")
-                                            is_cui = upload_result.get("is_cui", False)
-                                            password = upload_result.get("password")
 
                                         # Inject Box link into the email body
                                         body_with_link = inject_box_link_into_body(body, share_link, is_cui)
@@ -1306,7 +1342,66 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                         })
                                         continue
                                 
-                                # Send emails to each vendor
+                                # Determine Box link/password ONCE per part (entire queue)
+                                share_link = row.get('box_share_link') or None
+                                password = row.get('box_password') or None
+                                is_cui = detect_cui_itar(row)
+
+                                if not share_link:
+                                    attachments_once = []
+                                    if 'file_location' in row and row['file_location']:
+                                        attachments_once = get_file_attachments(row['file_location'], logger)
+
+                                    upload_result_once = upload_and_share_for_part(
+                                        box=box,
+                                        row=row,
+                                        attachments=attachments_once,
+                                        access="open",
+                                        default_expire_days=30,
+                                    )
+
+                                    if upload_result_once.get("error"):
+                                        logger.warning(upload_result_once["error"]) 
+                                        share_link = None
+                                        is_cui = False
+                                        password = None
+                                    else:
+                                        share_link = upload_result_once.get("share_link")
+                                        is_cui = upload_result_once.get("is_cui", is_cui)
+                                        password = upload_result_once.get("password")
+
+                                        # Persist new Box info to the queue for this row
+                                        queue.loc[row.name, 'box_rfq_root_id'] = getattr(upload_result_once.get('rfqs_root'), 'id', '')
+                                        queue.loc[row.name, 'box_quote_folder_id'] = getattr(upload_result_once.get('quote_folder'), 'id', '')
+                                        queue.loc[row.name, 'box_part_folder_id'] = getattr(upload_result_once.get('part_folder'), 'id', '')
+                                        queue.loc[row.name, 'box_share_link'] = share_link or ''
+                                        queue.loc[row.name, 'box_access'] = upload_result_once.get('box_access', '')
+                                        queue.loc[row.name, 'box_password'] = password or ''
+                                        queue.loc[row.name, 'box_unshared_at'] = upload_result_once.get('unshared_at', '') or ''
+                                        queue.loc[row.name, 'box_last_updated'] = datetime.now().isoformat()
+                                        queue.loc[row.name, 'files_uploaded'] = upload_result_once.get('files_uploaded', 0)
+                                        queue.loc[row.name, 'file_manifest'] = upload_result_once.get('file_manifest', '')
+                                        save_queue(queue)
+                                else:
+                                    # If link exists but password missing and it's CUI, ensure we have a password
+                                    if is_cui and not password:
+                                        attachments_once = []
+                                        if 'file_location' in row and row['file_location']:
+                                            attachments_once = get_file_attachments(row['file_location'], logger)
+                                        upload_result_once = upload_and_share_for_part(
+                                            box=box,
+                                            row=row,
+                                            attachments=attachments_once,
+                                            access="open",
+                                            default_expire_days=30,
+                                        )
+                                        if not upload_result_once.get("error"):
+                                            password = upload_result_once.get('password')
+                                            queue.loc[row.name, 'box_password'] = password or ''
+                                            queue.loc[row.name, 'box_last_updated'] = datetime.now().isoformat()
+                                            save_queue(queue)
+
+                                # Send emails to each vendor using the determined link/password
                                 emails_sent = 0
                                 for vendor in matching_vendors:
                                     try:
@@ -1329,31 +1424,6 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                             contact_name=contact_name,
                                             company_info=company_info
                                         )
-                                        
-                                        # Collect local files for Box upload
-                                        attachments = []
-                                        if 'file_location' in row and row['file_location']:
-                                            file_path = row['file_location']
-                                            attachments = get_file_attachments(file_path, logger)
-
-                                        # Upload to Box and create share link (password if CUI/ITAR)
-                                        upload_result = upload_and_share_for_part(
-                                            box=box,
-                                            row=row,
-                                            attachments=attachments,
-                                            access="open",
-                                            default_expire_days=30,
-                                        )
-
-                                        if upload_result.get("error"):
-                                            logger.warning(upload_result["error"]) 
-                                            share_link = None
-                                            is_cui = False
-                                            password = None
-                                        else:
-                                            share_link = upload_result.get("share_link")
-                                            is_cui = upload_result.get("is_cui", False)
-                                            password = upload_result.get("password")
 
                                         # Inject Box link into the email body
                                         body_with_link = inject_box_link_into_body(body, share_link, is_cui)
