@@ -45,7 +45,7 @@ import urllib3
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from core.config import Paths, LoggingConfig, init_config
 from core.secrets import get_section
-from utils.queue import save_queue
+from utils.rfq_queue import save_queue
 
 # Initialize configuration
 init_config()
@@ -137,7 +137,7 @@ def setup_logging(logs_dir: str) -> logging.Logger:
     try:
         # Add parent directory to path to import from utils
         sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        from utils.logging import get_logger
+        from utils.rfq_logging import get_logger
         return get_logger("email_from_list", "email_from_list.log")
     except ImportError:
         # Fall back to original implementation if centralized logging is not available

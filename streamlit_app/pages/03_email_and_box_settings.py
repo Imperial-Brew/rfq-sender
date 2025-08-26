@@ -16,7 +16,7 @@ if str(parent_dir) not in sys.path:
 
 # Import configuration and utility functions
 from core.config import Paths, CompanyInfo, LoggingConfig, init_config
-from utils.queue import save_queue, load_queue as load_queue_df
+from utils.rfq_queue import save_queue, load_queue as load_queue_df
 from core.secrets import get_section
 from core.email.email_manager import EmailManager
 from core.vendors.vendor_manager import VendorManager

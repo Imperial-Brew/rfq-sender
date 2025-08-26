@@ -15,7 +15,7 @@ parent_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(parent_dir))
 
 # Import the logging module
-from utils.logging import get_logger
+from utils.rfq_logging import get_logger
 
 # Get module-specific logger
 logger = get_logger(__name__)
@@ -39,8 +39,8 @@ def test_queue_loading():
         logger.info(f"Queue columns: {df_direct.columns.tolist()}")
         
         # 2. Test loading through utils.queue
-        logger.info("Testing loading through utils.queue.load_queue")
-        from utils.queue import load_queue, QUEUE_PATH
+        logger.info("Testing loading through utils.rfq_queue.load_queue")
+        from utils.rfq_queue import load_queue, QUEUE_PATH
         
         df_util = load_queue(QUEUE_PATH)
         logger.info(f"Successfully loaded queue through utils with {len(df_util)} entries")
