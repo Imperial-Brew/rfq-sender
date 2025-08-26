@@ -594,6 +594,10 @@ vendors:
     - number: ASTM A 967
     - number: ASTM A 380
     - number: AMS-QQ-P-35
+  - name: Zinc Plating
+    specs:
+    - number: QQ-Z-325
+    - number: ASTM B 633
 - name: Harrison Electropolishing L.P.
   location: Houston, Texas
   website: http://www.harrisonep.com/

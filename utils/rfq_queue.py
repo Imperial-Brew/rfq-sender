@@ -158,8 +158,15 @@ def load_queue(path: str | None = None) -> pd.DataFrame:
 
 
 def save_queue(df: pd.DataFrame, path: str | None = None) -> None:
-    # One-time cleanup: drop legacy RFQ # if present
-    df = df.drop(columns=["rfq #", "RFQ #"], errors="ignore")
+    # Drop legacy columns when saving
+    df = df.drop(columns=[
+        "rfq #", "RFQ #",  # existing
+        "box_rfq_root_id",  # remove legacy
+        "box_access",  # remove legacy
+        "file_manifest",  # remove legacy
+        "box_quote_folder_id",  # replaced by box_rfq_folder
+        "quote_id",  # remove legacy bridge
+    ], errors="ignore")
 
     store = _get_box_store()
     if store is not None:

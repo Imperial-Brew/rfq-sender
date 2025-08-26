@@ -249,9 +249,6 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, log
         
         # Rename columns
         queue = queue.rename(columns=queue_column_mapping)
-        
-        # Add part_number as quote_id since it doesn't exist in the queue.csv
-        queue['quote_id'] = queue['part_number']
 
         # Process contacts data
         # Filter to primary contacts only
