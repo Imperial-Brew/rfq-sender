@@ -1,4 +1,84 @@
 vendors:
+- name: Har-Conn Company
+  location: West Hartford, CT
+  website: https://www.har-conn.com/
+  processes:
+  - name: Anodize
+    specs:
+    - number: AMS 2468
+    - number: AMS 2469
+    - number: AMS 2470
+    - number: AMS 2471
+    - number: AMS 2472
+    - number: MIL-PRF-8625/MIL-A-8625
+  - name: Cadmium Plating
+    specs:
+    - number: AMS 2400
+    - number: AMS 2401
+    - number: AMS-QQ-P-416
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-DTL-5541
+    - number: AMS 2473
+    - number: AMS 2474
+    - number: AMS 2477
+  - name: Dry Film Lubricant
+    specs:
+    - number: PS18021
+    - number: MIL-L-23398
+    - number: MIL-L-46010
+    - number: MIL-L-81329
+  - name: Nickel Plating
+    specs:
+    - number: MIL-C-26074
+    - number: AMS 2403
+    - number: AMS 2404
+    - number: AMS 2405
+    - number: AMS 2424
+    - number: AMS-C-26074
+  - name: Passivation
+    specs:
+    - number: ASTM A 967
+    - number: ASTM A 380
+    - number: AMS-QQ-P-35
+    - number: AMS 2700
+  - name: Silver Plating
+    specs:
+    - number: AMS 2410
+    - number: AMS 2411
+    - number: AMS 2412
+    - number: ASTM B 700
+  - name: Cleaning
+    specs:
+    - number: ASTM B 600
+- name: Har-Conn Aerospace, Inc.
+  location: FORT WORTH, TX
+  website: https://www.hcaerospace.com/
+  processes:
+  - name: Anodize
+    specs:
+    - number: AMS 2469
+    - number: AMS 2470
+    - number: BPS 4001
+    - number: BPS 4387
+    - number: BAC 5019
+    - number: BAC 5719
+    - number: MIL-PRF-8625/MIL-A-8625
+  - name: Chromate Conversion
+    specs:
+    - number: MIL-DTL-5541
+    - number: AMS 2473
+    - number: AMS 2474
+    - number: BAC 5719
+    - number: BPS 4182
+  - name: Cleaning
+    specs:
+    - number: BPS 4138
+  - name: Passivation
+    specs:
+    - number: AMS-QQ-P-35
+    - number: BPS 4007
+    - number: ASTM A 967
 - name: 3P Processing Inc
   location: Wichita, Kansas
   website: https://www.3pprocessing.com/
@@ -148,12 +228,15 @@ vendors:
     - number: AMS 2417
   - name: Passivation
     specs:
-    - number: AMS QQ P 35
+    - number: AMS-QQ-P-35
     - number: AMS 2700
     - number: ASTM A 380
     - number: ASTM A 967
   - name: Dry Film Lubricant
     specs:
+    - number: MIL-L-46010
+    - number: MIL-L-81329
+    - number: AMS 3084
   - name: Anodize
     specs:
     - number: MIL-PRF-8625/MIL-A-8625
@@ -188,6 +271,7 @@ vendors:
     - number: AMS 2418
   - name: Nickel Plating
     specs:
+    - number: MIL-C-26074
     - number: ASTM B 733
     - number: AMS-QQ-N-290
     - number: AMS 2403
@@ -260,9 +344,6 @@ vendors:
     specs:
     - number: ASTM B488
     - number: MIL-DTL-45204
-  - name: Dry Film Lubricant
-    specs:
-    - number: MIL-PRF-16010
 - name: Turn-key Coatings, Inc.
   location: Houston, Texas
   website: https://turnkeycoatings.com/main.htm
@@ -498,14 +579,6 @@ vendors:
   - name: Tin Plating
     specs:
     - number: ASTM B 545
-- name: Har-Conn Aerospace, Inc.
-  location: West Hartford, CT
-  website: http://www.har-conn.com/
-  processes:
-  - name: Nickel Plating
-    specs:
-    - number: MIL-C-26074
-    - number: AMS 2404
 - name: Brooks Industrial Coatings, Inc.
   location: Austin, Texas
   website: http://bic-texas.com/

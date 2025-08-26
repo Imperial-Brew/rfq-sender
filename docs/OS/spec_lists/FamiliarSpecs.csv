@@ -6,6 +6,7 @@ Anodize,ASTM B 580,ASTM
 Anodize,BAC 5019,BOEING
 Anodize,BAC 5632,BOEING
 Anodize,BPS 4001,BELL
+Anodize,BPS 4387,BELL
 Anodize,BPS 4555,BELL
 Anodize,MIL-PRF-8625/MIL-A-8625,DOD
 Cadmium Plating,BAC 5701,BOEING
@@ -24,7 +25,7 @@ Cleaning,ASTM B 600,ASTM
 Cleaning,BAC 5753,BOEING
 Cleaning,BPS 4138,BELL
 Copper Plating,AMS 2418,SAE
-Dry Film Lubricant,MIL-PRF-16010,DOD
+Dry Film Lubricant,MIL-L-46010,DOD
 Dry Film Lubricant,PS18021,BOEING
 Electropolish,0250-13605,AMAT
 Electropolish,ASTM B 912,ASTM
