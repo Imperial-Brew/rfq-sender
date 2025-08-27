@@ -1494,126 +1494,126 @@ def display_email_settings():
     st.subheader("Email Settings")
     
     # Display current settings
-    st.info("""
-    Email settings are configured in the Streamlit secrets file. 
-    Current configuration is displayed below for reference only.
-    To change these settings, edit the .streamlit/secrets.toml file directly.
-    """)
+    # st.info("""
+    # Email settings are configured in the Streamlit secrets file.
+    # Current configuration is displayed below for reference only.
+    # To change these settings, edit the .streamlit/secrets.toml file directly.
+    # """)
     
     # Display settings in an expandable section
-    with st.expander("View Current Email Settings"):
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("**Mailbox Settings (Graph)**")
-            ex_cfg = get_section("exchange")
-            st.text(f"Mailbox (UPN): {ex_cfg.get('username', '')}")
-            st.text(f"Default CC: {ex_cfg.get('cc', '')}")
-        
-        with col2:
-            st.markdown("**Company Settings**")
-            st.text(f"Company Name: {CompanyInfo.get_name()}")
-            st.text(f"Sender Name: {CompanyInfo.get_sender_name()}")
-            st.text(f"Sender Title: {CompanyInfo.get_sender_title()}")
-            st.text(f"Sender Phone: {CompanyInfo.get_sender_phone()}")
+    # with st.expander("View Current Email Settings"):
+    #     col1, col2 = st.columns(2)
+    #
+    #     with col1:
+    #         st.markdown("**Mailbox Settings (Graph)**")
+    #         ex_cfg = get_section("exchange")
+    #         st.text(f"Mailbox (UPN): {ex_cfg.get('username', '')}")
+    #         st.text(f"Default CC: {ex_cfg.get('cc', '')}")
+    #
+    #     with col2:
+    #         st.markdown("**Company Settings**")
+    #         st.text(f"Company Name: {CompanyInfo.get_name()}")
+    #         st.text(f"Sender Name: {CompanyInfo.get_sender_name()}")
+    #         st.text(f"Sender Title: {CompanyInfo.get_sender_title()}")
+    #         st.text(f"Sender Phone: {CompanyInfo.get_sender_phone()}")
     
     # New: Box Settings and Diagnostics
-    with st.expander("Box Settings (JWT) and Diagnostics"):
-        # Show current BOX_CONFIG_PATH
-        current_path = os.environ.get("BOX_CONFIG_PATH", "")
-        st.text(f"Current BOX_CONFIG_PATH: {current_path or '(not set)'}")
-        # Also indicate if BOX_JWT_JSON (full credentials in secrets) is present
-        jwt_json_env = os.environ.get("BOX_JWT_JSON", "")
-        st.text(f"BOX_JWT_JSON present: {'yes' if jwt_json_env else 'no'}" + (f" (len={len(jwt_json_env)})" if jwt_json_env else ""))
-        st.caption("Search order: 1) BOX_JWT_JSON (secrets)  2) BOX_CONFIG_PATH  3) scripts\\box\\0__config.json  4) scripts\\0__config.json")
-
-        # Allow session override for BOX_CONFIG_PATH
-        new_path = st.text_input("Set/override BOX_CONFIG_PATH for this session", value=current_path)
-        set_env = st.button("Use This Config Path (Session Only)")
-        if set_env:
-            try:
-                if new_path:
-                    os.environ["BOX_CONFIG_PATH"] = new_path
-                    st.success(f"BOX_CONFIG_PATH set for this session: {new_path}")
-                    logger.info(f"BOX_CONFIG_PATH set via UI: {new_path}")
-                else:
-                    if "BOX_CONFIG_PATH" in os.environ:
-                        del os.environ["BOX_CONFIG_PATH"]
-                    st.warning("Cleared BOX_CONFIG_PATH for this session.")
-                    logger.info("BOX_CONFIG_PATH cleared via UI")
-            except Exception as e:
-                st.error(f"Failed to set BOX_CONFIG_PATH: {e}")
-                logger.error(f"Failed to set BOX_CONFIG_PATH: {e}")
-
-        # Test connection
-        if st.button("Test Box Connection"):
-            try:
-                box = BoxIntegration(logger=logger)
-                # Safely gather diagnostics even if older BoxIntegration lacks .diagnostics()
-                diag = {}
-                try:
-                    if box and hasattr(box, "diagnostics"):
-                        diag = box.diagnostics()
-                    elif box:
-                        diag = {
-                            "tried_paths": getattr(box, "tried_paths", []),
-                            "config_path": getattr(box, "config_path", None),
-                            "last_error": getattr(box, "last_error", ""),
-                            "client_initialized": bool(getattr(box, "client", None)),
-                            "user": getattr(box, "_user_identity", ""),
-                        }
-                    else:
-                        diag = {"client_initialized": False, "last_error": "Box object not created"}
-                except Exception as _e:
-                    diag = {"client_initialized": bool(box and getattr(box, "client", None)), "last_error": str(_e)}
-                if box and getattr(box, "client", None):
-                    st.success(f"Authenticated to Box as {diag.get('user','')}\nConfig: {diag.get('config_path','')}")
-                else:
-                    st.error("Box initialization failed.")
-                # Show diagnostics details
-                st.write({
-                    "config_path": diag.get("config_path"),
-                    "tried_paths": diag.get("tried_paths"),
-                    "client_initialized": diag.get("client_initialized"),
-                    "last_error": diag.get("last_error"),
-                    "BOX_JWT_JSON_present": bool(os.environ.get("BOX_JWT_JSON", "")),
-                })
-            except Exception as e:
-                st.error(f"Box test failed: {e}")
-                logger.error(f"Box test failed: {e}")
+    # with st.expander("Box Settings (JWT) and Diagnostics"):
+    #     # Show current BOX_CONFIG_PATH
+    #     current_path = os.environ.get("BOX_CONFIG_PATH", "")
+    #     st.text(f"Current BOX_CONFIG_PATH: {current_path or '(not set)'}")
+    #     # Also indicate if BOX_JWT_JSON (full credentials in secrets) is present
+    #     jwt_json_env = os.environ.get("BOX_JWT_JSON", "")
+    #     st.text(f"BOX_JWT_JSON present: {'yes' if jwt_json_env else 'no'}" + (f" (len={len(jwt_json_env)})" if jwt_json_env else ""))
+    #     st.caption("Search order: 1) BOX_JWT_JSON (secrets)  2) BOX_CONFIG_PATH  3) scripts\\box\\0__config.json  4) scripts\\0__config.json")
+#
+    #     # Allow session override for BOX_CONFIG_PATH
+    #     new_path = st.text_input("Set/override BOX_CONFIG_PATH for this session", value=current_path)
+    #     set_env = st.button("Use This Config Path (Session Only)")
+    #     if set_env:
+    #         try:
+    #             if new_path:
+    #                 os.environ["BOX_CONFIG_PATH"] = new_path
+    #                 st.success(f"BOX_CONFIG_PATH set for this session: {new_path}")
+    #                 logger.info(f"BOX_CONFIG_PATH set via UI: {new_path}")
+    #             else:
+    #                 if "BOX_CONFIG_PATH" in os.environ:
+    #                     del os.environ["BOX_CONFIG_PATH"]
+    #                 st.warning("Cleared BOX_CONFIG_PATH for this session.")
+    #                 logger.info("BOX_CONFIG_PATH cleared via UI")
+    #         except Exception as e:
+    #             st.error(f"Failed to set BOX_CONFIG_PATH: {e}")
+    #             logger.error(f"Failed to set BOX_CONFIG_PATH: {e}")
+#
+    #     # Test connection
+    #     if st.button("Test Box Connection"):
+    #         try:
+    #             box = BoxIntegration(logger=logger)
+    #             # Safely gather diagnostics even if older BoxIntegration lacks .diagnostics()
+    #             diag = {}
+    #             try:
+    #                 if box and hasattr(box, "diagnostics"):
+    #                     diag = box.diagnostics()
+    #                 elif box:
+    #                     diag = {
+    #                         "tried_paths": getattr(box, "tried_paths", []),
+    #                         "config_path": getattr(box, "config_path", None),
+    #                         "last_error": getattr(box, "last_error", ""),
+    #                         "client_initialized": bool(getattr(box, "client", None)),
+    #                         "user": getattr(box, "_user_identity", ""),
+    #                     }
+    #                 else:
+    #                     diag = {"client_initialized": False, "last_error": "Box object not created"}
+    #             except Exception as _e:
+    #                 diag = {"client_initialized": bool(box and getattr(box, "client", None)), "last_error": str(_e)}
+    #             if box and getattr(box, "client", None):
+    #                 st.success(f"Authenticated to Box as {diag.get('user','')}\nConfig: {diag.get('config_path','')}")
+    #             else:
+    #                 st.error("Box initialization failed.")
+    #             # Show diagnostics details
+    #             st.write({
+    #                 "config_path": diag.get("config_path"),
+    #                 "tried_paths": diag.get("tried_paths"),
+    #                 "client_initialized": diag.get("client_initialized"),
+    #                 "last_error": diag.get("last_error"),
+    #                 "BOX_JWT_JSON_present": bool(os.environ.get("BOX_JWT_JSON", "")),
+    #             })
+    #         except Exception as e:
+    #             st.error(f"Box test failed: {e}")
+    #             logger.error(f"Box test failed: {e}")
     
     # Test email button
-    if st.button("Create Test Email Draft"):
-        try:
-            # Mailbox settings (Graph)
-            ex_cfg = get_section("exchange")
-            to_addr = ex_cfg.get("username", "")
-            cc_addr = ex_cfg.get("cc")
-            
-            # Create a test email
-            test_email = {
-                "to": to_addr,
-                "subject": "Test RFQ Email",
-                "body": "<h1>Test Email</h1><p>This is a test email from the RFQ Sender application.</p>",
-                "cc": [cc_addr] if cc_addr else [],
-                "attachments": []
-            }
-            
-            # Create the test email draft
-            if create_draft_email(
-                recipient=test_email["to"],
-                subject=test_email["subject"],
-                body=test_email["body"],
-            ):
-                st.success("Test email draft created successfully in Outlook!")
-                logger.info("Test email draft created successfully in Outlook")
-            else:
-                st.error("Failed to create test email draft.")
-                logger.error("Failed to create test email draft")
-            
-        except Exception as e:
-            st.error(f"Error creating test email draft: {str(e)}")
-            logger.error(f"Error creating test email draft: {str(e)}")
+    # if st.button("Create Test Email Draft"):
+    #     try:
+    #         # Mailbox settings (Graph)
+    #         ex_cfg = get_section("exchange")
+    #         to_addr = ex_cfg.get("username", "")
+    #         cc_addr = ex_cfg.get("cc")
+    #
+    #         # Create a test email
+    #         test_email = {
+    #             "to": to_addr,
+    #             "subject": "Test RFQ Email",
+    #             "body": "<h1>Test Email</h1><p>This is a test email from the RFQ Sender application.</p>",
+    #             "cc": [cc_addr] if cc_addr else [],
+    #             "attachments": []
+    #         }
+    #
+    #         # Create the test email draft
+    #         if create_draft_email(
+    #             recipient=test_email["to"],
+    #             subject=test_email["subject"],
+    #             body=test_email["body"],
+    #         ):
+    #             st.success("Test email draft created successfully in Outlook!")
+    #             logger.info("Test email draft created successfully in Outlook")
+    #         else:
+    #             st.error("Failed to create test email draft.")
+    #             logger.error("Failed to create test email draft")
+    #
+    #     except Exception as e:
+    #         st.error(f"Error creating test email draft: {str(e)}")
+    #         logger.error(f"Error creating test email draft: {str(e)}")
 
 
 def main():
