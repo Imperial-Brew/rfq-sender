@@ -543,6 +543,15 @@ def setup_page():
     """)
 
 
+def display_email_settings():
+    """Backward-compatible no-op after UI refactor.
+    Kept to avoid runtime errors where older code still calls this function.
+    Settings controls have been moved into the queue section and/or sidebar.
+    """
+    # Intentionally does nothing. Previously contained email settings UI.
+    return
+
+
 def display_queue_for_emails(user: Dict[str, Any], role: str):
     """
     Display the queue with options to send emails.
