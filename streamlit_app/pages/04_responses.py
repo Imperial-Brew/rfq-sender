@@ -7,6 +7,7 @@ import mimetypes
 from datetime import timezone
 from email import policy
 from email.parser import BytesParser
+import re
 
 # Add the parent directory to the path so we can import from other modules
 parent_dir = Path(__file__).parent.parent.parent
@@ -191,6 +192,142 @@ def _guess_vendor(name: str, email_from: str = "", body: str = "") -> str:
             return tokens[0]
     except Exception:
         pass
+    return ""
+
+def _load_master_df():
+    """Load rfq_master.csv via RFQTracking (Box if configured, else local)."""
+    tracker = get_tracker()
+    try:
+        if getattr(tracker, "master_store", None) is not None:
+            df = tracker.master_store.load_df()
+            if isinstance(df, pd.DataFrame):
+                return df
+    except Exception:
+        pass
+    try:
+        p = getattr(tracker, "master_path", None)
+        if p and Path(p).exists():
+            try:
+                return pd.read_csv(p, encoding="utf-8")
+            except UnicodeDecodeError:
+                return pd.read_csv(p, encoding="cp1252")
+    except Exception:
+        pass
+    return pd.DataFrame()
+
+def _master_cols(df: pd.DataFrame) -> dict:
+    return {
+        "rfq": _find_col(df, ["rfq#", "rfq #", "rfqno", "rfqid"]),
+        "part": _find_col(df, ["part_number", "part number", "part", "pn"]),
+        "vendor": _find_col(df, ["vendor", "vendor_name", "vendor name"]),
+        "process": _find_col(df, ["process"]),
+    }
+
+def _extract_numbers(text: str) -> list[int]:
+    if not text:
+        return []
+    nums = re.findall(r"\b(\d{3,})\b", text)
+    return [int(n) for n in nums if n.isdigit()]
+
+def _auto_match_rfq(master_df: pd.DataFrame, name: str, subject: str, body: str, vendor_guess: str) -> dict:
+    result = {"match": None, "candidates": pd.DataFrame(), "reason": ""}
+    if master_df is None or master_df.empty:
+        result["reason"] = "RFQ master is empty"
+        return result
+    cols = _master_cols(master_df)
+    if not any(cols.values()):
+        result["reason"] = "RFQ master missing required columns"
+        return result
+
+    subject = subject or ""
+    body = body or ""
+    text_all = " ".join([name or "", subject, body])
+
+    # 1) RFQ# in text
+    rfq_col = cols["rfq"]
+    if rfq_col:
+        rfq_nums = _extract_numbers(text_all)
+        if rfq_nums:
+            cand = master_df[master_df[rfq_col].astype(str).isin([str(n) for n in rfq_nums])]
+            if len(cand) == 1:
+                result["match"] = cand.iloc[0]
+                result["reason"] = f"Matched by RFQ# {cand.iloc[0][rfq_col]}"
+                return result
+            elif len(cand) > 1:
+                result["candidates"] = cand
+
+    # 2) Part + Vendor
+    part_col = cols["part"]
+    vendor_col = cols["vendor"]
+    if part_col:
+        tokens = re.findall(r"[A-Za-z0-9][A-Za-z0-9\-_]{3,}", name or "")
+        tokens += re.findall(r"[A-Za-z0-9][A-Za-z0-9\-_]{3,}", subject)
+        tokens = sorted(set([t.strip() for t in tokens]), key=len, reverse=True)[:10]
+        dfp = master_df
+        if tokens:
+            mask_part = pd.Series(False, index=dfp.index)
+            for t in tokens:
+                mask_part = mask_part | dfp[part_col].astype(str).str.contains(re.escape(t), case=False, na=False)
+            dfp = dfp[mask_part] if not mask_part.empty and mask_part.any() else dfp
+        if vendor_col and vendor_guess:
+            v = str(vendor_guess).strip().lower()
+            mask_vendor = dfp[vendor_col].astype(str).str.lower().str.contains(v, na=False) | (dfp[vendor_col].astype(str).str.lower() == v)
+            dfpv = dfp[mask_vendor] if mask_vendor.any() else dfp
+        else:
+            dfpv = dfp
+        if len(dfpv) == 1:
+            result["match"] = dfpv.iloc[0]
+            result["reason"] = "Matched by Part+Vendor"
+            return result
+        elif 1 < len(dfpv) <= 25:
+            result["candidates"] = dfpv
+
+    # 3) Part-only unique
+    if part_col:
+        part_tokens = re.findall(r"[A-Za-z0-9][A-Za-z0-9\-_]{3,}", text_all)
+        if part_tokens:
+            mask = pd.Series(False, index=master_df.index)
+            for t in set(part_tokens):
+                mask = mask | master_df[part_col].astype(str).str.contains(re.escape(t), case=False, na=False)
+            same_part_df = master_df[mask] if mask.any() else pd.DataFrame()
+            if len(same_part_df) == 1:
+                result["match"] = same_part_df.iloc[0]
+                result["reason"] = "Matched by Part only"
+                return result
+            elif 1 < len(same_part_df) <= 25 and result["candidates"].empty:
+                result["candidates"] = same_part_df
+
+    if result["candidates"].empty and rfq_col:
+        result["candidates"] = master_df.copy()
+    result["reason"] = "No single match"
+    return result
+
+def _scrape_numbers_like_money(text: str) -> str:
+    if not text:
+        return ""
+    m = re.search(r"(?<!\w)(?:\$?\s?)(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{2})|\d+\.\d{2})(?!\w)", text)
+    return m.group(0).strip() if m else ""
+
+def _scrape_lead_time_days(text: str) -> int | None:
+    if not text:
+        return None
+    m = re.search(r"(\d+)\s*(day|days|week|weeks)", text, re.IGNORECASE)
+    if not m:
+        return None
+    qty = int(m.group(1))
+    unit = m.group(2).lower()
+    return qty if unit.startswith("day") else qty * 7
+
+def _scrape_lot_min(text: str) -> str:
+    if not text:
+        return ""
+    m = re.search(r"(?:lot\s*min(?:imum)?|minimum\s*lot)\D{0,10}(\d{1,6})", text, re.IGNORECASE)
+    return m.group(1) if m else ""
+
+def _first_nonempty(*vals) -> str:
+    for v in vals:
+        if str(v or "").strip():
+            return str(v)
     return ""
 
 def _resolve_responses_folder_id(tracker) -> str | None:
@@ -626,13 +763,143 @@ def display_responses(user, role):
                             st.info("No parser for this file type yet. You can still record a processed entry.")
                             vendor_guess = _guess_vendor(selected_name)
 
-                        # 3) Confirmation UI and write to rfq_responses.csv
+                        # -- Load RFQ master and try to match RFQ --
+                        master_df = _load_master_df()
+                        mcols = _master_cols(master_df)
+
+                        selected_rfq_num_val = ""
+                        selected_part_val = ""
+                        selected_vendor_val = ""
+                        selected_process_val = ""
+                        received_ts = _first_nonempty(
+                            (preview_data.get("date") if isinstance(preview_data, dict) else ""),
+                            _now_utc_iso()
+                        )
+
+                        if master_df is not None and not master_df.empty:
+                            auto = _auto_match_rfq(
+                                master_df,
+                                selected_name or "",
+                                subject or "",
+                                body_excerpt or "",
+                                vendor_guess or "",
+                            )
+                            if auto.get("match") is not None:
+                                row = auto["match"]
+                                try:
+                                    selected_rfq_num_val = str(row[mcols.get("rfq")]) if mcols.get("rfq") else ""
+                                    selected_part_val = str(row[mcols.get("part")]) if mcols.get("part") else ""
+                                    selected_vendor_val = str(row[mcols.get("vendor")]) if mcols.get("vendor") else ""
+                                    selected_process_val = str(row[mcols.get("process")]) if mcols.get(
+                                        "process") else ""
+                                    st.success(
+                                        f"Auto-matched RFQ: RFQ {selected_rfq_num_val} — {selected_part_val} — {selected_vendor_val} — {selected_process_val}"
+                                    )
+                                except Exception:
+                                    pass
+                            else:
+                                cands = auto.get("candidates") if isinstance(auto.get("candidates"),
+                                                                             pd.DataFrame) else pd.DataFrame()
+                                if not cands.empty:
+                                    view_cols = []
+                                    for key in ("rfq", "part", "vendor", "process"):
+                                        col = mcols.get(key)
+                                        if col:
+                                            view_cols.append(col)
+                                    st.write("Select an RFQ from master:")
+                                    view_df = cands[view_cols].copy() if view_cols else cands.copy()
+                                    st.dataframe(view_df, width='stretch', hide_index=True)
+
+                                    labels = []
+                                    for _, r in cands.iterrows():
+                                        rfq = str(r[mcols["rfq"]]) if mcols.get("rfq") else ""
+                                        partv = str(r[mcols["part"]]) if mcols.get("part") else ""
+                                        vendv = str(r[mcols["vendor"]]) if mcols.get("vendor") else ""
+                                        procv = str(r[mcols["process"]]) if mcols.get("process") else ""
+                                        labels.append(f"RFQ {rfq} — {partv} — {vendv} — {procv}")
+
+                                    pick = st.selectbox(
+                                        "RFQ selection",
+                                        options=labels,
+                                        index=0 if labels else None,
+                                        key="responses_pick_master",
+                                    )
+                                    if pick:
+                                        try:
+                                            idx = labels.index(pick)
+                                            row = cands.iloc[idx]
+                                            selected_rfq_num_val = str(row[mcols["rfq"]]) if mcols.get("rfq") else ""
+                                            selected_part_val = str(row[mcols["part"]]) if mcols.get("part") else ""
+                                            selected_vendor_val = str(row[mcols["vendor"]]) if mcols.get(
+                                                "vendor") else ""
+                                            selected_process_val = str(row[mcols["process"]]) if mcols.get(
+                                                "process") else ""
+                                        except Exception:
+                                            pass
+
+                        if not selected_vendor_val:
+                            selected_vendor_val = vendor_guess or ""
+
+                        # -- Scrape extracted values you requested --
+                        unit_price_val = ""
+                        lot_min_val = ""
+                        lead_time_days_val = None
+                        scope_notes_val = ""
+
+                        raw_text_for_scrape = body_excerpt or (subject or "")
+
+                        # If table preview exists (CSV/XLSX), try columns first
+                        if ext in ("csv", "xls", "xlsx") and "dataframe" in preview_data:
+                            try:
+                                dfp = preview_data["dataframe"]
+                                col_price = _find_col(dfp, ["unit_price", "unit price", "price", "unit cost", "cost"])
+                                if col_price and unit_price_val == "":
+                                    unit_price_val = str(dfp[col_price].iloc[0])
+
+                                col_lot = _find_col(dfp, ["lot_min", "lot min", "min_lot", "minimum lot", "min order",
+                                                          "moq"])
+                                if col_lot and not lot_min_val:
+                                    lot_min_val = str(dfp[col_lot].iloc[0])
+
+                                col_lead = _find_col(dfp, ["lead_time_days", "lead time days", "lead_time", "lead time",
+                                                           "lt days", "lt"])
+                                if col_lead and lead_time_days_val is None:
+                                    lead_time_days_val = int(
+                                        pd.to_numeric(dfp[col_lead].iloc[0], errors="coerce")) if pd.notna(
+                                        dfp[col_lead].iloc[0]) else None
+                            except Exception:
+                                pass
+
+                        # Fallback: scrape from text
+                        if not unit_price_val:
+                            unit_price_val = _scrape_numbers_like_money(raw_text_for_scrape)
+                        if not lot_min_val:
+                            lot_min_val = _scrape_lot_min(raw_text_for_scrape)
+                        if lead_time_days_val is None:
+                            lead_time_days_val = _scrape_lead_time_days(raw_text_for_scrape)
+                        scope_notes_val = _safe_preview_text(raw_text_for_scrape, limit=500)
+
+                        # -- Final confirmation UI (replaces the old one) --
                         with st.expander("Record this processing in rfq_responses.csv?", expanded=True):
-                            vendor_val = st.text_input("Vendor (editable)", value=vendor_guess or "")
+                            rfq_num_in = st.text_input("RFQ #", value=selected_rfq_num_val)
+                            part_in = st.text_input("Part #", value=selected_part_val)
+                            process_in = st.text_input("Process", value=selected_process_val)
+                            vendor_in = st.text_input("Vendor", value=selected_vendor_val)
+
+                            unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
+                            lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
+                            lead_time_in = st.number_input(
+                                "Lead time (days)",
+                                value=int(lead_time_days_val) if isinstance(lead_time_days_val, int) else 0,
+                                min_value=0, step=1
+                            )
+                            received_ts_in = st.text_input("Received timestamp (ISO)", value=str(received_ts))
+                            scope_notes_in = st.text_area("Scope notes", value=scope_notes_val or "")
+
                             subject_val = st.text_input("Subject (if email)", value=subject or "")
                             notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
 
-                            if st.button("Confirm and append record", key="confirm_append_response_record"):
+                            if st.button("Confirm and append record", key="confirm_append_response_record_master"):
                                 try:
                                     tracker = get_tracker()
                                     try:
@@ -642,11 +909,13 @@ def display_responses(user, role):
                                     if df_curr is None:
                                         df_curr = pd.DataFrame()
 
-                                    base_cols = [
+                                    needed_cols = [
                                         "processed_at", "file_id", "file_name", "file_type",
-                                        "vendor", "subject", "body_excerpt", "notes",
+                                        "rfq#", "part_number", "process", "vendor",
+                                        "unit_price", "lot_min", "lead_time_days", "received_timestamp", "scope_notes",
+                                        "subject", "body_excerpt", "notes",
                                     ]
-                                    for c in base_cols:
+                                    for c in needed_cols:
                                         if c not in df_curr.columns:
                                             df_curr[c] = pd.Series(dtype="object")
 
@@ -655,7 +924,15 @@ def display_responses(user, role):
                                         "file_id": selected_id,
                                         "file_name": selected_name,
                                         "file_type": ext or "",
-                                        "vendor": vendor_val or "",
+                                        "rfq#": rfq_num_in,
+                                        "part_number": part_in,
+                                        "process": process_in,
+                                        "vendor": vendor_in,
+                                        "unit_price": unit_price_in,
+                                        "lot_min": lot_min_in,
+                                        "lead_time_days": str(lead_time_in),
+                                        "received_timestamp": received_ts_in,
+                                        "scope_notes": scope_notes_in,
                                         "subject": subject_val or "",
                                         "body_excerpt": body_excerpt or "",
                                         "notes": notes_val or "",
@@ -673,6 +950,7 @@ def display_responses(user, role):
                                             f"Appended record to local rfq_responses.csv. Total rows: {len(df_out)}")
                                 except Exception as e:
                                     st.error(f"Failed to append record: {e}")
+
 
                     except Exception as e:
                         st.error(f"Processing failed: {e}")
