@@ -171,7 +171,8 @@ def _try_parse_tabular(ext: str, content: bytes) -> dict:
     try:
         import io
         if ext in ("csv",):
-            df = pd.read_csv(io.BytesIO(content))
+            # Use Python engine with sep=None to infer delimiter (handles TSV or other delims)
+            df = pd.read_csv(io.BytesIO(content), sep=None, engine="python")
         elif ext in ("xls", "xlsx"):
             df = pd.read_excel(io.BytesIO(content))
         else:
@@ -221,15 +222,6 @@ def _master_cols(df: pd.DataFrame) -> dict:
         "part": _find_col(df, ["part_number", "part number", "part", "pn"]),
         "vendor": _find_col(df, ["vendor", "vendor_name", "vendor name"]),
         "process": _find_col(df, ["process"]),
-    }
-
-def _master_extra_cols(df: pd.DataFrame) -> dict:
-    """Locate optional master columns we want to bring into responses."""
-    return {
-        "qtso": _find_col(df, ["qt/so #", "qt/so#", "qt", "so", "quote", "so #", "qt #"]),
-        "rev": _find_col(df, ["rev", "revision", "rev_level", "revision level"]),
-        "qty": _find_col(df, ["qty", "quantity", "quantities", "order qty", "order quantity"]),
-        "contact": _find_col(df, ["contact", "contact_email", "email", "contact email"]),
     }
 
 def _extract_numbers(text: str) -> list[int]:
@@ -804,16 +796,8 @@ def display_responses(user, role):
                                     selected_rfq_num_val = str(row[mcols.get("rfq")]) if mcols.get("rfq") else ""
                                     selected_part_val = str(row[mcols.get("part")]) if mcols.get("part") else ""
                                     selected_vendor_val = str(row[mcols.get("vendor")]) if mcols.get("vendor") else ""
-                                    selected_process_val = str(row[mcols.get("process")]) if mcols.get("process") else ""
-                                    mextra = _master_extra_cols(master_df)
-                                    if mextra.get("qtso"):
-                                        selected_qtso_val = str(row[mextra.get("qtso")])
-                                    if mextra.get("rev"):
-                                        selected_rev_val = str(row[mextra.get("rev")])
-                                    if mextra.get("qty"):
-                                        selected_qty_val = str(row[mextra.get("qty")])
-                                    if mextra.get("contact"):
-                                        selected_contact_val = str(row[mextra.get("contact")])
+                                    selected_process_val = str(row[mcols.get("process")]) if mcols.get(
+                                        "process") else ""
                                     st.success(
                                         f"Auto-matched RFQ: RFQ {selected_rfq_num_val} — {selected_part_val} — {selected_vendor_val} — {selected_process_val}"
                                     )
@@ -852,22 +836,74 @@ def display_responses(user, role):
                                             row = cands.iloc[idx]
                                             selected_rfq_num_val = str(row[mcols["rfq"]]) if mcols.get("rfq") else ""
                                             selected_part_val = str(row[mcols["part"]]) if mcols.get("part") else ""
-                                            selected_vendor_val = str(row[mcols["vendor"]]) if mcols.get("vendor") else ""
-                                            selected_process_val = str(row[mcols["process"]]) if mcols.get("process") else ""
-                                            mextra = _master_extra_cols(master_df)
-                                            if mextra.get("qtso"):
-                                                selected_qtso_val = str(row[mextra.get("qtso")])
-                                            if mextra.get("rev"):
-                                                selected_rev_val = str(row[mextra.get("rev")])
-                                            if mextra.get("qty"):
-                                                selected_qty_val = str(row[mextra.get("qty")])
-                                            if mextra.get("contact"):
-                                                selected_contact_val = str(row[mextra.get("contact")])
+                                            selected_vendor_val = str(row[mcols["vendor"]]) if mcols.get(
+                                                "vendor") else ""
+                                            selected_process_val = str(row[mcols["process"]]) if mcols.get(
+                                                "process") else ""
                                         except Exception:
                                             pass
 
                         if not selected_vendor_val:
                             selected_vendor_val = vendor_guess or ""
+
+                        # If we have a tabular preview, try to prefill fields from its first row
+                        try:
+                            if ext in ("csv", "xls", "xlsx") and isinstance(preview_data, dict) and "dataframe" in preview_data:
+                                dfp0 = preview_data["dataframe"]
+                                if isinstance(dfp0, pd.DataFrame) and not dfp0.empty:
+                                    r0 = dfp0.iloc[0]
+                                    def _get_col(df_, names):
+                                        c = _find_col(df_, names)
+                                        return str(r0[c]) if c and c in df_.columns and pd.notna(r0[c]) else ""
+                                    # Prefill only if not already set by auto-match
+                                    if not selected_rfq_num_val:
+                                        selected_rfq_num_val = _get_col(dfp0, ["rfq#", "rfq #", "rfqno", "rfqid"]) or selected_rfq_num_val
+                                    if not selected_part_val:
+                                        selected_part_val = _get_col(dfp0, ["part_number", "part number", "part", "pn"]) or selected_part_val
+                                    if not selected_process_val:
+                                        selected_process_val = _get_col(dfp0, ["process"]) or selected_process_val
+                                    if not selected_vendor_val:
+                                        selected_vendor_val = _get_col(dfp0, ["vendor", "vendor_name", "vendor name"]) or selected_vendor_val
+                                    # Extras
+                                    try:
+                                        selected_qtso_val
+                                    except NameError:
+                                        selected_qtso_val = ""
+                                    try:
+                                        selected_rev_val
+                                    except NameError:
+                                        selected_rev_val = ""
+                                    try:
+                                        selected_qty_val
+                                    except NameError:
+                                        selected_qty_val = ""
+                                    try:
+                                        selected_contact_val
+                                    except NameError:
+                                        selected_contact_val = ""
+                                    qtso_from = _get_col(dfp0, ["qt/so #", "qt/so#", "qt", "so", "quote", "so #", "qt #"]) or ""
+                                    rev_from = _get_col(dfp0, ["rev", "revision", "rev_level", "revision level"]) or ""
+                                    qty_from = _get_col(dfp0, ["qty", "quantity", "quantities", "order qty", "order quantity"]) or ""
+                                    contact_from = _get_col(dfp0, ["contact", "contact_email", "email", "contact email"]) or ""
+                                    if not selected_qtso_val:
+                                        selected_qtso_val = qtso_from or selected_qtso_val
+                                    if not selected_rev_val:
+                                        selected_rev_val = rev_from or selected_rev_val
+                                    if not selected_qty_val:
+                                        selected_qty_val = qty_from or selected_qty_val
+                                    if not selected_contact_val:
+                                        selected_contact_val = contact_from or selected_contact_val
+                                    # Pull received timestamp and potential validity/scope for later UI defaults
+                                    received_from = _get_col(dfp0, ["received_timestamp", "received ts", "received", "date", "timestamp"]) or ""
+                                    valid_through_from = _get_col(dfp0, ["valid_through", "valid through", "expires", "expiration", "expiry", "good_through"]) or ""
+                                    scope_from = _get_col(dfp0, ["scope_notes", "scope notes", "notes", "description", "details"]) or ""
+                                    if received_from:
+                                        received_ts = received_from
+                                    # Store these into session state for later defaulting in the UI if desired
+                                    st.session_state["responses_valid_through_from_table"] = valid_through_from
+                                    st.session_state["responses_scope_from_table"] = scope_from
+                        except Exception:
+                            pass
 
                         # -- Scrape extracted values you requested --
                         unit_price_val = ""
@@ -928,8 +964,11 @@ def display_responses(user, role):
                                 min_value=0, step=1
                             )
                             received_ts_in = st.text_input("Received timestamp (ISO)", value=str(received_ts))
-                            scope_notes_in = st.text_area("Scope notes", value=scope_notes_val or "")
-                            valid_through_in = st.text_input("Valid through (date or notes)", value="")
+                            # Use prefilled scope/valid_through from table if available
+                            pref_valid = st.session_state.get("responses_valid_through_from_table", "")
+                            pref_scope = scope_notes_val or st.session_state.get("responses_scope_from_table", "")
+                            scope_notes_in = st.text_area("Scope notes", value=pref_scope)
+                            valid_through_in = st.text_input("Valid through (date or notes)", value=pref_valid)
 
                             subject_val = st.text_input("Subject (if email)", value=subject or "")
                             notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
@@ -1313,15 +1352,6 @@ def display_responses(user, role):
                                 selected_part_val = str(row[mcols.get("part")]) if mcols.get("part") else ""
                                 selected_vendor_val = str(row[mcols.get("vendor")]) if mcols.get("vendor") else ""
                                 selected_process_val = str(row[mcols.get("process")]) if mcols.get("process") else ""
-                                mextra = _master_extra_cols(master_df)
-                                if mextra.get("qtso"):
-                                    selected_qtso_val = str(row[mextra.get("qtso")])
-                                if mextra.get("rev"):
-                                    selected_rev_val = str(row[mextra.get("rev")])
-                                if mextra.get("qty"):
-                                    selected_qty_val = str(row[mextra.get("qty")])
-                                if mextra.get("contact"):
-                                    selected_contact_val = str(row[mextra.get("contact")])
                                 st.success(
                                     f"Auto-matched RFQ: RFQ {selected_rfq_num_val} — {selected_part_val} — {selected_vendor_val} — {selected_process_val}"
                                 )
@@ -1361,20 +1391,53 @@ def display_responses(user, role):
                                         selected_part_val = str(row[mcols["part"]]) if mcols.get("part") else ""
                                         selected_vendor_val = str(row[mcols["vendor"]]) if mcols.get("vendor") else ""
                                         selected_process_val = str(row[mcols["process"]]) if mcols.get("process") else ""
-                                        mextra = _master_extra_cols(master_df)
-                                        if mextra.get("qtso"):
-                                            selected_qtso_val = str(row[mextra.get("qtso")])
-                                        if mextra.get("rev"):
-                                            selected_rev_val = str(row[mextra.get("rev")])
-                                        if mextra.get("qty"):
-                                            selected_qty_val = str(row[mextra.get("qty")])
-                                        if mextra.get("contact"):
-                                            selected_contact_val = str(row[mextra.get("contact")])
                                     except Exception:
                                         pass
 
                     if not selected_vendor_val:
                         selected_vendor_val = vendor_guess or ""
+
+                    # If we have a tabular preview, try to prefill fields from its first row
+                    try:
+                        if ext in ("csv", "xls", "xlsx") and isinstance(preview_data, dict) and "dataframe" in preview_data:
+                            dfp0 = preview_data["dataframe"]
+                            if isinstance(dfp0, pd.DataFrame) and not dfp0.empty:
+                                r0 = dfp0.iloc[0]
+                                def _get_col(df_, names):
+                                    c = _find_col(df_, names)
+                                    return str(r0[c]) if c and c in df_.columns and pd.notna(r0[c]) else ""
+                                # Prefill only if not already set by auto-match
+                                if not selected_rfq_num_val:
+                                    selected_rfq_num_val = _get_col(dfp0, ["rfq#", "rfq #", "rfqno", "rfqid"]) or selected_rfq_num_val
+                                if not selected_part_val:
+                                    selected_part_val = _get_col(dfp0, ["part_number", "part number", "part", "pn"]) or selected_part_val
+                                if not selected_process_val:
+                                    selected_process_val = _get_col(dfp0, ["process"]) or selected_process_val
+                                if not selected_vendor_val:
+                                    selected_vendor_val = _get_col(dfp0, ["vendor", "vendor_name", "vendor name"]) or selected_vendor_val
+                                # Extras
+                                qtso_from = _get_col(dfp0, ["qt/so #", "qt/so#", "qt", "so", "quote", "so #", "qt #"]) or ""
+                                rev_from = _get_col(dfp0, ["rev", "revision", "rev_level", "revision level"]) or ""
+                                qty_from = _get_col(dfp0, ["qty", "quantity", "quantities", "order qty", "order quantity"]) or ""
+                                contact_from = _get_col(dfp0, ["contact", "contact_email", "email", "contact email"]) or ""
+                                if not selected_qtso_val:
+                                    selected_qtso_val = qtso_from or selected_qtso_val
+                                if not selected_rev_val:
+                                    selected_rev_val = rev_from or selected_rev_val
+                                if not selected_qty_val:
+                                    selected_qty_val = qty_from or selected_qty_val
+                                if not selected_contact_val:
+                                    selected_contact_val = contact_from or selected_contact_val
+                                # Pull received timestamp and potential validity/scope for later UI defaults
+                                received_from = _get_col(dfp0, ["received_timestamp", "received ts", "received", "date", "timestamp"]) or ""
+                                valid_through_from = _get_col(dfp0, ["valid_through", "valid through", "expires", "expiration", "expiry", "good_through"]) or ""
+                                scope_from = _get_col(dfp0, ["scope_notes", "scope notes", "notes", "description", "details"]) or ""
+                                if received_from:
+                                    received_ts = received_from
+                                st.session_state["responses_valid_through_from_table"] = valid_through_from
+                                st.session_state["responses_scope_from_table"] = scope_from
+                    except Exception:
+                        pass
 
                     # -- Scrape extracted values you requested --
                     unit_price_val = ""
@@ -1431,8 +1494,10 @@ def display_responses(user, role):
                             min_value=0, step=1
                         )
                         received_ts_in = st.text_input("Received timestamp (ISO)", value=str(received_ts))
-                        scope_notes_in = st.text_area("Scope notes", value=scope_notes_val or "")
-                        valid_through_in = st.text_input("Valid through (date or notes)", value="")
+                        pref_valid = st.session_state.get("responses_valid_through_from_table", "")
+                        pref_scope = scope_notes_val or st.session_state.get("responses_scope_from_table", "")
+                        scope_notes_in = st.text_area("Scope notes", value=pref_scope)
+                        valid_through_in = st.text_input("Valid through (date or notes)", value=pref_valid)
 
                         subject_val = st.text_input("Subject (if email)", value=subject or "")
                         notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
