@@ -1039,10 +1039,30 @@ def display_responses(user, role):
             if files:
                 df_files = pd.DataFrame(files)
                 if not df_files.empty:
+                    # Exclude the tracking CSV and zero-byte files from processing list
+                    try:
+                        df_files = df_files[df_files["name"].str.lower() != "rfq_responses.csv"]
+                    except Exception:
+                        pass
+                    try:
+                        df_files = df_files[(pd.to_numeric(df_files["size"], errors="coerce").fillna(0) > 0)]
+                    except Exception:
+                        pass
+                    # Sort newest first by modified_at (if available)
+                    try:
+                        df_files["modified_at_dt"] = pd.to_datetime(df_files["modified_at"], errors="coerce")
+                        df_files = df_files.sort_values("modified_at_dt", ascending=False)
+                    except Exception:
+                        pass
+                    # Prettify size
                     try:
                         df_files["size_readable"] = df_files["size"].apply(_hr_size)
                     except Exception:
                         df_files["size_readable"] = df_files["size"]
+                    # Show a small summary and a manual reload trigger (clicking will rerun)
+                    st.caption(f"{len(df_files)} file(s) found. Click 'Reload file list' to refresh.")
+                    st.button("Reload file list", key="responses_reload_list")
+                    # Display
                     cols = [c for c in ["name", "size_readable", "modified_at", "id"] if c in df_files.columns]
                     st.dataframe(df_files[cols], width='stretch', hide_index=True)
 
