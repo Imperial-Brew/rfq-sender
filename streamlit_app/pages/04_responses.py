@@ -104,7 +104,7 @@ def display_responses(user, role):
     st.caption("Drop files here to store them in the Box ‘responses’ folder (if configured).")
     uploaded = st.file_uploader(
         "Drop responses files here",
-        type=["pdf", "xlsx", "xls", "csv", "docx", "txt", "zip", "png", "jpg", "jpeg"],
+        type=["pdf","xlsx","xls","csv","docx","txt","zip","png","jpg","jpeg","msg","eml"],
         accept_multiple_files=True,
         label_visibility="collapsed",
         key="responses_uploader",
