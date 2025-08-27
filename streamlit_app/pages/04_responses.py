@@ -362,15 +362,154 @@ def _resolve_responses_folder_id(tracker) -> str | None:
     return None
 
 def display_responses(user, role):
-    st.subheader("Upload Responses Files")
-    st.caption("Drop files here to store them in the Box ‘responses’ folder (if configured).")
-    uploaded = st.file_uploader(
-        "Drop responses files here",
-        type=["pdf","xlsx","xls","csv","docx","txt","zip","png","jpg","jpeg","msg","eml"],
-        accept_multiple_files=True,
-        label_visibility="collapsed",
-        key="responses_uploader",
-    )
+    # Tabs: Upload/Process vs. Files list
+    tab_upload, tab_files = st.tabs(["Upload / Process", "Responses Files"])
+
+    with tab_upload:
+        st.subheader("Upload Responses Files")
+        st.caption("Drop files here to store them in the Box ‘responses’ folder (if configured).")
+        uploaded = st.file_uploader(
+            "Drop responses files here",
+            type=["pdf","xlsx","xls","csv","docx","txt","zip","png","jpg","jpeg","msg","eml"],
+            accept_multiple_files=True,
+            label_visibility="collapsed",
+            key="responses_uploader",
+        )
+
+    # Second tab: show files in Responses folder
+    with tab_files:
+        st.subheader("Files in Responses folder")
+        try:
+            tracker = get_tracker()
+            store = getattr(tracker, "responses_store", None)
+            box = getattr(store, "box", None) if store else None
+            client = getattr(box, "client", None) if box else None
+
+            # Resolve target folder id using authoritative parent-of-file when possible
+            target_folder_id = None
+            file_parent_id = None
+            explicit_folder_id = None
+            try:
+                if store and getattr(store, "file_id", None) and client:
+                    try:
+                        _f = client.file(store.file_id).get()
+                        if getattr(_f, "parent", None) and getattr(_f.parent, "id", None):
+                            file_parent_id = _f.parent.id
+                    except Exception:
+                        file_parent_id = None
+                if store and getattr(store, "folder_id", None):
+                    explicit_folder_id = store.folder_id
+                target_folder_id = file_parent_id or explicit_folder_id
+                if not target_folder_id:
+                    try:
+                        from core.secrets import get_section as _get_secret_section
+                        _bx = _get_secret_section("box") or {}
+                        val = str(_bx.get("BOX_RFQ_RESPONSES_FOLDER_ID", "")).strip()
+                        target_folder_id = val or None
+                    except Exception:
+                        target_folder_id = None
+                if file_parent_id and explicit_folder_id and file_parent_id != explicit_folder_id:
+                    # Prefer file parent (should be 'Responses')
+                    target_folder_id = file_parent_id
+            except Exception:
+                target_folder_id = None
+
+            def _hr_size(n) -> str:
+                try:
+                    n = int(n or 0)
+                    for unit in ["B", "KB", "MB", "GB", "TB"]:
+                        if n < 1024 or unit == "TB":
+                            return f"{n:.1f} {unit}" if unit != "B" else f"{n} {unit}"
+                        n /= 1024
+                except Exception:
+                    return ""
+
+            if client and target_folder_id:
+                # Show folder context
+                try:
+                    folder_obj = client.folder(target_folder_id).get()
+                    st.caption(f"Listing: Box folder {target_folder_id} — {getattr(folder_obj, 'name', '(unknown)')}")
+                except Exception:
+                    st.caption(f"Listing: Box folder {target_folder_id}")
+
+                # Fetch first page of items
+                try:
+                    items = list(client.folder(target_folder_id).get_items(limit=1000, fields=["id","name","size","modified_at","sha1"]))
+                except Exception as e:
+                    items = []
+                    st.error(f"Failed to list Box folder items: {e}")
+
+                files = []
+                for it in items:
+                    try:
+                        if getattr(it, "type", None) == "file":
+                            files.append({
+                                "id": getattr(it, "id", ""),
+                                "name": getattr(it, "name", ""),
+                                "size": getattr(it, "size", 0),
+                                "modified_at": getattr(it, "modified_at", ""),
+                            })
+                    except Exception:
+                        pass
+
+                if files:
+                    df_files = pd.DataFrame(files)
+                    if not df_files.empty:
+                        # Exclude the tracking CSV from processing list
+                        try:
+                            df_files = df_files[df_files["name"].str.lower() != "rfq_responses.csv"]
+                        except Exception:
+                            pass
+                        # Sort newest first by modified_at (if available)
+                        try:
+                            df_files["modified_at_dt"] = pd.to_datetime(df_files["modified_at"], errors="coerce")
+                            df_files = df_files.sort_values("modified_at_dt", ascending=False)
+                        except Exception:
+                            pass
+                        # Prettify size
+                        try:
+                            df_files["size_readable"] = df_files["size"].apply(_hr_size)
+                        except Exception:
+                            df_files["size_readable"] = df_files["size"]
+                        cols = [c for c in ["name", "size_readable", "modified_at", "id"] if c in df_files.columns]
+                        st.dataframe(df_files[cols], width='stretch', hide_index=True)
+                        st.caption(f"{len(df_files)} file(s) found. Use this tab to browse; processing controls remain on the main tab.")
+                else:
+                    st.info("No files found in the Responses folder.")
+            else:
+                # Local fallback listing
+                try:
+                    local_base = getattr(tracker, "responses_path", None)
+                    if local_base is not None:
+                        local_folder = local_base.parent / "responses_uploads"
+                        local_folder.mkdir(parents=True, exist_ok=True)
+                        local_files = []
+                        for p in sorted(local_folder.glob("*")):
+                            if p.is_file():
+                                stat = p.stat()
+                                local_files.append({
+                                    "path": str(p),
+                                    "name": p.name,
+                                    "size": stat.st_size,
+                                    "modified_at": pd.to_datetime(stat.st_mtime, unit='s').isoformat() if hasattr(pd, 'to_datetime') else str(stat.st_mtime),
+                                })
+                        if local_files:
+                            df_local = pd.DataFrame(local_files)
+                            try:
+                                df_local["size_readable"] = df_local["size"].apply(_hr_size)
+                            except Exception:
+                                df_local["size_readable"] = df_local["size"]
+                            cols = [c for c in ["name", "size_readable", "modified_at", "path"] if c in df_local.columns]
+                            st.dataframe(df_local[cols], width='stretch', hide_index=True)
+                            st.caption(f"{len(df_local)} local file(s) found in responses_uploads.")
+                        else:
+                            st.info("No local files found in responses_uploads.")
+                    else:
+                        st.info("Box not configured and no local fallback folder available.")
+                except Exception as e:
+                    st.error(f"Failed to list local uploads: {e}")
+        except Exception as e:
+            st.error(f"Failed to list files in the Responses folder: {e}")
 
     if uploaded:
         tracker = get_tracker()
