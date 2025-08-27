@@ -664,109 +664,7 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                     hide_index=True
                 )
 
-            # New: Create/Update Box for selected parts
-            if st.button("Create/Update Box Folders/Links for Selected Parts", disabled=len(selected_indices) == 0):
-                try:
-                    with st.spinner("Creating Box folders, uploading files, and updating CSV..."):
-                        # Initialize Box
-                        box = BoxIntegration(logger=logger)
-                        if not box or not box.client:
-                            # Surface diagnostics to help user resolve missing config
-                            diag = {}
-                            try:
-                                if box and hasattr(box, "diagnostics"):
-                                    diag = box.diagnostics()
-                                elif box:
-                                    diag = {
-                                        "tried_paths": getattr(box, "tried_paths", []),
-                                        "config_path": getattr(box, "config_path", None),
-                                        "last_error": getattr(box, "last_error", ""),
-                                        "client_initialized": bool(getattr(box, "client", None)),
-                                    }
-                            except Exception as _e:
-                                diag = {"client_initialized": False, "last_error": str(_e)}
-                            st.error("Box initialization failed. Provide [box].jwt_json in Streamlit Secrets or set BOX_CONFIG_PATH to your 0__config.json. See diagnostics below.")
-                            st.write({
-                                "config_path": diag.get("config_path"),
-                                "tried_paths": diag.get("tried_paths"),
-                                "client_initialized": diag.get("client_initialized"),
-                                "last_error": diag.get("last_error"),
-                                "BOX_JWT_JSON_present": bool(os.environ.get("BOX_JWT_JSON", "")),
-                            })
-                            return
 
-                        # Work on a slice so we can map back by index
-                        selected_parts_df = queue.iloc[selected_indices]
-                        box_results = []
-
-                        for idx, row in selected_parts_df.iterrows():
-                            part_number = row.get("part_number", "")
-                            # Collect local files
-                            attachments = []
-                            if 'file_location' in row and row['file_location']:
-                                attachments = get_file_attachments(row['file_location'], logger)
-
-                            # Upload to Box and create share link
-                            upload_result = upload_and_share_for_part(
-                                box=box,
-                                row=row,
-                                attachments=attachments,
-                                access="open",
-                                default_expire_days=30,
-                            )
-
-                            if upload_result.get("error"):
-                                logger.warning(upload_result["error"])
-                                box_results.append({
-                                    "part_number": part_number,
-                                    "status": "Error",
-                                    "detail": upload_result.get("error"),
-                                })
-                                continue
-
-                            # Persist to queue DataFrame
-                            queue.loc[idx, 'box_part_folder_id'] = getattr(upload_result.get('part_folder'), 'id', '')
-                            queue.loc[idx, 'box_share_link'] = upload_result.get('share_link', '') or ''
-                            queue.loc[idx, 'box_password'] = upload_result.get('password', '') or ''
-                            queue.loc[idx, 'box_unshared_at'] = upload_result.get('unshared_at', '') or ''
-                            try:
-                                part_folder_obj = upload_result.get('part_folder')
-                                if part_folder_obj is not None:
-                                    folder = box.client.folder(part_folder_obj.id).get()
-                                    api_last_modified = getattr(folder, 'content_modified_at', None) or getattr(folder, 'modified_at', None)
-                                    queue.loc[idx, 'box_last_modified'] = api_last_modified or ''
-                            except Exception as _e:
-                                logger.debug(f"Failed to fetch Box folder modified time: {_e}")
-                            queue.loc[idx, 'files_uploaded'] = upload_result.get('files_uploaded', 0)
-
-                            # New: create an open, no-password share link for the quote folder
-                            quote_folder = upload_result.get('quote_folder')
-                            quote_share_link = box.create_share_link(
-                                quote_folder,
-                                access="open",
-                                password=None,
-                                expire_days=None,
-                            ) if quote_folder else None
-                            queue.loc[idx, 'box_rfq_folder'] = quote_share_link or ''
-
-                            box_results.append({
-                                "part_number": part_number,
-                                "status": "Updated",
-                                "box_part_folder_id": queue.loc[idx, 'box_part_folder_id'],
-                                "share_link": queue.loc[idx, 'box_share_link'],
-                                "box_rfq_folder": queue.loc[idx, 'box_rfq_folder'],  # optional
-                            })
-
-                        # Save queue via centralized Box/local handler
-                        save_queue(queue)
-                        results_df = pd.DataFrame(box_results)
-                        st.success(f"Updated Box info for {len(results_df)} selected part(s).")
-                        st.dataframe(results_df, use_container_width=True, hide_index=True)
-                        logger.info(f"Box folders/links updated for {len(results_df)} selected parts")
-                except Exception as e:
-                    st.error(f"Error creating Box folders or updating CSV: {str(e)}")
-                    logger.error(f"Error creating Box folders or updating CSV: {str(e)}")
-            
             # Initialize RFQ tracker
             tracker = get_tracker()
 
@@ -846,6 +744,112 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
             col1, col2 = st.columns(2)
             
             with col1:
+                # New: Create/Update Box for selected parts
+                if st.button("Create/Update Box Folders/Links for Selected Parts", disabled=len(selected_indices) == 0):
+                    try:
+                        with st.spinner("Creating Box folders, uploading files, and updating CSV..."):
+                            # Initialize Box
+                            box = BoxIntegration(logger=logger)
+                            if not box or not box.client:
+                                # Surface diagnostics to help user resolve missing config
+                                diag = {}
+                                try:
+                                    if box and hasattr(box, "diagnostics"):
+                                        diag = box.diagnostics()
+                                    elif box:
+                                        diag = {
+                                            "tried_paths": getattr(box, "tried_paths", []),
+                                            "config_path": getattr(box, "config_path", None),
+                                            "last_error": getattr(box, "last_error", ""),
+                                            "client_initialized": bool(getattr(box, "client", None)),
+                                        }
+                                except Exception as _e:
+                                    diag = {"client_initialized": False, "last_error": str(_e)}
+                                st.error(
+                                    "Box initialization failed. Provide [box].jwt_json in Streamlit Secrets or set BOX_CONFIG_PATH to your 0__config.json. See diagnostics below.")
+                                st.write({
+                                    "config_path": diag.get("config_path"),
+                                    "tried_paths": diag.get("tried_paths"),
+                                    "client_initialized": diag.get("client_initialized"),
+                                    "last_error": diag.get("last_error"),
+                                    "BOX_JWT_JSON_present": bool(os.environ.get("BOX_JWT_JSON", "")),
+                                })
+                                return
+
+                            # Work on a slice so we can map back by index
+                            selected_parts_df = queue.iloc[selected_indices]
+                            box_results = []
+
+                            for idx, row in selected_parts_df.iterrows():
+                                part_number = row.get("part_number", "")
+                                # Collect local files
+                                attachments = []
+                                if 'file_location' in row and row['file_location']:
+                                    attachments = get_file_attachments(row['file_location'], logger)
+
+                                # Upload to Box and create share link
+                                upload_result = upload_and_share_for_part(
+                                    box=box,
+                                    row=row,
+                                    attachments=attachments,
+                                    access="open",
+                                    default_expire_days=30,
+                                )
+
+                                if upload_result.get("error"):
+                                    logger.warning(upload_result["error"])
+                                    box_results.append({
+                                        "part_number": part_number,
+                                        "status": "Error",
+                                        "detail": upload_result.get("error"),
+                                    })
+                                    continue
+
+                                # Persist to queue DataFrame
+                                queue.loc[idx, 'box_part_folder_id'] = getattr(upload_result.get('part_folder'), 'id',
+                                                                               '')
+                                queue.loc[idx, 'box_share_link'] = upload_result.get('share_link', '') or ''
+                                queue.loc[idx, 'box_password'] = upload_result.get('password', '') or ''
+                                queue.loc[idx, 'box_unshared_at'] = upload_result.get('unshared_at', '') or ''
+                                try:
+                                    part_folder_obj = upload_result.get('part_folder')
+                                    if part_folder_obj is not None:
+                                        folder = box.client.folder(part_folder_obj.id).get()
+                                        api_last_modified = getattr(folder, 'content_modified_at', None) or getattr(
+                                            folder, 'modified_at', None)
+                                        queue.loc[idx, 'box_last_modified'] = api_last_modified or ''
+                                except Exception as _e:
+                                    logger.debug(f"Failed to fetch Box folder modified time: {_e}")
+                                queue.loc[idx, 'files_uploaded'] = upload_result.get('files_uploaded', 0)
+
+                                # New: create an open, no-password share link for the quote folder
+                                quote_folder = upload_result.get('quote_folder')
+                                quote_share_link = box.create_share_link(
+                                    quote_folder,
+                                    access="open",
+                                    password=None,
+                                    expire_days=None,
+                                ) if quote_folder else None
+                                queue.loc[idx, 'box_rfq_folder'] = quote_share_link or ''
+
+                                box_results.append({
+                                    "part_number": part_number,
+                                    "status": "Updated",
+                                    "box_part_folder_id": queue.loc[idx, 'box_part_folder_id'],
+                                    "share_link": queue.loc[idx, 'box_share_link'],
+                                    "box_rfq_folder": queue.loc[idx, 'box_rfq_folder'],  # optional
+                                })
+
+                            # Save queue via centralized Box/local handler
+                            save_queue(queue)
+                            results_df = pd.DataFrame(box_results)
+                            st.success(f"Updated Box info for {len(results_df)} selected part(s).")
+                            st.dataframe(results_df, use_container_width=True, hide_index=True)
+                            logger.info(f"Box folders/links updated for {len(results_df)} selected parts")
+                    except Exception as e:
+                        st.error(f"Error creating Box folders or updating CSV: {str(e)}")
+                        logger.error(f"Error creating Box folders or updating CSV: {str(e)}")
+
                 if st.button("Create Draft Emails for Selected Parts", disabled=len(selected_indices) == 0):
                     if role not in ["admin", "editor"]:
                         st.warning("You need admin or editor privileges to send emails.")
@@ -1489,9 +1493,9 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
         logger.error(f"Error loading queue data: {str(e)}")
 
 
-def display_email_settings():
-    """Display email settings from the configuration."""
-    st.subheader("Email Settings")
+# def display_email_settings():
+#     """Display email settings from the configuration."""
+#     st.subheader("Email Settings")
     
     # Display current settings
     # st.info("""
