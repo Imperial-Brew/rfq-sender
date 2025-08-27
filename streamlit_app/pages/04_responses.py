@@ -1116,8 +1116,30 @@ def display_responses(user, role):
             st.session_state["responses_selected_file_id"] = selected_id
             st.session_state["responses_selected_file_name"] = selected_name
 
-            if st.button("Process selected file", key="process_selected_response_file_always"):
+            start_processing = st.button("Process selected file", key="process_selected_response_file_always")
+            if start_processing:
+                st.session_state["responses_processing_active"] = True
+                st.session_state["responses_selected_file_id"] = selected_id
+                st.session_state["responses_selected_file_name"] = selected_name
+
+            # Use session state to persist processing UI across reruns (e.g., when selecting an RFQ)
+            processing_active = st.session_state.get("responses_processing_active", False)
+            sess_selected_id = st.session_state.get("responses_selected_file_id")
+            sess_selected_name = st.session_state.get("responses_selected_file_name")
+
+            if processing_active and sess_selected_id:
+                # Allow canceling processing mode
+                col_a, col_b = st.columns([1, 4])
+                with col_a:
+                    if st.button("Cancel processing", key="responses_cancel_processing"):
+                        st.session_state["responses_processing_active"] = False
+                        st.stop()  # stop to avoid rendering stale UI; next run shows list again
+
                 try:
+                    # Use the persisted selection
+                    selected_id = str(sess_selected_id)
+                    selected_name = sess_selected_name
+
                     raw = None
                     ext = ""
                     mime = ""
@@ -1309,7 +1331,7 @@ def display_responses(user, role):
                     scope_notes_val = _safe_preview_text(raw_text_for_scrape, limit=500)
 
                     # -- Final confirmation UI (replaces the old one) --
-                    with st.expander("Record this processing in rfq_responses.csv?", expanded=True):
+                    with st.expander("Record this processing in rfq_responses.csv?", expanded=True, key="responses_record_expander"):
                         rfq_num_in = st.text_input("RFQ #", value=selected_rfq_num_val)
                         part_in = st.text_input("Part #", value=selected_part_val)
                         process_in = st.text_input("Process", value=selected_process_val)
