@@ -163,6 +163,12 @@ def display_responses(user, role):
             except Exception:
                 pass
             st.caption(f"Upload target: Box folder {target_folder_id} — {folder_name}")
+            # Ensure the store reflects the chosen folder id for consistency in this session
+            try:
+                if store and target_folder_id and getattr(store, "folder_id", None) != target_folder_id:
+                    store.folder_id = target_folder_id
+            except Exception:
+                pass
             # Warn if a configured folder_id differs from the responses file parent
             try:
                 # Recompute the two candidates for messaging
