@@ -621,25 +621,25 @@ vendors:
   location: California
   website: https://www.bodycote.com/services/
   processes:
-  - name: Heat Treat
-  specs:
-  - number: AMS 2759
-  - number: AMS 2770
-  - number: AMS 2769
-  - number: AMS 6875
-  - number: BPS 4140
-  - number: PS15634
-  - number: MIL-H-6875
-  - number: BAC 5613
-  - number: BPS 4139
+    - name: Heat Treat
+      specs:
+        - number: AMS 2759
+        - number: AMS 2770
+        - number: AMS 2769
+        - number: AMS 6875
+        - number: BPS 4140
+        - number: PS15634
+        - number: MIL-H-6875
+        - number: BAC 5613
+        - number: BPS 4139
 - name: Texas Heat Treating 
   location: Texas
   website: https://texasheattreating.com/
   processes:
-  - name: Heat Treat
-  specs:
-  - number: AMS 2759
-  - number: AMS 2769
+    - name: Heat Treat
+      specs:
+        - number: AMS 2759
+        - number: AMS 2769
 
 
 
