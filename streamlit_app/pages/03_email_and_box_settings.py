@@ -39,149 +39,21 @@ init_config()
 # Set up logging
 logger = LoggingConfig.setup_logging(__name__, "send_rfq_emails.log")
 
-def normalize_process_spec(text: str, validator: SpecProcessValidator = None) -> str:
-    """
-    Normalize a process or spec name using the SpecProcessValidator.
+# Moved vendor helpers to a utility module for maintainability
+from streamlit_app.utils.vendor_helpers import (
+    normalize_process_spec,
+    build_familiarity_report,
+    find_vendors_for_process_spec,
+)
 
-    Args:
-        text: The process or spec name to normalize
-        validator: Optional SpecProcessValidator instance. If None, a new one will be created.
-
-    Returns:
-        The normalized process or spec name
-    """
-    if not text:
-        return ""
-
-    # Create a validator if one wasn't provided
-    if validator is None:
-        validator = SpecProcessValidator()
-
-    # Use the validator's normalize method
-    return validator.normalize(text)
-
-def build_familiarity_report(queue: pd.DataFrame) -> pd.DataFrame:
-    """
-    Build a report for rows whose process/spec are not in familiar list.
-    Preference order for familiarity source:
-    1) familiar_specs.csv (if present) under docs/OS/spec_lists/ or docs/
-    2) vendor_options.yaml via SpecProcessValidator (fallback)
-    """
-    # Try to load familiar_specs.csv if available
-    csv_paths = [
-        os.path.join(parent_dir, 'docs', 'OS', 'spec_lists', 'familiar_specs.csv'),
-        os.path.join(parent_dir, 'docs', 'familiar_specs.csv'),
-    ]
-    familiar_processes: set[str] = set()
-    familiar_specs: set[str] = set()
-    used_csv = None
-    for p in csv_paths:
-        if os.path.exists(p):
-            try:
-                df = pd.read_csv(p, encoding='utf-8')
-            except UnicodeDecodeError:
-                df = pd.read_csv(p, encoding='cp1252')
-            used_csv = p
-            # Normalize column names
-            lower_cols = {c.lower(): c for c in df.columns}
-            if 'process' in lower_cols:
-                col = lower_cols['process']
-                familiar_processes = {SpecProcessValidator.normalize(str(x)) for x in df[col].dropna().astype(str)}
-            if 'spec' in lower_cols:
-                col = lower_cols['spec']
-                familiar_specs = {SpecProcessValidator.normalize(str(x)) for x in df[col].dropna().astype(str)}
-            break
-    use_validator = False
-    validator = None
-    if not used_csv:
-        # Fallback to validator (vendor_options.yaml)
-        validator = SpecProcessValidator()
-        use_validator = True
-
-    rows = []
-    for idx, row in queue.iterrows():
-        proc = str(row.get('process', '') or '')
-        spec = str(row.get('spec', '') or '')
-        if use_validator:
-            proc_ok, proc_norm, proc_suggestions = validator.check_process(proc)
-            spec_ok, spec_norm, spec_suggestions = validator.check_spec(spec)
-        else:
-            # CSV-based check: membership on normalized tokens
-            proc_norm = SpecProcessValidator.normalize(proc)
-            spec_norm = SpecProcessValidator.normalize(spec)
-            proc_ok = (proc_norm in familiar_processes) if familiar_processes else True
-            spec_ok = (spec_norm in familiar_specs) if familiar_specs else True
-            proc_suggestions = []
-            spec_suggestions = []
-        if not proc_ok or not spec_ok:
-            rows.append({
-                'row_index': idx,
-                'part_number': row.get('part_number', ''),
-                'process': proc,
-                'process_normalized': proc_norm,
-                'process_ok': proc_ok,
-                'process_suggestions': "; ".join(proc_suggestions) if proc_suggestions else '',
-                'spec': spec,
-                'spec_normalized': spec_norm,
-                'spec_ok': spec_ok,
-                'spec_suggestions': "; ".join(spec_suggestions) if spec_suggestions else '',
-                'source': used_csv or 'vendor_options.yaml',
-            })
-    return pd.DataFrame(rows)
-
-def _persist_box_update(
-    queue: pd.DataFrame,
-    row_index,
-    *,
-    share_link: Optional[str] = None,
-    password: Optional[str] = None,
-    unshared_at: Optional[str] = None,
-    files_uploaded: Optional[int] = None,
-    part_folder=None,
-    quote_folder=None,
-    box: Optional[BoxIntegration] = None,
-    create_quote_link: bool = True,
-) -> None:
-    """
-    Persist Box-related fields for a single row, following the new schema.
-    - Writes box_rfq_folder (open link, no password) if quote_folder provided.
-    - Writes part-folder id, share_link, password, unshared_at, last_updated, files_uploaded.
-    - Does NOT write deprecated columns (box_access, file_manifest, box_rfq_root_id).
-    """
-    # Quote-level open link (no password, no expiry)
-    if create_quote_link and quote_folder is not None and box is not None:
-        try:
-            quote_share_link = box.create_share_link(
-                quote_folder,
-                access="open",
-                password=None,
-                expire_days=None,
-            )
-        except Exception:
-            quote_share_link = None
-        queue.loc[row_index, 'box_rfq_folder'] = quote_share_link or ''
-
-    # Part folder id (retain if useful)
-    if part_folder is not None:
-        queue.loc[row_index, 'box_part_folder_id'] = getattr(part_folder, 'id', '')
-
-    # Main share link (part folder)
-    if share_link is not None:
-        queue.loc[row_index, 'box_share_link'] = share_link or ''
-
-    # Password and link metadata
-    if password is not None:
-        queue.loc[row_index, 'box_password'] = password or ''
-
-    if unshared_at is not None:
-        queue.loc[row_index, 'box_unshared_at'] = unshared_at or ''
-
-    # Timestamp
-    queue.loc[row_index, 'box_last_updated'] = datetime.now().isoformat()
-
-    # Files uploaded (count provided by caller)
-    if files_uploaded is not None:
-        queue.loc[row_index, 'files_uploaded'] = int(files_uploaded)
+# Box helpers moved to a utility module for maintainability
+from streamlit_app.utils.box_helpers import (
+    detect_cui_itar,
+    generate_password,
+    ensure_rfq_part_folder,
+    upload_and_share_for_part,
+    persist_box_update as _persist_box_update,
+)
 
 def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
               logger: logging.Logger = None) -> Tuple[pd.DataFrame, Dict[Any, Dict[str, Any]]]:
@@ -351,133 +223,12 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
 
     return queue, vendor_info
 
-def detect_cui_itar(row: pd.Series) -> bool:
-    """
-    Prefer explicit cui_itar column if present; otherwise fall back to heuristic
-    scanning of spec/process/callout/material for 'CUI' or 'ITAR'.
-    """
-    try:
-        flag = row.get('cui_itar', None)
-        if isinstance(flag, str):
-            s = flag.strip().upper()
-            if s in ("TRUE", "YES", "Y", "1"):  # treat any truthy token as True
-                return True
-            if s in ("FALSE", "NO", "N", "0"):  # explicit false
-                return False
-        elif isinstance(flag, bool):
-            return bool(flag)
-    except Exception:
-        pass
-
-    fields_to_scan = [
-        str(row.get('spec', '')),
-        str(row.get('process', '')),
-        str(row.get('callout', '')),
-        str(row.get('material', '')),
-    ]
-    text = " ".join(fields_to_scan).upper()
-    return ("CUI" in text) or ("ITAR" in text)
 
 
-def generate_password(length: int = 14) -> str:
-    """Generate a random, email-friendly password."""
-    alphabet = string.ascii_letters + string.digits + "-_@#"
-    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
-def ensure_rfq_part_folder(box: "BoxIntegration", qt_so: str, part_number: str):
-    """
-    Ensure Box folders exist for 'RFQs/[qt/so #]/[Part_Number]'.
-    Returns (rfqs_root, quote_folder, part_folder) or (None, None, None) on failure.
-    """
-    rfqs_root = box.create_folder("RFQs", parent_folder_id="0")
-    if not rfqs_root:
-        return None, None, None
-
-    quote_name = str(qt_so).strip() if qt_so else str(part_number).strip()
-    quote_folder = box.create_folder(quote_name, parent_folder_id=rfqs_root.id)
-    if not quote_folder:
-        return rfqs_root, None, None
-
-    part_folder = box.create_folder(str(part_number).strip(), parent_folder_id=quote_folder.id)
-    if not part_folder:
-        return rfqs_root, quote_folder, None
-
-    return rfqs_root, quote_folder, part_folder
 
 
-def upload_and_share_for_part(
-    box: "BoxIntegration",              # your BoxIntegration instance
-    row: pd.Series,                     # one queue row (pd.Series)
-    attachments: List[str],             # list[str] of file paths to upload
-    access: str = "open",               # "open" for public-with-link, "company" for internal-only
-    default_expire_days: int = 30,      # default expire time in days
-):
-    """
-    - Creates RFQs/[qt/so #]/[Part_Number]
-    - Uploads attachments to the part folder
-    - Counts actual files in the Box part folder (authoritative)
-    - Detects CUI/ITAR to optionally add password protection
-    - Returns a dict with: share_link, password, is_cui, part_folder, quote_folder, rfqs_root,
-      files_uploaded, unshared_at
-    """
-    qt_so = row.get("qt/so #", "")
-    part_number = row.get("part_number", "")
-    if not part_number:
-        return {"error": "Missing part_number"}
-
-    rfqs_root, quote_folder, part_folder = ensure_rfq_part_folder(box, qt_so, part_number)
-    if not part_folder:
-        return {"error": f"Failed to prepare Box folder for {part_number}"}
-
-    # 1) Upload files (if any)
-    if attachments:
-        try:
-            box.upload_files(attachments, part_folder)
-        except Exception as e:
-            # Continue; we'll still try to count folder contents
-            try:
-                logger.warning(f"Upload failed for some files in {part_number}: {e}")
-            except Exception:
-                pass
-
-    # 2) Authoritative count from Box (with pagination-safe iteration)
-    files_uploaded = 0
-    try:
-        # get_items(limit=1000) returns an iterator that handles pagination within boxsdk
-        items = box.client.folder(part_folder.id).get_items(limit=1000)
-        files_uploaded = sum(1 for it in items if getattr(it, 'type', '') == 'file')
-    except Exception:
-        # Fallback if Box listing fails
-        files_uploaded = len(attachments or [])
-
-    # 3) Decide protection and create share link
-    is_cui = detect_cui_itar(row)
-    password = generate_password() if is_cui else None
-
-    # Compute expiration timestamp for recording (intended expiry)
-    unshared_at = None
-    if default_expire_days and default_expire_days > 0:
-        from datetime import timedelta
-        unshared_at = (datetime.now() + timedelta(days=default_expire_days)).isoformat()
-
-    share_link = box.create_share_link(
-        part_folder,
-        access=access,
-        password=password,
-        expire_days=default_expire_days,
-    )
-
-    return {
-        "share_link": share_link or "",
-        "password": password or "",
-        "is_cui": is_cui,
-        "part_folder": part_folder,
-        "quote_folder": quote_folder,
-        "rfqs_root": rfqs_root,
-        "files_uploaded": files_uploaded,
-        "unshared_at": unshared_at or "",
-    }
 
 def inject_box_link_into_body(html_body: str, share_link: str, is_cui: bool) -> str:
     """Append a styled Box link section to the existing HTML email body and then append signature."""
@@ -535,82 +286,6 @@ def append_signature(html_body: str) -> str:
         return html_body.replace("</html>", signature + "\n</html>")
     return html_body + signature
 
-def find_vendors_for_process_spec(vendor_info: Dict[str, Dict[str, Any]], 
-                                 process: str, 
-                                 spec: str = None,
-                                 validator: SpecProcessValidator = None) -> List[Dict[str, Any]]:
-    """
-    Find vendors that can handle a specific process and optionally a spec.
-    
-    Args:
-        vendor_info: Dictionary mapping vendor_id to vendor information
-        process: Process name to match
-        spec: Optional spec name to match
-        validator: Optional SpecProcessValidator instance
-        
-    Returns:
-        List of vendor dictionaries that can handle the process/spec
-    """
-    if validator is None:
-        validator = SpecProcessValidator()
-    
-    # Normalize process and spec for comparison
-    normalized_process = normalize_process_spec(process, validator)
-    normalized_spec = normalize_process_spec(spec, validator) if spec else None
-    
-    matching_vendors = []
-    
-    process_only_vendors = []
-    for vendor_id, vendor_data in vendor_info.items():
-        if 'processes' not in vendor_data:
-            continue
-        
-        can_handle_process = False
-        can_handle_spec = normalized_spec is None  # If no spec is provided, default to True
-        
-        for vendor_process in vendor_data['processes']:
-            if not vendor_process or 'name' not in vendor_process:
-                continue
-            vendor_process_name = normalize_process_spec(vendor_process['name'], validator)
-            if vendor_process_name == normalized_process:
-                can_handle_process = True
-                # If spec is provided, check if vendor can handle it
-                if normalized_spec and 'specs' in vendor_process and vendor_process['specs']:
-                    for vendor_spec in vendor_process['specs']:
-                        if not vendor_spec:
-                            continue
-                        if isinstance(vendor_spec, dict):
-                            raw_spec = vendor_spec.get('number') or vendor_spec.get('name') or ''
-                        else:
-                            raw_spec = vendor_spec
-                        vendor_spec_name = normalize_process_spec(raw_spec, validator)
-                        if vendor_spec_name == normalized_spec:
-                            can_handle_spec = True
-                            break
-                # If we found a match for both process and spec (or no spec was required), stop checking
-                if can_handle_process and can_handle_spec:
-                    break
-        
-        # Track process-capable vendors for fallback
-        if can_handle_process and not process_only_vendors:
-            # we will fill later after loop to avoid repeated copies
-            pass
-        
-        if can_handle_process and can_handle_spec:
-            vendor_copy = vendor_data.copy()
-            vendor_copy['id'] = vendor_id
-            matching_vendors.append(vendor_copy)
-        elif can_handle_process and normalized_spec is not None:
-            # remember for fallback when spec provided but no matches
-            vendor_copy = vendor_data.copy()
-            vendor_copy['id'] = vendor_id
-            process_only_vendors.append(vendor_copy)
-    
-    # Fallback: if spec given but no exact spec matches, return process-only vendors
-    if normalized_spec is not None and not matching_vendors and process_only_vendors:
-        return process_only_vendors
-    
-    return matching_vendors
 
 
 def _load_sample_table_header(csv_path: str) -> List[str]:
