@@ -118,17 +118,26 @@ def display_responses(user, role):
         client = getattr(box, "client", None) if box else None
 
         # Resolve the target folder id deterministically
+        # Prefer the parent of the configured responses file_id (authoritative),
+        # then fallback to an explicit folder_id, then secrets.
         target_folder_id = None
         try:
-            if store and getattr(store, "folder_id", None):
-                target_folder_id = store.folder_id
-            if (not target_folder_id) and store and getattr(store, "file_id", None) and client:
+            file_parent_id = None
+            if store and getattr(store, "file_id", None) and client:
                 try:
                     fobj = client.file(store.file_id).get()
                     if getattr(fobj, "parent", None) and getattr(fobj.parent, "id", None):
-                        target_folder_id = fobj.parent.id
+                        file_parent_id = fobj.parent.id
                 except Exception:
-                    pass
+                    file_parent_id = None
+            explicit_folder_id = None
+            if store and getattr(store, "folder_id", None):
+                explicit_folder_id = store.folder_id
+
+            # Choose parent-of-file first if available
+            target_folder_id = file_parent_id or explicit_folder_id
+
+            # Final fallback to secrets
             if not target_folder_id:
                 try:
                     from core.secrets import get_section as _get_secret_section
@@ -137,6 +146,10 @@ def display_responses(user, role):
                     target_folder_id = val or None
                 except Exception:
                     target_folder_id = None
+
+            # If both exist and differ, prefer the file parent (more authoritative)
+            if file_parent_id and explicit_folder_id and file_parent_id != explicit_folder_id:
+                target_folder_id = file_parent_id
         except Exception:
             target_folder_id = None
 
@@ -150,6 +163,35 @@ def display_responses(user, role):
             except Exception:
                 pass
             st.caption(f"Upload target: Box folder {target_folder_id} — {folder_name}")
+            # Warn if a configured folder_id differs from the responses file parent
+            try:
+                # Recompute the two candidates for messaging
+                file_parent_id_msg = None
+                explicit_folder_id_msg = None
+                if store and getattr(store, "file_id", None):
+                    try:
+                        pf = client.file(store.file_id).get()
+                        if getattr(pf, "parent", None) and getattr(pf.parent, "id", None):
+                            file_parent_id_msg = pf.parent.id
+                    except Exception:
+                        pass
+                if store and getattr(store, "folder_id", None):
+                    explicit_folder_id_msg = store.folder_id
+                if file_parent_id_msg and explicit_folder_id_msg and file_parent_id_msg != explicit_folder_id_msg:
+                    try:
+                        resp_folder_name = client.folder(file_parent_id_msg).get().name
+                    except Exception:
+                        resp_folder_name = "(unknown)"
+                    try:
+                        exp_folder_name = client.folder(explicit_folder_id_msg).get().name
+                    except Exception:
+                        exp_folder_name = "(unknown)"
+                    st.warning(
+                        f"Detected mismatch between responses file parent ({file_parent_id_msg} — {resp_folder_name}) "
+                        f"and configured folder_id ({explicit_folder_id_msg} — {exp_folder_name}). Using the responses file parent."
+                    )
+            except Exception:
+                pass
 
             # Upload to Box
             for uf in uploaded:
