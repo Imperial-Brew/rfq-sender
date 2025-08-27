@@ -772,6 +772,26 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
 
             # Queue Management Tools
             with st.expander("Queue Management Tools", expanded=False):
+                # Duplicate handling policy for RFQ Master logging
+                dup_policy_label = "When logging to RFQ Master, if a matching entry already exists (same qt/so #, part, process, vendor, contact):"
+                dup_choice = st.radio(
+                    dup_policy_label,
+                    options=["Skip (do not add new line)", "Update (status/notes/link/date)", "Append (always add new line)"],
+                    index=0,
+                    key="rfq_master_dup_policy",
+                    help=(
+                        "Skip: return existing rfq# and do not write.\n"
+                        "Update: update status/notes/rfq_folder/date on the existing line.\n"
+                        "Append: always add a new row even if a match exists."
+                    ),
+                )
+                # Map UI choice to on_duplicate parameter
+                _on_dup_map = {
+                    "Skip (do not add new line)": "skip",
+                    "Update (status/notes/link/date)": "update",
+                    "Append (always add new line)": "append",
+                }
+                on_duplicate_policy = _on_dup_map.get(dup_choice, "skip")
                 if st.button("Refresh queue from Box"):
                     try:
                         from utils.rfq_queue import _get_box_store as _qm_get_box_store
@@ -1100,6 +1120,8 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                         contact_email=vendor_email,
                                         contact_name=contact_name,
                                         status="pending",
+                                        dedupe=True,
+                                        on_duplicate=on_duplicate_policy,
                                     )
                                     logged += 1
                                 except Exception as _e:
@@ -1448,6 +1470,8 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                             contact_email=vendor_email,
                                             contact_name=contact_name,
                                             status="pending",
+                                            dedupe=True,
+                                            on_duplicate=on_duplicate_policy,
                                         )
                                         logged += 1
                                     except Exception as _e:

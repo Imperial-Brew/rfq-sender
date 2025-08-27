@@ -147,25 +147,52 @@ class RFQTracking:
             return pd.DataFrame()
 
     def _next_rfq_num(self) -> int:
-        """Return the next integer rfq# based on existing master."""
+        """Return the next integer rfq# based on existing master (Box-first if configured)."""
         try:
-            if not self.master_path.exists():
+            df = None
+            # Prefer Box-backed master if configured and accessible
+            if getattr(self, "master_store", None) is not None:
+                try:
+                    df = self.master_store.load_df()
+                except Exception as _e:
+                    logger.debug(f"Box load for rfq_master failed in _next_rfq_num: {_e}")
+                    df = None
+            # Fallback to local file if Box not used or failed
+            if df is None or (isinstance(df, pd.DataFrame) and df.empty):
+                if not self.master_path.exists():
+                    return 1
+                try:
+                    df = pd.read_csv(self.master_path, encoding="utf-8")
+                except UnicodeDecodeError:
+                    df = pd.read_csv(self.master_path, encoding="cp1252")
+                except Exception as _e:
+                    logger.debug(f"Local load for rfq_master failed in _next_rfq_num: {_e}")
+                    return 1
+            # Guard: empty dataframe
+            if df is None or df.empty:
                 return 1
-            df = pd.read_csv(self.master_path, encoding="utf-8")
             # Normalize possible column names
-            cols = [c.lower() for c in df.columns]
-            if "rfq#" in cols:
-                col = df.columns[cols.index("rfq#")]
-            elif "rfq #" in cols:
-                col = df.columns[cols.index("rfq #")]
+            cols_lower = [str(c).lower().strip() for c in df.columns]
+            target_col = None
+            if "rfq#" in cols_lower:
+                target_col = df.columns[cols_lower.index("rfq#")]
+            elif "rfq #" in cols_lower:
+                target_col = df.columns[cols_lower.index("rfq #")]
             else:
-                return 1
+                # Try to infer a numeric rfq-like column
+                for cand in df.columns:
+                    if str(cand).lower().replace(" ", "") in ("rfq#", "rfq#", "rfqno", "rfqid"):
+                        target_col = cand
+                        break
+                if target_col is None:
+                    return 1
             # Coerce to numeric and find max
-            nums = pd.to_numeric(df[col], errors="coerce").dropna()
+            nums = pd.to_numeric(df[target_col], errors="coerce").dropna()
             if nums.empty:
                 return 1
             return int(nums.max()) + 1
-        except Exception:
+        except Exception as e:
+            logger.debug(f"_next_rfq_num unexpected error: {e}")
             return 1
 
     def _validate_vendor_contact(self, vendor_name: str, contact_email: str) -> Tuple[bool, str]:
@@ -199,19 +226,31 @@ class RFQTracking:
                          contact_name: Optional[str] = None,
                          status: str = "pending",
                          rfq_folder_link: Optional[str] = None,
-                         notes: Optional[str] = None) -> Dict[str, Any]:
+                         notes: Optional[str] = None,
+                         dedupe: bool = False,
+                         on_duplicate: str = "skip") -> Dict[str, Any]:
         """
         Append a row to rfq_master.csv using template columns.
         Ensures unique rfq#.
+
+        Parameters:
+        - dedupe: when True, check existing rfq_master (Box-first) for a matching natural key
+                  (qt/so #, part_number, process, vendor, contact) before inserting.
+        - on_duplicate: behavior if a duplicate is found (one of: 'skip', 'update', 'append').
+            'skip'   -> return existing rfq# without writing a new row.
+            'update' -> update status/notes/rfq_folder/date on the existing row and return its rfq#.
+            'append' -> always append a new row (behaves like dedupe=False).
         """
         # Determine header either from existing Box/local file or template
         header: list = []
+        existing_df: Optional[pd.DataFrame] = None
         if self.master_store is not None:
             try:
                 existing_df = self.master_store.load_df()
                 header = list(existing_df.columns)
             except Exception:
                 header = []
+                existing_df = None
         if not header:
             try:
                 with open(self.master_path, "r", encoding="utf-8") as f:
@@ -232,7 +271,98 @@ class RFQTracking:
         # Validate vendor/contact
         ok, msg = self._validate_vendor_contact(vendor_name, contact_email)
 
-        # Assign rfq#
+        # Helper to map logical to actual column names
+        def _col(df: pd.DataFrame, name: str) -> Optional[str]:
+            if df is None or df.empty:
+                return None
+            low = [str(c).lower().strip() for c in df.columns]
+            key = name.lower().strip()
+            return df.columns[low.index(key)] if key in low else None
+
+        # Dedupe flow (Box-first, then local) if requested
+        match_idx = None
+        existing_rfq_num = None
+        if dedupe and on_duplicate in ("skip", "update", "append"):
+            # Load df if not already
+            df = existing_df
+            if df is None and self.master_path.exists():
+                try:
+                    df = pd.read_csv(self.master_path, encoding="utf-8")
+                except UnicodeDecodeError:
+                    df = pd.read_csv(self.master_path, encoding="cp1252")
+                except Exception:
+                    df = None
+            if df is not None and not df.empty:
+                # Resolve column names
+                col_qt = _col(df, "qt/so #")
+                col_part = _col(df, "part_number")
+                col_proc = _col(df, "process")
+                col_vendor = _col(df, "vendor")
+                col_contact = _col(df, "contact")
+                col_rfq = _col(df, "rfq#") or _col(df, "rfq #")
+                # Only attempt match if all key cols exist
+                if all([col_qt, col_part, col_proc, col_vendor, col_contact, col_rfq]):
+                    def norm_series(s):
+                        return s.astype(str).str.strip().str.lower()
+                    try:
+                        mask = (
+                            norm_series(df[col_qt]) == qt_so.strip().lower()
+                        ) & (
+                            norm_series(df[col_part]) == part_number.strip().lower()
+                        ) & (
+                            norm_series(df[col_proc]) == process.strip().lower()
+                        ) & (
+                            norm_series(df[col_vendor]) == str(vendor_name).strip().lower()
+                        ) & (
+                            norm_series(df[col_contact]) == (str(contact_email or contact_name or "").strip().lower())
+                        )
+                        matches = df[mask]
+                        if not matches.empty:
+                            match_idx = matches.index[0]
+                            try:
+                                existing_rfq_num = int(pd.to_numeric(matches.iloc[0][col_rfq], errors="coerce"))
+                            except Exception:
+                                existing_rfq_num = None
+                            # Handle duplicate per policy
+                            if on_duplicate == "skip":
+                                return {"rfq#": existing_rfq_num, "validation_ok": ok, "duplicate": True, "action": "skipped"}
+                            elif on_duplicate == "update":
+                                # Update fields on the existing row
+                                now_iso = datetime.now().isoformat(timespec="seconds")
+                                try:
+                                    if status is not None and _col(df, "status"):
+                                        df.loc[match_idx, _col(df, "status")] = status
+                                except Exception:
+                                    pass
+                                try:
+                                    if notes is not None and _col(df, "notes"):
+                                        df.loc[match_idx, _col(df, "notes")] = notes
+                                except Exception:
+                                    pass
+                                try:
+                                    if rfq_folder and _col(df, "rfq_folder"):
+                                        df.loc[match_idx, _col(df, "rfq_folder")] = rfq_folder
+                                except Exception:
+                                    pass
+                                try:
+                                    if _col(df, "date"):
+                                        df.loc[match_idx, _col(df, "date")] = now_iso
+                                except Exception:
+                                    pass
+                                # Save back
+                                try:
+                                    if self.master_store is not None:
+                                        self.master_store.save_df(df)
+                                    else:
+                                        df.to_csv(self.master_path, index=False)
+                                except Exception as _e:
+                                    logger.warning(f"Failed to save updated duplicate RFQ in Box/local: {_e}")
+                                return {"rfq#": existing_rfq_num, "validation_ok": ok, "duplicate": True, "action": "updated"}
+                            # else on_duplicate == 'append' falls through to append
+                    except Exception as _e:
+                        logger.debug(f"Error during duplicate detection: {_e}")
+
+        # Assign rfq# only when appending a new row
         rfq_num = self._next_rfq_num()
 
         # Map values to potential columns
@@ -266,7 +396,7 @@ class RFQTracking:
         # Append to file (Box preferred)
         try:
             if self.master_store is not None:
-                df = self.master_store.load_df()
+                df = existing_df if existing_df is not None else self.master_store.load_df()
                 # if header known but df empty without columns, set columns
                 if df is None or df.empty:
                     df = pd.DataFrame(columns=header)
@@ -288,7 +418,7 @@ class RFQTracking:
                 logger.error(f"Also failed local append for rfq#={rfq_num}: {_e2}")
 
         logger.info(f"Appended RFQ master row rfq#={rfq_num} vendor={vendor_name} contact={contact_email}")
-        return {"rfq#": rfq_num, "validation_ok": ok}
+        return {"rfq#": rfq_num, "validation_ok": ok, "duplicate": False, "action": "appended"}
 
     def ensure_responses_file(self) -> None:
         """Ensure responses file exists in Box if configured; else locally."""
