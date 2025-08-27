@@ -1347,7 +1347,7 @@ def display_responses(user, role):
                     scope_notes_val = _safe_preview_text(raw_text_for_scrape, limit=500)
 
                     # -- Final confirmation UI (replaces the old one) --
-                    with st.expander("Record this processing in rfq_responses.csv?", expanded=True, key="responses_record_expander"):
+                    with st.expander("Record this processing in rfq_responses.csv?", expanded=True):
                         rfq_num_in = st.text_input("RFQ #", value=selected_rfq_num_val)
                         part_in = st.text_input("Part #", value=selected_part_val)
                         process_in = st.text_input("Process", value=selected_process_val)
