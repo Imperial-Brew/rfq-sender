@@ -41,7 +41,22 @@ class BoxQueueStore:
         # Upload with ETag precondition to prevent overwriting concurrent changes
         f, etag = self._ensure_file()
         bio = BytesIO()
-        df.to_csv(bio, index=False)
+        # Ensure we don't persist legacy columns even on initial save
+        merged = df.copy()
+        try:
+            # Drop known-legacy columns
+            drop_cols = [
+                "rfq #", "RFQ #",
+                "box_rfq_root_id",
+                "box_access",
+                "file_manifest",
+                "box_quote_folder_id",
+                "quote_id",
+            ]
+            merged = merged.drop(columns=drop_cols, errors="ignore")
+        except Exception:
+            pass
+        merged.to_csv(bio, index=False)
         bio.seek(0)
         try:
             f.update_contents_with_stream(bio, etag=etag)  # If-Match is used under the hood
@@ -49,9 +64,28 @@ class BoxQueueStore:
             if e.status == 412:  # Precondition Failed — etag mismatch
                 if self.logger:
                     self.logger.info("ETag mismatch; reloading and retrying merge")
-                # simple retry: reload, merge, and retry
+                # simple retry: reload, merge, prune legacy cols, align schema, and retry
                 latest = self.load_df()
                 merged = self._merge(latest, df)
+                try:
+                    drop_cols = [
+                        "rfq #", "RFQ #",
+                        "box_rfq_root_id",
+                        "box_access",
+                        "file_manifest",
+                        "box_quote_folder_id",
+                        "quote_id",
+                    ]
+                    merged = merged.drop(columns=drop_cols, errors="ignore")
+                except Exception:
+                    pass
+                # Prefer our current schema column order first, then any additional cols at the end
+                try:
+                    preferred = [c for c in df.columns if c in merged.columns]
+                    rest = [c for c in merged.columns if c not in preferred]
+                    merged = merged.loc[:, preferred + rest]
+                except Exception:
+                    pass
                 bio2 = BytesIO()
                 merged.to_csv(bio2, index=False)
                 bio2.seek(0)

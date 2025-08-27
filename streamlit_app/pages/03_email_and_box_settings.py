@@ -770,6 +770,39 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
             # Initialize RFQ tracker
             tracker = get_tracker()
 
+            # Queue Management Tools
+            with st.expander("Queue Management Tools", expanded=False):
+                if st.button("Refresh queue from Box"):
+                    try:
+                        from utils.rfq_queue import _get_box_store as _qm_get_box_store
+                        from utils.rfq_queue import _standardize_df as _qm_std_df
+                        from utils.rfq_queue import save_queue as _qm_save_queue
+
+                        with st.spinner("Refreshing queue from Box..."):
+                            store = _qm_get_box_store()
+                            if store is None:
+                                st.error(
+                                    "Box is not configured or failed to initialize; cannot refresh from Box.\n"
+                                    "Check BOX_QUEUE_FILE_ID / BOX_QUEUE_FOLDER_ID and Box credentials."
+                                )
+                            else:
+                                refreshed_df = store.load_df()
+                                refreshed_df = _qm_std_df(refreshed_df)
+                                queue = refreshed_df
+                                st.success(f"Loaded {len(queue)} row(s) from Box and refreshed the queue in the UI.")
+                                st.dataframe(queue, use_container_width=True, hide_index=True)
+
+                                if st.button("Save cleaned queue back to Box (drop legacy columns)"):
+                                    try:
+                                        _qm_save_queue(queue)
+                                        st.success("Cleaned queue saved back to Box. Legacy columns have been dropped.")
+                                    except Exception as _e:
+                                        st.error(f"Failed to save cleaned queue back to Box: {_e}")
+                                        logger.error(f"Failed to save cleaned queue back to Box: {_e}")
+                    except Exception as e:
+                        st.error(f"Refresh from Box failed: {e}")
+                        logger.exception("Refresh from Box failed")
+
             # Process selected parts
             col1, col2 = st.columns(2)
             
