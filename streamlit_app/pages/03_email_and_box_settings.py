@@ -1101,48 +1101,49 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                         st.error(f"Error creating RFQ email drafts: {str(e)}")
                         logger.error(f"Error creating RFQ email drafts: {str(e)}")
             
-            # New: Log RFQs to master for selected parts (no email)
-            if st.button("Log RFQs to Master for Selected Parts", disabled=len(selected_indices) == 0):
-                try:
-                    with st.spinner("Logging RFQs to master for selected parts..."):
-                        logged = 0
-                        # Reuse vendor_info built earlier and SpecProcessValidator
-                        validator = SpecProcessValidator()
-                        for _, row in queue.iloc[selected_indices].iterrows():
-                            part_number = row.get("part_number", "")
-                            process = row.get("process", "")
-                            spec = row.get("spec", None)
-                            matching_vendors = find_vendors_for_process_spec(
-                                vendor_info,
-                                process,
-                                spec,
-                                validator
-                            )
-                            if not matching_vendors:
-                                continue
-                            for vendor in matching_vendors:
-                                vendor_email = vendor.get('email', '')
-                                vendor_name = vendor.get('vendor_name', '')
-                                contact_name = vendor.get('first_name', '')
-                                if not vendor_email:
+            with col1:
+                # New: Log RFQs to master for selected parts (no email)
+                if st.button("Log RFQs to Master for Selected Parts", disabled=len(selected_indices) == 0):
+                    try:
+                        with st.spinner("Logging RFQs to master for selected parts..."):
+                            logged = 0
+                            # Reuse vendor_info built earlier and SpecProcessValidator
+                            validator = SpecProcessValidator()
+                            for _, row in queue.iloc[selected_indices].iterrows():
+                                part_number = row.get("part_number", "")
+                                process = row.get("process", "")
+                                spec = row.get("spec", None)
+                                matching_vendors = find_vendors_for_process_spec(
+                                    vendor_info,
+                                    process,
+                                    spec,
+                                    validator
+                                )
+                                if not matching_vendors:
                                     continue
-                                try:
-                                    tracker.add_master_entry(
-                                        row.to_dict(),
-                                        vendor_name=vendor_name,
-                                        contact_email=vendor_email,
-                                        contact_name=contact_name,
-                                        status="pending",
-                                        dedupe=True,
-                                        on_duplicate=on_duplicate_policy,
-                                    )
-                                    logged += 1
-                                except Exception as _e:
-                                    logger.warning(f"Failed to append RFQ master for {part_number}/{vendor_email}: {_e}")
-                        st.success(f"Logged {logged} RFQ entrie(s) to rfq_master.csv")
-                except Exception as e:
-                    st.error(f"Error logging RFQs to master: {e}")
-                    logger.error(f"Error logging RFQs to master: {e}")
+                                for vendor in matching_vendors:
+                                    vendor_email = vendor.get('email', '')
+                                    vendor_name = vendor.get('vendor_name', '')
+                                    contact_name = vendor.get('first_name', '')
+                                    if not vendor_email:
+                                        continue
+                                    try:
+                                        tracker.add_master_entry(
+                                            row.to_dict(),
+                                            vendor_name=vendor_name,
+                                            contact_email=vendor_email,
+                                            contact_name=contact_name,
+                                            status="pending",
+                                            dedupe=True,
+                                            on_duplicate=on_duplicate_policy,
+                                        )
+                                        logged += 1
+                                    except Exception as _e:
+                                        logger.warning(f"Failed to append RFQ master for {part_number}/{vendor_email}: {_e}")
+                            st.success(f"Logged {logged} RFQ entrie(s) to rfq_master.csv")
+                    except Exception as e:
+                        st.error(f"Error logging RFQs to master: {e}")
+                        logger.error(f"Error logging RFQs to master: {e}")
 
             with col2:
                 # New: Create/Update Box for entire queue
