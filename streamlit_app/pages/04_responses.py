@@ -12,6 +12,8 @@ from streamlit_app.utils.auth_middleware import require_authentication
 from streamlit_app.utils.auth_shim import get_user_role
 from utils.rfq_logging import get_logger
 from utils.rfq_tracking import get_tracker
+from io import BytesIO
+from boxsdk.exception import BoxAPIException
 
 # Require authentication for this page
 if not require_authentication():
@@ -56,8 +58,107 @@ def _load_responses_df():
         return pd.DataFrame()
 
 
+def _find_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
+    """Return the actual column name in df matching any of candidate names (case-insensitive)."""
+    if df is None or df.empty:
+        return None
+    cols = {c.strip().lower(): c for c in df.columns}
+    for name in candidates:
+        key = str(name).strip().lower()
+        if key in cols:
+            return cols[key]
+    return None
+
+def _resolve_responses_folder_id(tracker) -> str | None:
+    """
+    Try to determine the Box folder_id where responses files should be uploaded.
+    Priority:
+      1) tracker.responses_store.folder_id if set
+      2) Parent folder of tracker.responses_store.file_id (if only file_id configured)
+    Returns folder_id or None if Box not configured/available.
+    """
+    try:
+        store = getattr(tracker, "responses_store", None)
+        if not store:
+            return None
+        folder_id = getattr(store, "folder_id", None)
+        if folder_id:
+            return folder_id
+        file_id = getattr(store, "file_id", None)
+        box = getattr(store, "box", None)
+        client = getattr(box, "client", None) if box else None
+        if file_id and client:
+            try:
+                fobj = client.file(file_id).get()
+                parent = getattr(fobj, "parent", None)
+                if parent and getattr(parent, "id", None):
+                    return parent.id
+            except Exception:
+                return None
+    except Exception:
+        return None
+    return None
+
 def display_responses(user, role):
-    st.subheader("Responses Table")
+    st.subheader("Upload Responses Files")
+    st.caption("Drop files here to store them in the Box ‘responses’ folder (if configured).")
+    uploaded = st.file_uploader(
+        "Drop responses files here",
+        type=["pdf", "xlsx", "xls", "csv", "docx", "txt", "zip", "png", "jpg", "jpeg"],
+        accept_multiple_files=True,
+        label_visibility="collapsed",
+        key="responses_uploader",
+    )
+
+    if uploaded:
+        tracker = get_tracker()
+        store = getattr(tracker, "responses_store", None)
+        box = getattr(store, "box", None) if store else None
+        client = getattr(box, "client", None) if box else None
+        target_folder_id = _resolve_responses_folder_id(tracker)
+
+        successes, failures = [], []
+        if client and target_folder_id:
+            # Upload to Box
+            for uf in uploaded:
+                try:
+                    uf.seek(0)
+                    bio = BytesIO(uf.read())
+                    bio.seek(0)
+                    client.folder(target_folder_id).upload_stream(bio, uf.name)
+                    successes.append(uf.name)
+                except BoxAPIException as e:
+                    failures.append(f"{uf.name}: BoxAPIException {e.status} {getattr(e, 'code', '')}")
+                except Exception as e:
+                    failures.append(f"{uf.name}: {e}")
+        else:
+            # Local fallback if Box not configured/available
+            try:
+                local_base = getattr(tracker, "responses_path", None)
+                if local_base is not None:
+                    local_folder = local_base.parent / "responses_uploads"
+                    local_folder.mkdir(parents=True, exist_ok=True)
+                    for uf in uploaded:
+                        try:
+                            uf.seek(0)
+                            data = uf.read()
+                            (local_folder / uf.name).write_bytes(data)
+                            successes.append(f"{uf.name} (saved locally to {local_folder})")
+                        except Exception as e:
+                            failures.append(f"{uf.name}: {e}")
+                else:
+                    failures.append("Local fallback path not available")
+            except Exception as e:
+                failures.append(f"Local fallback failed: {e}")
+
+        if successes:
+            st.success(f"Uploaded {len(successes)} file(s): " + ", ".join(successes))
+            with st.expander("Next steps", expanded=False):
+                st.markdown("- If you uploaded CSV updates, click ‘Refresh from Box’ below to reload the table.")
+        if failures:
+            st.error("Some files could not be uploaded:")
+            for msg in failures:
+                st.write(f"- {msg}")
 
     # Load once initially
     df = _load_responses_df()
@@ -65,19 +166,47 @@ def display_responses(user, role):
     if df is None or df.empty:
         st.info("No responses found yet.")
     else:
-        # Simple search filter across columns
+        # Filters
         with st.expander("Filters", expanded=False):
             search = st.text_input("Search (matches any column)", "")
+            c1, c2 = st.columns(2)
+            with c1:
+                part_filter = st.text_input("Part number contains", "", placeholder="e.g. 12345 or ABC-001")
+            with c2:
+                vendor_filter = st.text_input("Vendor contains", "", placeholder="e.g. Acme Metals")
+
+        # Start with full df
+        df_filtered = df
+
+        # Apply global search across all columns
         if search:
             try:
-                mask = pd.Series(False, index=df.index)
-                for c in df.columns:
-                    mask = mask | df[c].astype(str).str.contains(search, case=False, na=False)
-                df_filtered = df[mask]
+                mask = pd.Series(False, index=df_filtered.index)
+                for c in df_filtered.columns:
+                    mask = mask | df_filtered[c].astype(str).str.contains(search, case=False, na=False)
+                df_filtered = df_filtered[mask]
             except Exception:
-                df_filtered = df
-        else:
-            df_filtered = df
+                pass
+
+        # Apply part number filter
+        if part_filter:
+            col_part = _find_col(df_filtered, ["part_number", "part number", "part", "pn"])
+            if col_part:
+                try:
+                    mask = df_filtered[col_part].astype(str).str.contains(part_filter, case=False, na=False)
+                    df_filtered = df_filtered[mask]
+                except Exception:
+                    pass
+
+        # Apply vendor filter
+        if vendor_filter:
+            col_vendor = _find_col(df_filtered, ["vendor", "vendor_name", "vendor name"])
+            if col_vendor:
+                try:
+                    mask = df_filtered[col_vendor].astype(str).str.contains(vendor_filter, case=False, na=False)
+                    df_filtered = df_filtered[mask]
+                except Exception:
+                    pass
 
         st.dataframe(df_filtered, use_container_width=True, hide_index=True)
 
