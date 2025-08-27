@@ -16,14 +16,16 @@ if str(parent_dir) not in sys.path:
 
 # Import configuration and utility functions
 from core.config import Paths, CompanyInfo, LoggingConfig, init_config
-from utils.queue import save_queue, load_queue as load_queue_df
+from utils.rfq_queue import save_queue, load_queue as load_queue_df
 from core.secrets import get_section
 from core.email.email_manager import EmailManager
 from core.vendors.vendor_manager import VendorManager
 from streamlit_app.utils.auth_shim import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
 from scripts.utils.spec_check import SpecProcessValidator
+from utils.rfq_tracking import get_tracker
 from scripts.box.box_integration import BoxIntegration
+from boxsdk.exception import BoxAPIException
 import secrets
 import string
 
@@ -58,7 +60,130 @@ def normalize_process_spec(text: str, validator: SpecProcessValidator = None) ->
     # Use the validator's normalize method
     return validator.normalize(text)
 
-def load_data(queue_file: str, contacts_file: str, vendor_options_file: str, 
+def build_familiarity_report(queue: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build a report for rows whose process/spec are not in familiar list.
+    Preference order for familiarity source:
+    1) familiar_specs.csv (if present) under docs/OS/spec_lists/ or docs/
+    2) vendor_options.yaml via SpecProcessValidator (fallback)
+    """
+    # Try to load familiar_specs.csv if available
+    csv_paths = [
+        os.path.join(parent_dir, 'docs', 'OS', 'spec_lists', 'familiar_specs.csv'),
+        os.path.join(parent_dir, 'docs', 'familiar_specs.csv'),
+    ]
+    familiar_processes: set[str] = set()
+    familiar_specs: set[str] = set()
+    used_csv = None
+    for p in csv_paths:
+        if os.path.exists(p):
+            try:
+                df = pd.read_csv(p, encoding='utf-8')
+            except UnicodeDecodeError:
+                df = pd.read_csv(p, encoding='cp1252')
+            used_csv = p
+            # Normalize column names
+            lower_cols = {c.lower(): c for c in df.columns}
+            if 'process' in lower_cols:
+                col = lower_cols['process']
+                familiar_processes = {SpecProcessValidator.normalize(str(x)) for x in df[col].dropna().astype(str)}
+            if 'spec' in lower_cols:
+                col = lower_cols['spec']
+                familiar_specs = {SpecProcessValidator.normalize(str(x)) for x in df[col].dropna().astype(str)}
+            break
+    use_validator = False
+    validator = None
+    if not used_csv:
+        # Fallback to validator (vendor_options.yaml)
+        validator = SpecProcessValidator()
+        use_validator = True
+
+    rows = []
+    for idx, row in queue.iterrows():
+        proc = str(row.get('process', '') or '')
+        spec = str(row.get('spec', '') or '')
+        if use_validator:
+            proc_ok, proc_norm, proc_suggestions = validator.check_process(proc)
+            spec_ok, spec_norm, spec_suggestions = validator.check_spec(spec)
+        else:
+            # CSV-based check: membership on normalized tokens
+            proc_norm = SpecProcessValidator.normalize(proc)
+            spec_norm = SpecProcessValidator.normalize(spec)
+            proc_ok = (proc_norm in familiar_processes) if familiar_processes else True
+            spec_ok = (spec_norm in familiar_specs) if familiar_specs else True
+            proc_suggestions = []
+            spec_suggestions = []
+        if not proc_ok or not spec_ok:
+            rows.append({
+                'row_index': idx,
+                'part_number': row.get('part_number', ''),
+                'process': proc,
+                'process_normalized': proc_norm,
+                'process_ok': proc_ok,
+                'process_suggestions': "; ".join(proc_suggestions) if proc_suggestions else '',
+                'spec': spec,
+                'spec_normalized': spec_norm,
+                'spec_ok': spec_ok,
+                'spec_suggestions': "; ".join(spec_suggestions) if spec_suggestions else '',
+                'source': used_csv or 'vendor_options.yaml',
+            })
+    return pd.DataFrame(rows)
+
+def _persist_box_update(
+    queue: pd.DataFrame,
+    row_index,
+    *,
+    share_link: Optional[str] = None,
+    password: Optional[str] = None,
+    unshared_at: Optional[str] = None,
+    files_uploaded: Optional[int] = None,
+    part_folder=None,
+    quote_folder=None,
+    box: Optional[BoxIntegration] = None,
+    create_quote_link: bool = True,
+) -> None:
+    """
+    Persist Box-related fields for a single row, following the new schema.
+    - Writes box_rfq_folder (open link, no password) if quote_folder provided.
+    - Writes part-folder id, share_link, password, unshared_at, last_updated, files_uploaded.
+    - Does NOT write deprecated columns (box_access, file_manifest, box_rfq_root_id).
+    """
+    # Quote-level open link (no password, no expiry)
+    if create_quote_link and quote_folder is not None and box is not None:
+        try:
+            quote_share_link = box.create_share_link(
+                quote_folder,
+                access="open",
+                password=None,
+                expire_days=None,
+            )
+        except Exception:
+            quote_share_link = None
+        queue.loc[row_index, 'box_rfq_folder'] = quote_share_link or ''
+
+    # Part folder id (retain if useful)
+    if part_folder is not None:
+        queue.loc[row_index, 'box_part_folder_id'] = getattr(part_folder, 'id', '')
+
+    # Main share link (part folder)
+    if share_link is not None:
+        queue.loc[row_index, 'box_share_link'] = share_link or ''
+
+    # Password and link metadata
+    if password is not None:
+        queue.loc[row_index, 'box_password'] = password or ''
+
+    if unshared_at is not None:
+        queue.loc[row_index, 'box_unshared_at'] = unshared_at or ''
+
+    # Timestamp
+    queue.loc[row_index, 'box_last_updated'] = datetime.now().isoformat()
+
+    # Files uploaded (count provided by caller)
+    if files_uploaded is not None:
+        queue.loc[row_index, 'files_uploaded'] = int(files_uploaded)
+
+def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
               logger: logging.Logger = None) -> Tuple[pd.DataFrame, Dict[Any, Dict[str, Any]]]:
     """
     Load data from CSV and YAML files and prepare vendor information.
@@ -110,7 +235,7 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
         raise FileNotFoundError(f"Vendor options file not found: {vendor_options_file}")
 
     try:
-        # Load queue using centralized loader (Box-backed if configured)
+        # Load queue using a centralized loader (Box-backed if configured)
         try:
             queue = load_queue_df()
             if queue is None or queue.empty:
@@ -170,9 +295,6 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
         
         # Rename columns
         queue = queue.rename(columns=queue_column_mapping)
-        
-        # Add part_number as quote_id since it doesn't exist in the queue.csv
-        queue['quote_id'] = queue['part_number']
 
         # Process contacts data
         # Filter to primary contacts only
@@ -285,18 +407,19 @@ def ensure_rfq_part_folder(box: "BoxIntegration", qt_so: str, part_number: str):
 
 
 def upload_and_share_for_part(
-    box: "BoxIntegration",
-    row: pd.Series,
-    attachments: List[str],
-    access: str = "open",          # Consider "company" for internal-only links
-    default_expire_days: int = 30,
+    box: "BoxIntegration",              # your BoxIntegration instance
+    row: pd.Series,                     # one queue row (pd.Series)
+    attachments: List[str],             # list[str] of file paths to upload
+    access: str = "open",               # "open" for public-with-link, "company" for internal-only
+    default_expire_days: int = 30,      # default expire time in days
 ):
     """
     - Creates RFQs/[qt/so #]/[Part_Number]
     - Uploads attachments to the part folder
+    - Counts actual files in the Box part folder (authoritative)
     - Detects CUI/ITAR to optionally add password protection
     - Returns a dict with: share_link, password, is_cui, part_folder, quote_folder, rfqs_root,
-      files_uploaded, file_manifest, unshared_at
+      files_uploaded, unshared_at
     """
     qt_so = row.get("qt/so #", "")
     part_number = row.get("part_number", "")
@@ -307,19 +430,32 @@ def upload_and_share_for_part(
     if not part_folder:
         return {"error": f"Failed to prepare Box folder for {part_number}"}
 
-    # Upload files first (if present)
-    files_uploaded = 0
-    manifest = []
+    # 1) Upload files (if any)
     if attachments:
-        box.upload_files(attachments, part_folder)
-        files_uploaded = len(attachments)
-        manifest = [os.path.basename(p) for p in attachments]
+        try:
+            box.upload_files(attachments, part_folder)
+        except Exception as e:
+            # Continue; we'll still try to count folder contents
+            try:
+                logger.warning(f"Upload failed for some files in {part_number}: {e}")
+            except Exception:
+                pass
 
-    # Decide protection
+    # 2) Authoritative count from Box (with pagination-safe iteration)
+    files_uploaded = 0
+    try:
+        # get_items(limit=1000) returns an iterator that handles pagination within boxsdk
+        items = box.client.folder(part_folder.id).get_items(limit=1000)
+        files_uploaded = sum(1 for it in items if getattr(it, 'type', '') == 'file')
+    except Exception:
+        # Fallback if Box listing fails
+        files_uploaded = len(attachments or [])
+
+    # 3) Decide protection and create share link
     is_cui = detect_cui_itar(row)
     password = generate_password() if is_cui else None
 
-    # Compute expiration timestamp for recording (Box returns link; we record intended expiry)
+    # Compute expiration timestamp for recording (intended expiry)
     unshared_at = None
     if default_expire_days and default_expire_days > 0:
         from datetime import timedelta
@@ -333,45 +469,71 @@ def upload_and_share_for_part(
     )
 
     return {
-        "share_link": share_link,
-        "password": password,
+        "share_link": share_link or "",
+        "password": password or "",
         "is_cui": is_cui,
         "part_folder": part_folder,
         "quote_folder": quote_folder,
         "rfqs_root": rfqs_root,
         "files_uploaded": files_uploaded,
-        "file_manifest": ";".join(manifest) if manifest else "",
-        "box_access": access,
-        "unshared_at": unshared_at,
+        "unshared_at": unshared_at or "",
     }
 
-
 def inject_box_link_into_body(html_body: str, share_link: str, is_cui: bool) -> str:
-    """Append a styled Box link section to the existing HTML email body."""
+    """Append a styled Box link section to the existing HTML email body and then append signature."""
     if not share_link:
-        return html_body
+        # Even if no link, ensure signature is appended
+        return append_signature(html_body)
 
     banner = f"""
-    <div style="margin-top:16px;padding:14px;border:1px solid #d0d7de;border-radius:8px;background:#f6f8fa;">
-      <div style="font-size:16px;font-weight:600;margin-bottom:6px;">
+    <div style=\"margin-top:16px;padding:14px;border:1px solid #d0d7de;border-radius:8px;background:#f6f8fa;\">
+      <div style=\"font-size:16px;font-weight:600;margin-bottom:6px;\">
         RFQ Files in Box { '(Password Protected)' if is_cui else '' }
       </div>
       <div>
-        <a href="{share_link}" style="display:inline-block;padding:10px 14px;background:#2d7ff9;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+        <a href=\"{share_link}\" style=\"display:inline-block;padding:10px 14px;background:#2d7ff9;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;\">
           Open RFQ Folder
         </a>
       </div>
-      <div style="margin-top:8px;color:#57606a;font-size:13px;">
+      <div style=\"margin-top:8px;color:#57606a;font-size:13px;\">
         If you have trouble opening the link, copy and paste this URL into your browser:<br/>
-        <code style="font-size:12px;">{share_link}</code>
+        <code style=\"font-size:12px;\">{share_link}</code>
       </div>
     </div>
     """
+    updated = html_body
     if "</body>" in html_body:
-        return html_body.replace("</body>", banner + "\n</body>")
+        updated = html_body.replace("</body>", banner + "\n</body>")
+    elif "</html>" in html_body:
+        updated = html_body.replace("</html>", banner + "\n</html>")
+    else:
+        updated = html_body + banner
+    # Append signature after Box banner
+    return append_signature(updated)
+
+
+def load_signature_html() -> str:
+    """Load the HTML signature from docs/templates/email_signature.html."""
+    try:
+        sig_path = os.path.join(parent_dir, 'docs', 'templates', 'email_signature.html')
+        if os.path.exists(sig_path):
+            with open(sig_path, 'r', encoding='utf-8') as f:
+                return f.read()
+    except Exception as e:
+        logger.debug(f"Could not load email signature: {e}")
+    return ""
+
+
+def append_signature(html_body: str) -> str:
+    """Append the HTML signature at the end of the email body."""
+    signature = load_signature_html()
+    if not signature:
+        return html_body
+    if "</body>" in html_body:
+        return html_body.replace("</body>", signature + "\n</body>")
     if "</html>" in html_body:
-        return html_body.replace("</html>", banner + "\n</html>")
-    return html_body + banner
+        return html_body.replace("</html>", signature + "\n</html>")
+    return html_body + signature
 
 def find_vendors_for_process_spec(vendor_info: Dict[str, Dict[str, Any]], 
                                  process: str, 
@@ -451,21 +613,116 @@ def find_vendors_for_process_spec(vendor_info: Dict[str, Dict[str, Any]],
     return matching_vendors
 
 
+def _load_sample_table_header(csv_path: str) -> List[str]:
+    """Load header columns from the sample table CSV; fallback to defaults if missing."""
+    default_header = [
+        "Part Number",
+        "Print Callout",
+        "Process",
+        "Spec",
+        "QTYs",
+        "Unit_Price",
+        "Line Minimum",
+        "Order Minimum",
+        "Lead_Time",
+        "vendor_ref_#",
+    ]
+    try:
+        if csv_path and os.path.exists(csv_path):
+            import csv
+            with open(csv_path, 'r', newline='', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                header = next(reader, None)
+                if header and len(header) >= 5:
+                    return header
+    except UnicodeDecodeError:
+        try:
+            import csv
+            with open(csv_path, 'r', newline='', encoding='cp1252', errors='replace') as f:
+                reader = csv.reader(f)
+                header = next(reader, None)
+                if header and len(header) >= 5:
+                    return header
+        except Exception:
+            pass
+    except Exception:
+        pass
+    return default_header
+
+
+def _build_sample_table_html(row: Any, header: List[str]) -> str:
+    """Build a single-row HTML sample table using provided header and queue row fields."""
+    # Map row fields
+    def _safe(val):
+        try:
+            return '' if val is None or (isinstance(val, float) and pd.isna(val)) else str(val)
+        except Exception:
+            return ''
+    part_number = _safe(row.get('part_number', '') if hasattr(row, 'get') else getattr(row, 'part_number', ''))
+    callout = _safe(row.get('callout', '') if hasattr(row, 'get') else getattr(row, 'callout', ''))
+    process = _safe(row.get('process', '') if hasattr(row, 'get') else getattr(row, 'process', ''))
+    spec = _safe(row.get('spec', '') if hasattr(row, 'get') else getattr(row, 'spec', ''))
+    qtys = _safe(row.get('qty', None) if hasattr(row, 'get') else getattr(row, 'qty', None))
+    if not qtys:
+        qtys = _safe(row.get('quantities', '') if hasattr(row, 'get') else getattr(row, 'quantities', ''))
+
+    # Build cells aligned to expected header names; unknown headers get empty cells
+    values_map = {
+        'part number': part_number,
+        'print callout': callout,
+        'process': process,
+        'spec': spec,
+        'qtys': qtys,
+        'unit_price': '',
+        'line minimum': '',
+        'order minimum': '',
+        'lead_time': '',
+        'vendor_ref_#': '',
+        'vendor_ref': '',
+    }
+    def norm(s: str) -> str:
+        return s.lower().replace(' ', '').replace('-', '').replace('/', '').strip()
+
+    html = ['<table style="border-collapse: collapse; width: 100%;">']
+    # Header row
+    html.append('<tr style="background-color: #f2f2f2; font-weight: bold;">')
+    for col in header:
+        html.append(f'<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">{col}</th>')
+    html.append('</tr>')
+    # Data row
+    html.append('<tr>')
+    for col in header:
+        key = norm(col)
+        val = ''
+        if key in values_map:
+            val = values_map[key]
+        else:
+            # try specific normalized keys
+            if key == 'partnumber':
+                val = part_number
+            elif key == 'printcallout':
+                val = callout
+            elif key == 'leadtime':
+                val = ''
+            elif key == 'qty' or key == 'qtys':
+                val = qtys
+            else:
+                val = ''
+        html.append(f'<td style="border: 1px solid #ddd; padding: 8px;">{val}</td>')
+    html.append('</tr>')
+    html.append('</table>')
+    return ''.join(html)
+
+
 def create_email_body(queue_items: pd.DataFrame, 
                      vendor_name: str, 
                      contact_name: str = None,
                      company_info: Dict[str, str] = None) -> str:
     """
-    Create HTML email body for RFQ using Jinja2 templates.
-    
-    Args:
-        queue_items: DataFrame containing queue items for this vendor
-        vendor_name: Name of the vendor
-        contact_name: Optional contact first name for personalized greeting
-        company_info: Dictionary with company information
-        
-    Returns:
-        HTML formatted email body
+    Create HTML email body for RFQ using the docs/templates/cover_letter.j2 template.
+
+    This returns the body without the signature; the signature will be appended
+    after Box link injection to match policy (link appears above signature).
     """
     # Default company info if not provided
     if company_info is None:
@@ -476,93 +733,70 @@ def create_email_body(queue_items: pd.DataFrame,
             'sender_phone': CompanyInfo.get_sender_phone(),
             'sender_email': CompanyInfo.get_sender_email()
         }
-    
-    # Create a Jinja2 environment
-    template_dir = os.path.join(parent_dir, 'config', 'templates')
+
+    # Jinja2 environment for docs/templates
+    template_dir = os.path.join(parent_dir, 'docs', 'templates')
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(template_dir),
         autoescape=jinja2.select_autoescape(['html', 'xml'])
     )
-    
-    # Try to load the template
+
+    # Load cover_letter.j2; if missing, fall back to a minimal greeting
     try:
-        template = env.get_template('rfq_email.html')
+        template = env.get_template('cover_letter.j2')
     except jinja2.exceptions.TemplateNotFound:
-        # Fallback to a basic template if the file doesn't exist
-        template_str = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { font-family: Arial, sans-serif; }
-                table { border-collapse: collapse; width: 100%; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                th { background-color: #f2f2f2; }
-            </style>
-        </head>
-        <body>
-            {% if contact_name %}
-            <p>Hello {{ contact_name }},</p>
-            {% else %}
-            <p>Hello,</p>
-            {% endif %}
-            
-            <p>We would like to request a quote for the following part(s):</p>
-            
-            <table>
-                <tr>
-                    <th>Part Number</th>
-                    <th>Process</th>
-                    <th>Spec</th>
-                    <th>Quantities</th>
-                </tr>
-                {% for item in items %}
-                <tr>
-                    <td>{{ item.part_number }}</td>
-                    <td>{{ item.process }}</td>
-                    <td>{{ item.spec }}</td>
-                    <td>{{ item.quantities }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-            
-            <p>Please provide your best pricing and lead time.</p>
-            
-            <p>Thank you,</p>
-            <p>{{ sender_name }}<br>
-            {{ sender_title }}<br>
-            {{ company_name }}<br>
-            {{ sender_phone }}<br>
-            {{ sender_email }}</p>
-        </body>
-        </html>
-        """
-        template = jinja2.Template(template_str)
-    
-    # Prepare items for the template
-    items = []
-    for _, row in queue_items.iterrows():
-        item = {
-            'part_number': row.get('part_number', ''),
-            'process': row.get('process', ''),
-            'spec': row.get('spec', ''),
-            'quantities': row.get('quantities', '')
-        }
-        items.append(item)
-    
-    # Render the template
-    html_content = template.render(
-        items=items,
-        contact_name=contact_name,
-        vendor_name=vendor_name,
-        company_name=company_info.get('name', ''),
-        sender_name=company_info.get('sender_name', ''),
-        sender_title=company_info.get('sender_title', ''),
-        sender_phone=company_info.get('sender_phone', ''),
-        sender_email=company_info.get('sender_email', '')
-    )
-    
-    return html_content
+        # Minimal fallback
+        greeting = f"Hello {contact_name}," if contact_name else "Hello," 
+        return f"<p>{greeting}</p><p>Please see the RFQ details below.</p>"
+
+    # Prepare context expected by cover_letter.j2
+    # Use first row since we generate one email per vendor/part in this UI
+    row = queue_items.iloc[0] if not queue_items.empty else {}
+
+    # Parse quantities if present (string or list); keep simple representation
+    q_val = ''
+    try:
+        q_val = row.get('quantities', '') if isinstance(row, dict) else row.get('quantities')
+    except Exception:
+        q_val = ''
+
+    from datetime import datetime, timedelta
+    due_date = (datetime.now() + timedelta(days=7)).strftime("%B %d, %Y")
+
+    # Attempt to build sample table from CSV header template
+    sample_csv = os.path.join(parent_dir, 'docs', 'templates', 'Sample_Table(Empty)-OS.csv')
+    sample_table_html = None
+    try:
+        header = _load_sample_table_header(sample_csv)
+        sample_table_html = _build_sample_table_html(row, header)
+    except Exception as _e:
+        logger.debug(f"Sample table generation skipped: {_e}")
+        sample_table_html = None
+
+    context = {
+        'vendor': {
+            'name': vendor_name,
+            'first_name': contact_name or vendor_name,
+        },
+        'greeting_name': contact_name or vendor_name,
+        'part_no': str(row.get('part_number', '')) if hasattr(row, 'get') else str(getattr(row, 'part_number', '')),
+        'process': str(row.get('process', '')) if hasattr(row, 'get') else str(getattr(row, 'process', '')),
+        'spec': (row.get('spec', None) if hasattr(row, 'get') else getattr(row, 'spec', None)) or None,
+        'quantities': q_val,
+        'attachments': [],  # We use Box link; no direct attachments from this UI
+        'due_date': due_date,
+        'sender_name': company_info.get('sender_name', ''),
+        'sender_email': company_info.get('sender_email', ''),
+        'company_name': company_info.get('name', ''),
+        'sample_table': sample_table_html,
+    }
+
+    try:
+        return template.render(**context)
+    except Exception as e:
+        logger.warning(f"Failed to render cover_letter.j2: {e}")
+        greeting = f"Hello {contact_name}," if contact_name else "Hello," 
+        return f"<p>{greeting}</p><p>Please see the RFQ details below.</p>"
 
 
 def create_draft_email(recipient: str, 
@@ -722,7 +956,6 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                     lambda x: "⚠️ Expedited" if x else "Standard"
                 )
 
-            display_df = queue.copy()
             display_df = display_df.drop(columns=["rfq #", "RFQ #"], errors="ignore")
 
             # Reorder and select columns for display
@@ -803,7 +1036,7 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                 box=box,
                                 row=row,
                                 attachments=attachments,
-                                access="company",
+                                access="open",
                                 default_expire_days=30,
                             )
 
@@ -817,22 +1050,36 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                 continue
 
                             # Persist to queue DataFrame
-                            queue.loc[idx, 'box_rfq_root_id'] = getattr(upload_result.get('rfqs_root'), 'id', '')
-                            queue.loc[idx, 'box_quote_folder_id'] = getattr(upload_result.get('quote_folder'), 'id', '')
                             queue.loc[idx, 'box_part_folder_id'] = getattr(upload_result.get('part_folder'), 'id', '')
                             queue.loc[idx, 'box_share_link'] = upload_result.get('share_link', '') or ''
-                            queue.loc[idx, 'box_access'] = upload_result.get('box_access', '')
                             queue.loc[idx, 'box_password'] = upload_result.get('password', '') or ''
                             queue.loc[idx, 'box_unshared_at'] = upload_result.get('unshared_at', '') or ''
-                            queue.loc[idx, 'box_last_updated'] = datetime.now().isoformat()
+                            try:
+                                part_folder_obj = upload_result.get('part_folder')
+                                if part_folder_obj is not None:
+                                    folder = box.client.folder(part_folder_obj.id).get()
+                                    api_last_modified = getattr(folder, 'content_modified_at', None) or getattr(folder, 'modified_at', None)
+                                    queue.loc[idx, 'box_last_modified'] = api_last_modified or ''
+                            except Exception as _e:
+                                logger.debug(f"Failed to fetch Box folder modified time: {_e}")
                             queue.loc[idx, 'files_uploaded'] = upload_result.get('files_uploaded', 0)
-                            queue.loc[idx, 'file_manifest'] = upload_result.get('file_manifest', '')
+
+                            # New: create an open, no-password share link for the quote folder
+                            quote_folder = upload_result.get('quote_folder')
+                            quote_share_link = box.create_share_link(
+                                quote_folder,
+                                access="open",
+                                password=None,
+                                expire_days=None,
+                            ) if quote_folder else None
+                            queue.loc[idx, 'box_rfq_folder'] = quote_share_link or ''
 
                             box_results.append({
                                 "part_number": part_number,
                                 "status": "Updated",
                                 "box_part_folder_id": queue.loc[idx, 'box_part_folder_id'],
                                 "share_link": queue.loc[idx, 'box_share_link'],
+                                "box_rfq_folder": queue.loc[idx, 'box_rfq_folder'],  # optional
                             })
 
                         # Save queue via centralized Box/local handler
@@ -845,6 +1092,9 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                     st.error(f"Error creating Box folders or updating CSV: {str(e)}")
                     logger.error(f"Error creating Box folders or updating CSV: {str(e)}")
             
+            # Initialize RFQ tracker
+            tracker = get_tracker()
+
             # Process selected parts
             col1, col2 = st.columns(2)
             
@@ -944,7 +1194,72 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                         })
                                         continue
                                 
-                                # Send emails to each vendor
+                                # Determine Box link/password ONCE per part
+                                share_link = row.get('box_share_link') or None
+                                password = row.get('box_password') or None
+                                is_cui = detect_cui_itar(row)
+
+                                if not share_link:
+                                    # Collect local files for Box upload once
+                                    attachments_once = []
+                                    if 'file_location' in row and row['file_location']:
+                                        attachments_once = get_file_attachments(row['file_location'], logger)
+
+                                    upload_result_once = upload_and_share_for_part(
+                                        box=box,
+                                        row=row,
+                                        attachments=attachments_once,
+                                        access="open",
+                                        default_expire_days=30,
+                                    )
+
+                                    if upload_result_once.get("error"):
+                                        logger.warning(upload_result_once["error"]) 
+                                        share_link = None
+                                        is_cui = False
+                                        password = None
+                                    else:
+                                        share_link = upload_result_once.get("share_link")
+                                        is_cui = upload_result_once.get("is_cui", is_cui)
+                                        password = upload_result_once.get("password")
+
+                                        # Persist new Box info to the queue for this row
+                                        # New: ensure quote-level open link (no password, no expiry)
+                                        quote_folder = upload_result_once.get('quote_folder')
+                                        quote_share_link = box.create_share_link(
+                                            quote_folder,
+                                            access="open",
+                                            password=None,
+                                            expire_days=None,
+                                        ) if quote_folder else None
+                                        queue.loc[row.name, 'box_rfq_folder'] = quote_share_link or ''
+                                        queue.loc[row.name, 'box_share_link'] = share_link or ''
+                                        queue.loc[row.name, 'box_password'] = password or ''
+                                        queue.loc[row.name, 'box_unshared_at'] = upload_result_once.get('unshared_at', '') or ''
+                                        queue.loc[row.name, 'box_last_updated'] = datetime.now().isoformat()
+                                        queue.loc[row.name, 'files_uploaded'] = upload_result_once.get('files_uploaded', 0)
+                                        save_queue(queue)
+                                else:
+                                    # If link exists but password missing and it's CUI, ensure we have a password
+                                    if is_cui and not password:
+                                        attachments_once = []
+                                        if 'file_location' in row and row['file_location']:
+                                            attachments_once = get_file_attachments(row['file_location'], logger)
+                                        upload_result_once = upload_and_share_for_part(
+                                            box=box,
+                                            row=row,
+                                            attachments=attachments_once,
+                                            access="open",
+                                            default_expire_days=30,
+                                        )
+                                        if not upload_result_once.get("error"):
+                                            password = upload_result_once.get('password')
+                                            # Keep existing share_link if present, but update stored password
+                                            queue.loc[row.name, 'box_password'] = password or ''
+                                            queue.loc[row.name, 'box_last_updated'] = datetime.now().isoformat()
+                                            save_queue(queue)
+
+                                # Send emails to each vendor using the determined link/password
                                 emails_sent = 0
                                 for vendor in matching_vendors:
                                     try:
@@ -967,31 +1282,6 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                             contact_name=contact_name,
                                             company_info=company_info
                                         )
-                                        
-                                        # Collect local files for Box upload
-                                        attachments = []
-                                        if 'file_location' in row and row['file_location']:
-                                            file_path = row['file_location']
-                                            attachments = get_file_attachments(file_path, logger)
-
-                                        # Upload to Box and create share link (password if CUI/ITAR)
-                                        upload_result = upload_and_share_for_part(
-                                            box=box,
-                                            row=row,
-                                            attachments=attachments,
-                                            access="company",
-                                            default_expire_days=30,
-                                        )
-
-                                        if upload_result.get("error"):
-                                            logger.warning(upload_result["error"]) 
-                                            share_link = None
-                                            is_cui = False
-                                            password = None
-                                        else:
-                                            share_link = upload_result.get("share_link")
-                                            is_cui = upload_result.get("is_cui", False)
-                                            password = upload_result.get("password")
 
                                         # Inject Box link into the email body
                                         body_with_link = inject_box_link_into_body(body, share_link, is_cui)
@@ -1010,12 +1300,11 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
 
                                             # If CUI/ITAR, create a second draft containing only the password
                                             if is_cui and password:
-                                                pwd_subject = f"Password for RFQ Files – {part_number}"
+                                                pwd_subject = f"RFQ Files – {part_number}"
                                                 pwd_body = f"""
                                                 <p>Hello {contact_name or ''},</p>
                                                 <p>The RFQ files you received are password-protected.</p>
                                                 <p><b>Password:</b> <code>{password}</code></p>
-                                                <p>Please send this email about 10 minutes after the RFQ email.</p>
                                                 """
                                                 if create_draft_email(
                                                     recipient=vendor_email,
@@ -1052,6 +1341,47 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                         st.error(f"Error creating RFQ email drafts: {str(e)}")
                         logger.error(f"Error creating RFQ email drafts: {str(e)}")
             
+            # New: Log RFQs to master for selected parts (no email)
+            if st.button("Log RFQs to Master for Selected Parts", disabled=len(selected_indices) == 0):
+                try:
+                    with st.spinner("Logging RFQs to master for selected parts..."):
+                        logged = 0
+                        # Reuse vendor_info built earlier and SpecProcessValidator
+                        validator = SpecProcessValidator()
+                        for _, row in queue.iloc[selected_indices].iterrows():
+                            part_number = row.get("part_number", "")
+                            process = row.get("process", "")
+                            spec = row.get("spec", None)
+                            matching_vendors = find_vendors_for_process_spec(
+                                vendor_info,
+                                process,
+                                spec,
+                                validator
+                            )
+                            if not matching_vendors:
+                                continue
+                            for vendor in matching_vendors:
+                                vendor_email = vendor.get('email', '')
+                                vendor_name = vendor.get('vendor_name', '')
+                                contact_name = vendor.get('first_name', '')
+                                if not vendor_email:
+                                    continue
+                                try:
+                                    tracker.add_master_entry(
+                                        row.to_dict(),
+                                        vendor_name=vendor_name,
+                                        contact_email=vendor_email,
+                                        contact_name=contact_name,
+                                        status="pending",
+                                    )
+                                    logged += 1
+                                except Exception as _e:
+                                    logger.warning(f"Failed to append RFQ master for {part_number}/{vendor_email}: {_e}")
+                        st.success(f"Logged {logged} RFQ entrie(s) to rfq_master.csv")
+                except Exception as e:
+                    st.error(f"Error logging RFQs to master: {e}")
+                    logger.error(f"Error logging RFQs to master: {e}")
+
             with col2:
                 # New: Create/Update Box for entire queue
                 if st.button("Create/Update Box for Entire Queue"):
@@ -1093,7 +1423,7 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                     box=box,
                                     row=row,
                                     attachments=attachments,
-                                    access="company",
+                                    access="open",
                                     default_expire_days=30,
                                 )
 
@@ -1106,16 +1436,29 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                     })
                                     continue
 
-                                queue.loc[idx, 'box_rfq_root_id'] = getattr(upload_result.get('rfqs_root'), 'id', '')
-                                queue.loc[idx, 'box_quote_folder_id'] = getattr(upload_result.get('quote_folder'), 'id', '')
                                 queue.loc[idx, 'box_part_folder_id'] = getattr(upload_result.get('part_folder'), 'id', '')
                                 queue.loc[idx, 'box_share_link'] = upload_result.get('share_link', '') or ''
-                                queue.loc[idx, 'box_access'] = upload_result.get('box_access', '')
                                 queue.loc[idx, 'box_password'] = upload_result.get('password', '') or ''
                                 queue.loc[idx, 'box_unshared_at'] = upload_result.get('unshared_at', '') or ''
-                                queue.loc[idx, 'box_last_updated'] = datetime.now().isoformat()
+                                try:
+                                    part_folder_obj = upload_result.get('part_folder')
+                                    if part_folder_obj is not None:
+                                        folder = box.client.folder(part_folder_obj.id).get()
+                                        api_last_modified = getattr(folder, 'content_modified_at', None) or getattr(folder, 'modified_at', None)
+                                        queue.loc[idx, 'box_last_modified'] = api_last_modified or ''
+                                except Exception as _e:
+                                    logger.debug(f"Failed to fetch Box folder modified time: {_e}")
                                 queue.loc[idx, 'files_uploaded'] = upload_result.get('files_uploaded', 0)
-                                queue.loc[idx, 'file_manifest'] = upload_result.get('file_manifest', '')
+
+                                # Ensure quote-level open link (no password, no expiry)
+                                quote_folder = upload_result.get('quote_folder')
+                                quote_share_link = box.create_share_link(
+                                    quote_folder,
+                                    access="open",
+                                    password=None,
+                                    expire_days=None,
+                                ) if quote_folder else None
+                                queue.loc[idx, 'box_rfq_folder'] = quote_share_link or ''
 
                                 box_results.append({
                                     "part_number": part_number,
@@ -1137,9 +1480,7 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                     if role not in ["admin", "editor"]:
                         st.warning("You need admin or editor privileges to send emails.")
                         return
-                    
-                    try:
-                        with st.spinner("Processing entire queue..."):
+                    with st.spinner("Processing entire queue..."):
                             # Get company info from CompanyInfo and override with user info
                             company_info = CompanyInfo.get_info()
                             company_info.update({
@@ -1207,7 +1548,71 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                         })
                                         continue
                                 
-                                # Send emails to each vendor
+                                # Determine Box link/password ONCE per part (entire queue)
+                                share_link = row.get('box_share_link') or None
+                                password = row.get('box_password') or None
+                                is_cui = detect_cui_itar(row)
+
+                                if not share_link:
+                                    attachments_once = []
+                                    if 'file_location' in row and row['file_location']:
+                                        attachments_once = get_file_attachments(row['file_location'], logger)
+
+                                    upload_result_once = upload_and_share_for_part(
+                                        box=box,
+                                        row=row,
+                                        attachments=attachments_once,
+                                        access="open",
+                                        default_expire_days=30,
+                                    )
+
+                                    if upload_result_once.get("error"):
+                                        logger.warning(upload_result_once["error"]) 
+                                        share_link = None
+                                        is_cui = False
+                                        password = None
+                                    else:
+                                        share_link = upload_result_once.get("share_link")
+                                        is_cui = upload_result_once.get("is_cui", is_cui)
+                                        password = upload_result_once.get("password")
+
+                                        # Persist new Box info to the queue for this row
+                                        # New: ensure quote-level open link (no password, no expiry)
+                                        quote_folder = upload_result_once.get('quote_folder')
+                                        quote_share_link = box.create_share_link(
+                                            quote_folder,
+                                            access="open",
+                                            password=None,
+                                            expire_days=None,
+                                        ) if quote_folder else None
+                                        queue.loc[row.name, 'box_rfq_folder'] = quote_share_link or ''
+                                        queue.loc[row.name, 'box_part_folder_id'] = getattr(upload_result_once.get('part_folder'), 'id', '')
+                                        queue.loc[row.name, 'box_share_link'] = share_link or ''
+                                        queue.loc[row.name, 'box_password'] = password or ''
+                                        queue.loc[row.name, 'box_unshared_at'] = upload_result_once.get('unshared_at', '') or ''
+                                        queue.loc[row.name, 'box_last_updated'] = datetime.now().isoformat()
+                                        queue.loc[row.name, 'files_uploaded'] = upload_result_once.get('files_uploaded', 0)
+                                        save_queue(queue)
+                                else:
+                                    # If link exists but password missing and it's CUI, ensure we have a password
+                                    if is_cui and not password:
+                                        attachments_once = []
+                                        if 'file_location' in row and row['file_location']:
+                                            attachments_once = get_file_attachments(row['file_location'], logger)
+                                        upload_result_once = upload_and_share_for_part(
+                                            box=box,
+                                            row=row,
+                                            attachments=attachments_once,
+                                            access="open",
+                                            default_expire_days=30,
+                                        )
+                                        if not upload_result_once.get("error"):
+                                            password = upload_result_once.get('password')
+                                            queue.loc[row.name, 'box_password'] = password or ''
+                                            queue.loc[row.name, 'box_last_updated'] = datetime.now().isoformat()
+                                            save_queue(queue)
+
+                                # Send emails to each vendor using the determined link/password
                                 emails_sent = 0
                                 for vendor in matching_vendors:
                                     try:
@@ -1230,31 +1635,6 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                             contact_name=contact_name,
                                             company_info=company_info
                                         )
-                                        
-                                        # Collect local files for Box upload
-                                        attachments = []
-                                        if 'file_location' in row and row['file_location']:
-                                            file_path = row['file_location']
-                                            attachments = get_file_attachments(file_path, logger)
-
-                                        # Upload to Box and create share link (password if CUI/ITAR)
-                                        upload_result = upload_and_share_for_part(
-                                            box=box,
-                                            row=row,
-                                            attachments=attachments,
-                                            access="company",
-                                            default_expire_days=30,
-                                        )
-
-                                        if upload_result.get("error"):
-                                            logger.warning(upload_result["error"]) 
-                                            share_link = None
-                                            is_cui = False
-                                            password = None
-                                        else:
-                                            share_link = upload_result.get("share_link")
-                                            is_cui = upload_result.get("is_cui", False)
-                                            password = upload_result.get("password")
 
                                         # Inject Box link into the email body
                                         body_with_link = inject_box_link_into_body(body, share_link, is_cui)
@@ -1273,12 +1653,11 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
 
                                             # If CUI/ITAR, create a second draft containing only the password
                                             if is_cui and password:
-                                                pwd_subject = f"Password for RFQ Files – {part_number}"
+                                                pwd_subject = f"RFQ Files – {part_number}"
                                                 pwd_body = f"""
                                                 <p>Hello {contact_name or ''},</p>
                                                 <p>The RFQ files you received are password-protected.</p>
                                                 <p><b>Password:</b> <code>{password}</code></p>
-                                                <p>Please send this email about 10 minutes after the RFQ email.</p>
                                                 """
                                                 if create_draft_email(
                                                     recipient=vendor_email,
@@ -1310,22 +1689,70 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                             
                             # Log the action
                             logger.info(f"Entire queue processed by {user['name']}, draft emails created")
-                            
+
+                # New: Log RFQs to master for entire queue (no email)
+                if st.button("Log RFQs to Master for Entire Queue"):
+                    try:
+                        with st.spinner("Logging RFQs to master for entire queue..."):
+                            logged = 0
+                            validator = SpecProcessValidator()
+                            for _, row in queue.iterrows():
+                                part_number = row.get("part_number", "")
+                                process = row.get("process", "")
+                                spec = row.get("spec", None)
+                                matching_vendors = find_vendors_for_process_spec(
+                                    vendor_info,
+                                    process,
+                                    spec,
+                                    validator
+                                )
+                                if not matching_vendors:
+                                    continue
+                                for vendor in matching_vendors:
+                                    vendor_email = vendor.get('email', '')
+                                    vendor_name = vendor.get('vendor_name', '')
+                                    contact_name = vendor.get('first_name', '')
+                                    if not vendor_email:
+                                        continue
+                                    try:
+                                        tracker.add_master_entry(
+                                            row.to_dict(),
+                                            vendor_name=vendor_name,
+                                            contact_email=vendor_email,
+                                            contact_name=contact_name,
+                                            status="pending",
+                                        )
+                                        logged += 1
+                                    except Exception as _e:
+                                        logger.warning(f"Failed to append RFQ master for {part_number}/{vendor_email}: {_e}")
+                            st.success(f"Logged {logged} RFQ entrie(s) to rfq_master.csv")
                     except Exception as e:
-                        st.error(f"Error creating draft emails for queue: {str(e)}")
-                        logger.error(f"Error creating draft emails for queue: {str(e)}")
-        
+                        st.error(f"Error logging RFQs to master: {e}")
+                        logger.error(f"Error logging RFQs to master: {e}")
+
+            if st.button("Validate process/spec against familiar list"):
+                report_df = build_familiarity_report(queue)
+                if report_df.empty:
+                    st.success("All rows have familiar process/spec values.")
+                else:
+                    st.warning(f"Found {len(report_df)} row(s) with unfamiliar process/spec.")
+                    st.dataframe(report_df, use_container_width=True, hide_index=True)
+                    st.download_button(
+                        "Download report CSV",
+                        data=report_df.to_csv(index=False).encode('utf-8'),
+                        file_name="unfamiliar_process_spec_report.csv",
+                        mime="text/csv",
+                    )
         except Exception as e:
-            st.error(f"Error loading data: {str(e)}")
-            logger.error(f"Error loading data: {str(e)}")
-            
+            st.error(f"Error loading queue data: {str(e)}")
+            logger.error(f"Error loading queue data: {str(e)}")
     except Exception as e:
         st.error(f"Error loading queue data: {str(e)}")
         logger.error(f"Error loading queue data: {str(e)}")
 
 
 def display_email_settings():
-    """Display email settings from configuration."""
+    """Display email settings from the configuration."""
     st.subheader("Email Settings")
     
     # Display current settings
@@ -1335,7 +1762,7 @@ def display_email_settings():
     To change these settings, edit the .streamlit/secrets.toml file directly.
     """)
     
-    # Display settings in expandable section
+    # Display settings in an expandable section
     with st.expander("View Current Email Settings"):
         col1, col2 = st.columns(2)
         

@@ -25,7 +25,7 @@ sys.path.append(str(project_root))
 
 # Import BoxIntegration directly since we're in the same directory
 from box_integration import BoxIntegration
-from utils.logging import get_logger
+from utils.rfq_logging import get_logger
 
 
 def create_test_files(test_dir: str, part_numbers: list) -> dict:

@@ -13,8 +13,8 @@ sys.path.insert(0, str(parent_dir))
 # Import utility functions
 from streamlit_app.utils.auth_shim import load_users, get_user_role, validate_session
 from streamlit_app.components.logout_button import logout_button
-from utils.logging import get_logger, configure_root_logger
-from utils.queue import load_queue as load_queue_df
+from utils.rfq_logging import get_logger, configure_root_logger
+from utils.rfq_queue import load_queue as load_queue_df
 
 # Configure root logger first (ensures logs directory exists)
 configure_root_logger()

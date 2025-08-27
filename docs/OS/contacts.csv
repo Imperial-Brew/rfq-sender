@@ -1,12 +1,11 @@
 Vendor,Contact,First,Last,Email,Phone,type,State,P/S,website
 3P Processing Inc,Robert Pepper,Robert,Pepper,Quotes@3p-p.com,(316) 529-0828,finishing,Kansas,Primary,3p-p.com
-"Advanced Aero Coatings, LLC",Anthony Byington,Anthony,Byington,andy@aeroaac.com,(817) 280-0467,finishing,Texas,Primary,aeroaac.com
+"Advanced Aero Coatings, LLC",Shana Excell,Shana,Excell,shana@aeroaac.com,(817) 280-0467,finishing,Texas,Primary,aeroaac.com
 "Advanced Aero Coatings, LLC",Mike Forbis,Mike,Forbis,mike@aeroaac.com,(817) 280-0467,finishing,Texas,Secondary,aeroaac.com
-"Advanced Aero Coatings, LLC",Shana Excell,Shana,Excell,shana@aeroaac.com,(817) 280-0467,finishing,Texas,Secondary,aeroaac.com
 AI Industries,Steve Lanouette,Steve,Lanouette,slanouette@aiindustries.com,(512) 990-3999,finishing,,Primary,aiindustries.com
 AMI Metals,Douglas Ramirez,Douglas,Ramirez,Douglas.ramirez@amimetals.com,,material,,Primary,amimetals.com
 AMI Metals,Melissa Tricinella,Melissa,Tricinella,Melissa.tricinella@amimetals.com,,material,,Secondary,amimetals.com
-Anoplate Corporation,,Anoplate Corporation,,,(315) 471-6143,finishing,New York,Primary,anoplate.com
+Anoplate Corporation,,Anoplate Corporation,,quoting@anoplate.com,(315) 471-6143,finishing,New York,Primary,anoplate.com
 Ascenx,Elaine Kim,Elaine,Kim,elaine.kim@ascenx.com,(408) 945-1997,harnesses,,Primary,ascenx.com
 Ascenx,Stacy Wong,Stacy,Wong,stacy.wong@ascenx.com,(408) 945-1997,harnesses,,Secondary,ascenx.com
 Austin Seal Company,Cindy Perez,Cindy,Perez,cindyp@austinseal.com,(512) 832-0047,seals,Texas,Primary,austinseal.com
@@ -31,15 +30,17 @@ DB Roberts,Tanja Oster,Tanja,Oster,toster@dbroberts.com,(972) 202-4544,Hardware,
 DB Roberts,Amy Nguyen,Amy,Nguyen,anguyen@dbroberts.com,,Hardware,,Secondary,dbroberts.com
 DC Electronics,Esthefania Garcia,Esthefania,Garcia,e_garcia@dcelectronics.com,(408) 947-4500,harnesses,,Primary,dcelectronics.com
 DC Electronics,Kendi Luceli R Beltran,Kendi,Beltran,k_beltran@dcelectronics.com,,harnesses,,Secondary,dcelectronics.com
-Embee Processing,Quotes,Embee Processing,,Quotes@embee.com. ,,finishing,California,Primary,embee.com         
+Embee Processing,Quotes,Embee Processing,,Quotes@embee.com,,finishing,California,Primary,embee.com         
 Embee Processing,Blanca Vallejo ,Blanca,Vallejo,blancav@embee.com,,finishing,California,Secondary,embee.com         
 EMJ Metals,Michael Baker,Michael,Baker,MBaker@emjmetals.com,(713) 672-1621,material,Texas,Primary,emjmetals.com
 Fry Steel,Marissa Valdez,Marissa,Valdez,Marissa.Valdez@frysteel.com,,material,,Primary,frysteel.com
 Fry Steel,Johnathan Garcia,Johnathan,Garcia,Johnathan.Garcia@frysteel.com,,material,,Secondary,frysteel.com
 Gleco Plating,Cory Mouser,Cory,Mouser,cory@glecoplating.com            ,(972) 475-4300,finishing,Texas,Primary,glecoplating.com            
-Hadco Metal,Steve C,Steve,C,stevec@hadco-metal.com;,,material,,Primary,hadco-metal.com;
-"Har-Conn Aerospace, Inc.",laura coleman,laura,coleman,laura.coleman@hcaerospace.com,,finishing,,Primary,hcaerospace.com
-"Har-Conn Aerospace, Inc.",Shana Pope,Shana,Pope,shana.excell@hcaerospace.com,,finishing,,Secondary,hcaerospace.com
+Hadco Metal,Steve C,Steve,C,stevec@hadco-metal.com,,material,,Primary,hadco-metal.com
+"Har-Conn Aerospace, Inc.",laura coleman,laura,coleman,laura.coleman@hcaerospace.com,,finishing,Texas,Primary,hcaerospace.com
+"Har-Conn Aerospace, Inc.",Shana Pope,Shana,Pope,shana.excell@hcaerospace.com,,finishing,Texas,Secondary,hcaerospace.com
+Har-Conn Company,Walter Skwarek,Walter,Skwarek,walters@har-conn.com,(860) 236-6801,finishing,Connecticut,Primary,www.har-conn.com
+Har-Conn Company,Sofia Goncalves,Sofia,Goncalves,Sofia@har-conn.com,(860) 236-6801,finishing,Connecticut,Secondary,www.har-conn.com
 Harrison Electropolishing L.P.,Sales,Harrison Electropolishing L.P.,,sales@harrisonep.com,(832) 467-3099,finishing,Texas,Primary,harrisonep.com
 Harrison Electropolishing L.P.,Matthew Buck,Matthew,Buck,matthewb@harrisonep.com,(832) 467-3100,finishing,Texas,Secondary,harrisonep.com
 Harrison Electropolishing L.P.,Lenny Gonzalez ,Lenny,Gonzalez ,lennyg@harrisonep.com,(832) 467-3100,finishing,Texas,Secondary,harrisonep.com
@@ -47,7 +48,7 @@ Harting,Jan Belingon,Jan,Belingon,jan.belingon@Harting.com,(847) 717-9324,Turck,
 Harting,Alberto Gutierrez,Alberto,Gutierrez,Alberto.Gutierrez@Harting.com,,Turck,,Primary,Harting.com
 Harting,Lisa Ramirez,Lisa,Ramirez,Lisa.Ramirez@Harting.com,,Turck,,Secondary,Harting.com
 High Performance Alloys,Tracy Allen,Tracy,Allen,Tracy.Allen@hpalloys.com,,material,,Primary,hpalloys.com
-HUB Metals,,HUB Metals,,ericy@hubmetals.com;,,material,,Primary,hubmetals.com;
+HUB Metals,,HUB Metals,,ericy@hubmetals.com;,,material,,Primary,hubmetals.com
 Hytek Finishes,Quotes,Hytek Finishes,,quotes@hytekfinishes.com,,finishing,Washington,Primary,hytekfinishes.com
 Hytek Finishes,Joshua Schaaf ,Joshua,Schaaf ,joshua.schaaf@hytekfinishes.com,(253) 796-4584,finishing,Washington,Secondary,hytekfinishes.com
 Hytek Finishes,Lissa Garay ,Lissa,Garay , lissa.garay@hytekfinishes.com,(253) 796-4584,finishing,Washington,Secondary,hytekfinishes.com
@@ -70,13 +71,14 @@ Rapid Manufacturing,Blaize Garcia,Blaize,Garcia,blaize.garcia@rapidmfg.com,,harn
 Rapid Manufacturing,Annie Li,Annie,Li,annield@rapidmfg.com,,harnesses,,Secondary,rapidmfg.com
 Right Stainless & Alloys,Jeff Treadwell,Jeff,Treadwell,jtreadwell@rightstainless.com,(512) 395-2037,material,,Primary,rightstainless.com
 Rolled Alloys,,Rolled Alloys,,cbaird@rolledalloys.com,,material,,Primary,rolledalloys.com
+S&P Coatings LLC,Anthony Byington,Anthony,Byington,andy@aeroaac.com,(817) 280-0467,finishing,Texas,Primary,sp-coatings.com
 Sierra Alloys,,Sierra Alloys,,jkerkhove@sierraalloys.com,,material,,Primary,sierraalloys.com
 Sierra Alloys,,Sierra Alloys,,aigarashi@sierraalloys.com,,material,,Secondary,sierraalloys.com
 Sierra Alloys,,Sierra Alloys,,cjacobian@sierraalloys.com,,material,,Secondary,sierraalloys.com
 Sunshine Metals,Amanda Eisler,Amanda,Eisler,aeisler@sunshinemetals.com,(316) 252-8597,material,,Secondary,sunshinemetals.com
-Sunshine Metals,,Sunshine Metals,,Tburbach@Sunshinemetals.com;,,material,,Secondary,Sunshinemetals.com;
-Supra Alloys,,Supra Alloys,,PFriddle@supraalloys.com;,,material,,Primary,supraalloys.com;
-Supra Alloys,,Supra Alloys,,spatterson@supraalloys.com;,,material,,Secondary,supraalloys.com;
+Sunshine Metals,,Sunshine Metals,,Tburbach@Sunshinemetals.com,,material,,Secondary,Sunshinemetals.com;
+Supra Alloys,,Supra Alloys,,PFriddle@supraalloys.com,,material,,Primary,supraalloys.com;
+Supra Alloys,,Supra Alloys,,spatterson@supraalloys.com,,material,,Secondary,supraalloys.com;
 Tech Metals,,TechMetals,,quoting@techmetals.com,(937) 253-5311,finishing,Ohio,Primary,techmetals.com
 Tech Metals,Kimberly Jones,Kimberly,Jones,kjones@techmetals.com,(937) 253-5311,finishing,Ohio,Secondary,techmetals.com
 Tech Metals,Sidney Burton,Sidney,Burton,sburton@techmetals.com,(937) 253-5311,finishing,,Secondary,techmetals.com

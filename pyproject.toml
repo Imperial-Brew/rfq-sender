@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rfq-sender"
-version = "0.1.0"
+version = "0.2.1"
 description = "RFQ Sender application for managing and sending RFQ emails"
 readme = "README.md"
 license = {text = "MIT"}

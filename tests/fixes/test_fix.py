@@ -9,8 +9,8 @@ parent_dir = Path(__file__).parent.parent.parent
 sys.path.append(str(parent_dir))
 
 # Import the queue loading function and logging module
-from utils.queue import load_queue, QUEUE_PATH
-from utils.logging import get_logger
+from utils.rfq_queue import load_queue, QUEUE_PATH
+from utils.rfq_logging import get_logger
 
 # Get module-specific logger
 logger = get_logger(__name__)

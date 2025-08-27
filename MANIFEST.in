@@ -1,5 +1,12 @@
 include README.md
 include LICENSE
-recursive-include streamlit_app/config *
-recursive-include streamlit_app/templates *
+include requirements.txt
+include pyproject.toml
+include pytest.ini
+recursive-include config *.yaml *.yml *.toml
+recursive-include templates *.j2 *.html *.txt
 recursive-include docs *
+recursive-include streamlit_app *.py *.png *.jpg *.svg *.css *.js
+recursive-include core *.py
+recursive-include utils *.py
+recursive-include scripts *.py

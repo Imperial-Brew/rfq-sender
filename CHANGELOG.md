@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-08-25
+
 ### Added
 - Implemented Box hybrid folder structure for RFQ documentation organization
   - Added create_rfq_structure method to create master/part/vendor folders
@@ -14,9 +16,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added link_files_to_vendor method to create links in vendor folders
   - Added test scripts for hybrid folder structure verification
   - Added comprehensive documentation in docs/box_hybrid_structure.md
-- Reorganized project structure to match guidelines
-  - Created data_raw/ and data_cleaned/ directories to replace data/
-  - Organized scripts into functional subdirectories (email/, box/, vendor/, utils/)
+- Mail backend switched to Microsoft Graph for Draft creation
+  - Config via .streamlit/secrets.toml ([exchange], [azure], [company], [app])
+  - Smoke script (scripts/smoke_graph.py) to verify Graph connectivity
+- Reorganized project structure and documentation
+  - data_raw/ and data_cleaned/ directories
+  - scripts/ organized into email/, box/, utils/, vendor/
+  - README updates, Release Checklist, CONTRIBUTING and testing guidance
+
+### Changed
+- Email flow to use Graph + updated templates and company metadata
+- Improved Box vendor-specific sharing and folder organization by part number
+- Enhanced logging, environment handling, and documentation clarity
+
+### Fixed
+- Packaging coverage via MANIFEST.in so templates/config/docs ship in sdist/wheel
+- Template rendering and minor path/cross-platform issues
+
+## [0.1.0] - 2023-10-01
+
+- Initial release
+
+### Added
+- Implemented Box hybrid folder structure for RFQ documentation organization
+  - Added create_rfq_structure method to create master/part/vendor folders
+  - Added upload_part_files method to organize files by part number
+  - Added link_files_to_vendor method to create links in vendor folders
+  - Added test scripts for hybrid folder structure verification
+  - Added comprehensive documentation in docs/box_hybrid_structure.md
+- Mail backend switched to Microsoft Graph for Draft creation
+  - Config via .streamlit/secrets.toml ([exchange], [azure], [company], [app])
+  - Smoke script (scripts/smoke_graph.py) to verify Graph connectivity
+- Reorganized project structure and documentation
+  - data_raw/ and data_cleaned/ directories
+  - scripts/ organized into email/, box/, utils/, vendor/
+  - README updates, Release Checklist, CONTRIBUTING and testing guidance
 - Created tasks.md in .junie directory for tracking project tasks
 - Initial project structure
 - Core functionality for sending RFQ emails to vendors
@@ -37,13 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detailed scaling guide with recommendations for production use
 - Scalability and performance guidelines
 - Deployment and operations guidelines
-- Comprehensive project review summary
-- Email from list script for processing RFQs from CSV files
-- Comprehensive project status report
 - Test fix plan for addressing failing tests
 - Development roadmap for future enhancements
 - Documentation index for easier navigation
-- Session summary documenting completed work
 - Vendor capability matching in email_from_list.py script
 - Integration with vendor_options.yaml for process capabilities
 - Support for contacts.csv for vendor contact information
@@ -55,12 +85,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation for email_from_list.py script
 - Script for finding vendors by process capability (find_vendors_by_process.py)
 - Script for finding vendors by specification (find_vendors_by_spec.py)
-- Support for addressing emails to the first name from contacts.csv
 - HTML table formatting for better display in emails
 - Integration with Outlook's general signature
 - Box integration for secure file sharing (box_integration.py)
 - JWT authentication for Box integration
-- Chunked uploads for large files with progress reporting
 - Retry logic with exponential backoff for failed Box operations
 - Comprehensive Box integration documentation (BOX_INTEGRATION.md)
 - Test scripts for Box integration (test_box_integration.py, test_email_with_box.py)

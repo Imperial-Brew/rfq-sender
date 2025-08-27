@@ -20,7 +20,7 @@ from utils.specs import (
 )
 from streamlit_app.utils.auth_shim import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
-from utils.logging import get_logger
+from utils.rfq_logging import get_logger
 
 if not require_authentication():
     st.stop()
