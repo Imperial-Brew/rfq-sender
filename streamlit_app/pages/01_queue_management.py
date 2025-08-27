@@ -305,14 +305,14 @@ def main():
     st.sidebar.markdown(f"**User:** {user['name']}")
     st.sidebar.markdown(f"**Role:** {role}")
     
-    # Create tabs for Add to Queue and View Queue
-    tab1, tab2 = st.tabs(["Add to Queue", "View Queue"])
+    # Create tabs for View Queue and Add to Queue (View is default)
+    view_tab, add_tab = st.tabs(["View Queue", "Add to Queue"])
     
-    with tab1:
-        display_add_to_queue_form(user)
-    
-    with tab2:
+    with view_tab:
         display_queue_data(user, role)
+    
+    with add_tab:
+        display_add_to_queue_form(user)
 
 if __name__ == "__main__":
     main()
