@@ -14,7 +14,7 @@ if str(parent_dir) not in sys.path:
 # Import configuration and utility functions
 from core.config import Paths, LoggingConfig, init_config
 from utils.specs import load_process_list, load_specs_for_process
-from utils.rfq_queue import add_to_queue, load_queue
+from utils.rfq_queue import add_to_queue, load_queue, save_queue, _get_box_store, _standardize_df
 from streamlit_app.utils.auth_shim import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
 from utils.rfq_logging import get_logger
@@ -281,6 +281,80 @@ def display_queue_data(user, role):
                 file_name="rfq_queue_export.csv",
                 mime="text/csv"
             )
+
+        # Queue Management Tools (moved from Page 3)
+        with st.expander("Queue Management Tools", expanded=False):
+            # Duplicate handling policy for RFQ Master logging (kept for parity)
+            dup_policy_label = "When logging to RFQ Master, if a matching entry already exists (same qt/so #, part, process, vendor, contact):"
+            dup_choice = st.radio(
+                dup_policy_label,
+                options=[
+                    "Skip (do not add new line)",
+                    "Update (status/notes/link/date)",
+                    "Append (always add new line)",
+                ],
+                index=0,
+                key="rfq_master_dup_policy_page1",
+                help=(
+                    "Skip: return existing rfq# and do not write.\n"
+                    "Update: update status/notes/rfq_folder/date on the existing line.\n"
+                    "Append: always add a new row even if a match exists."
+                ),
+            )
+            _on_dup_map = {
+                "Skip (do not add new line)": "skip",
+                "Update (status/notes/link/date)": "update",
+                "Append (always add new line)": "append",
+            }
+            on_duplicate_policy = _on_dup_map.get(dup_choice, "skip")
+
+            # Refresh queue from Box
+            if st.button("Refresh queue from Box", key="refresh_from_box_page1"):
+                try:
+                    with st.spinner("Refreshing queue from Box..."):
+                        store = _get_box_store()
+                        if store is None:
+                            st.error(
+                                "Box is not configured or failed to initialize; cannot refresh from Box.\n"
+                                "Check BOX_QUEUE_FILE_ID / BOX_QUEUE_FOLDER_ID and Box credentials."
+                            )
+                        else:
+                            refreshed_df = store.load_df()
+                            refreshed_df = _standardize_df(refreshed_df)
+                            st.success(f"Loaded {len(refreshed_df)} row(s) from Box and refreshed the queue in the UI.")
+                            st.dataframe(refreshed_df, use_container_width=True, hide_index=True)
+
+                            if st.button("Save cleaned queue back to Box (drop legacy columns)", key="save_cleaned_queue_box_page1"):
+                                try:
+                                    save_queue(refreshed_df)
+                                    st.success("Cleaned queue saved back to Box. Legacy columns have been dropped.")
+                                except Exception as _e:
+                                    st.error(f"Failed to save cleaned queue back to Box: {_e}")
+                                    logger.error(f"Failed to save cleaned queue back to Box: {_e}")
+                except Exception as e:
+                    st.error(f"Refresh from Box failed: {e}")
+                    logger.exception("Refresh from Box failed")
+
+            # Validate process/spec against familiar list
+            try:
+                from streamlit_app.utils.vendor_helpers import build_familiarity_report
+                if st.button("Validate process/spec against familiar list", key="validate_familiarity_page1"):
+                    report_df = build_familiarity_report(df)
+                    if report_df.empty:
+                        st.success("All rows have familiar process/spec values.")
+                    else:
+                        st.warning(f"Found {len(report_df)} row(s) with unfamiliar process/spec.")
+                        st.dataframe(report_df, use_container_width=True, hide_index=True)
+                        st.download_button(
+                            "Download report CSV",
+                            data=report_df.to_csv(index=False).encode('utf-8'),
+                            file_name="unfamiliar_process_spec_report.csv",
+                            mime="text/csv",
+                            key="download_unfamiliar_report_page1",
+                        )
+            except Exception as e:
+                st.error(f"Error running familiarity validation: {e}")
+                logger.exception("Error running familiarity validation")
         
         # Log the view
         logger.info(f"Queue viewed by {user['name']} with {len(filtered_df)} entries after filtering")
