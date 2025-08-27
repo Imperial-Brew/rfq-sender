@@ -14,6 +14,7 @@ from utils.rfq_logging import get_logger
 from utils.rfq_tracking import get_tracker
 from io import BytesIO
 from boxsdk.exception import BoxAPIException
+from datetime import datetime
 
 # Require authentication for this page
 if not require_authentication():
@@ -115,10 +116,41 @@ def display_responses(user, role):
         store = getattr(tracker, "responses_store", None)
         box = getattr(store, "box", None) if store else None
         client = getattr(box, "client", None) if box else None
-        target_folder_id = _resolve_responses_folder_id(tracker)
+
+        # Resolve the target folder id deterministically
+        target_folder_id = None
+        try:
+            if store and getattr(store, "folder_id", None):
+                target_folder_id = store.folder_id
+            if (not target_folder_id) and store and getattr(store, "file_id", None) and client:
+                try:
+                    fobj = client.file(store.file_id).get()
+                    if getattr(fobj, "parent", None) and getattr(fobj.parent, "id", None):
+                        target_folder_id = fobj.parent.id
+                except Exception:
+                    pass
+            if not target_folder_id:
+                try:
+                    from core.secrets import get_section as _get_secret_section
+                    _bx = _get_secret_section("box") or {}
+                    val = str(_bx.get("BOX_RFQ_RESPONSES_FOLDER_ID", "")).strip()
+                    target_folder_id = val or None
+                except Exception:
+                    target_folder_id = None
+        except Exception:
+            target_folder_id = None
 
         successes, failures = [], []
         if client and target_folder_id:
+            # Show which folder we will upload to
+            folder_name = "(unknown)"
+            try:
+                fobj = client.folder(target_folder_id).get()
+                folder_name = getattr(fobj, "name", folder_name)
+            except Exception:
+                pass
+            st.caption(f"Upload target: Box folder {target_folder_id} — {folder_name}")
+
             # Upload to Box
             for uf in uploaded:
                 try:
@@ -128,7 +160,22 @@ def display_responses(user, role):
                     client.folder(target_folder_id).upload_stream(bio, uf.name)
                     successes.append(uf.name)
                 except BoxAPIException as e:
-                    failures.append(f"{uf.name}: BoxAPIException {e.status} {getattr(e, 'code', '')}")
+                    if e.status == 409:
+                        # Auto-rename on conflict and retry
+                        try:
+                            ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+                            if "." in uf.name:
+                                base, ext = uf.name.rsplit(".", 1)
+                                alt_name = f"{base} ({ts}).{ext}"
+                            else:
+                                alt_name = f"{uf.name} ({ts})"
+                            bio.seek(0)
+                            client.folder(target_folder_id).upload_stream(bio, alt_name)
+                            successes.append(f"{uf.name} -> {alt_name}")
+                        except Exception as _re:
+                            failures.append(f"{uf.name}: 409 conflict and rename failed: {_re}")
+                    else:
+                        failures.append(f"{uf.name}: BoxAPIException {e.status} {getattr(e, 'code', '')}")
                 except Exception as e:
                     failures.append(f"{uf.name}: {e}")
         else:
@@ -208,7 +255,7 @@ def display_responses(user, role):
                 except Exception:
                     pass
 
-        st.dataframe(df_filtered, use_container_width=True, hide_index=True)
+        st.dataframe(df_filtered, width='stretch', hide_index=True)
 
         # Download filtered/current view
         csv_bytes = df_filtered.to_csv(index=False).encode("utf-8")
@@ -229,11 +276,11 @@ def display_responses(user, role):
                 if refreshed is None:
                     refreshed = pd.DataFrame()
                 st.success(f"Loaded {len(refreshed)} row(s) from Box.")
-                st.dataframe(refreshed, use_container_width=True, hide_index=True)
+                st.dataframe(refreshed, width='stretch', hide_index=True)
             else:
                 st.warning("Box is not configured for rfq_responses.csv; showing local data instead.")
                 refreshed = _load_responses_df()
-                st.dataframe(refreshed, use_container_width=True, hide_index=True)
+                st.dataframe(refreshed, width='stretch', hide_index=True)
         except Exception as e:
             st.error(f"Refresh from Box failed: {e}")
             logger.exception("Refresh from Box failed for rfq_responses.csv")
