@@ -575,7 +575,7 @@ def display_responses(user, role):
 
                 # Fetch first page of items
                 try:
-                    items = list(client.folder(target_folder_id).get_items(limit=1000))
+                    items = list(client.folder(target_folder_id).get_items(limit=1000, fields=["id","name","size","modified_at","sha1"]))
                 except Exception as e:
                     items = []
                     st.error(f"Failed to list Box folder items: {e}")
@@ -1018,7 +1018,7 @@ def display_responses(user, role):
 
             # Fetch first page of items
             try:
-                items = list(client.folder(target_folder_id).get_items(limit=1000))
+                items = list(client.folder(target_folder_id).get_items(limit=1000, fields=["id","name","size","modified_at","sha1"]))
             except Exception as e:
                 items = []
                 st.error(f"Failed to list Box folder items: {e}")
@@ -1039,13 +1039,9 @@ def display_responses(user, role):
             if files:
                 df_files = pd.DataFrame(files)
                 if not df_files.empty:
-                    # Exclude the tracking CSV and zero-byte files from processing list
+                    # Exclude the tracking CSV from processing list
                     try:
                         df_files = df_files[df_files["name"].str.lower() != "rfq_responses.csv"]
-                    except Exception:
-                        pass
-                    try:
-                        df_files = df_files[(pd.to_numeric(df_files["size"], errors="coerce").fillna(0) > 0)]
                     except Exception:
                         pass
                     # Sort newest first by modified_at (if available)
