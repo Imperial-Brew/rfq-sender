@@ -803,6 +803,25 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                         st.error(f"Refresh from Box failed: {e}")
                         logger.exception("Refresh from Box failed")
 
+                # Validate process/spec against familiar list
+                try:
+                    if st.button("Validate process/spec against familiar list"):
+                        report_df = build_familiarity_report(queue)
+                        if report_df.empty:
+                            st.success("All rows have familiar process/spec values.")
+                        else:
+                            st.warning(f"Found {len(report_df)} row(s) with unfamiliar process/spec.")
+                            st.dataframe(report_df, use_container_width=True, hide_index=True)
+                            st.download_button(
+                                "Download report CSV",
+                                data=report_df.to_csv(index=False).encode('utf-8'),
+                                file_name="unfamiliar_process_spec_report.csv",
+                                mime="text/csv",
+                            )
+                except Exception as e:
+                    st.error(f"Error running familiarity validation: {e}")
+                    logger.exception("Error running familiarity validation")
+
             # Process selected parts
             col1, col2 = st.columns(2)
             
@@ -1438,19 +1457,6 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                         st.error(f"Error logging RFQs to master: {e}")
                         logger.error(f"Error logging RFQs to master: {e}")
 
-            if st.button("Validate process/spec against familiar list"):
-                report_df = build_familiarity_report(queue)
-                if report_df.empty:
-                    st.success("All rows have familiar process/spec values.")
-                else:
-                    st.warning(f"Found {len(report_df)} row(s) with unfamiliar process/spec.")
-                    st.dataframe(report_df, use_container_width=True, hide_index=True)
-                    st.download_button(
-                        "Download report CSV",
-                        data=report_df.to_csv(index=False).encode('utf-8'),
-                        file_name="unfamiliar_process_spec_report.csv",
-                        mime="text/csv",
-                    )
         except Exception as e:
             st.error(f"Error loading queue data: {str(e)}")
             logger.error(f"Error loading queue data: {str(e)}")
