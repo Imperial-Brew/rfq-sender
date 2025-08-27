@@ -223,6 +223,15 @@ def _master_cols(df: pd.DataFrame) -> dict:
         "process": _find_col(df, ["process"]),
     }
 
+def _master_extra_cols(df: pd.DataFrame) -> dict:
+    """Locate optional master columns we want to bring into responses."""
+    return {
+        "qtso": _find_col(df, ["qt/so #", "qt/so#", "qt", "so", "quote", "so #", "qt #"]),
+        "rev": _find_col(df, ["rev", "revision", "rev_level", "revision level"]),
+        "qty": _find_col(df, ["qty", "quantity", "quantities", "order qty", "order quantity"]),
+        "contact": _find_col(df, ["contact", "contact_email", "email", "contact email"]),
+    }
+
 def _extract_numbers(text: str) -> list[int]:
     if not text:
         return []
@@ -771,6 +780,11 @@ def display_responses(user, role):
                         selected_part_val = ""
                         selected_vendor_val = ""
                         selected_process_val = ""
+                        # Additional values from RFQ master
+                        selected_qtso_val = ""
+                        selected_rev_val = ""
+                        selected_qty_val = ""
+                        selected_contact_val = ""
                         received_ts = _first_nonempty(
                             (preview_data.get("date") if isinstance(preview_data, dict) else ""),
                             _now_utc_iso()
@@ -790,8 +804,16 @@ def display_responses(user, role):
                                     selected_rfq_num_val = str(row[mcols.get("rfq")]) if mcols.get("rfq") else ""
                                     selected_part_val = str(row[mcols.get("part")]) if mcols.get("part") else ""
                                     selected_vendor_val = str(row[mcols.get("vendor")]) if mcols.get("vendor") else ""
-                                    selected_process_val = str(row[mcols.get("process")]) if mcols.get(
-                                        "process") else ""
+                                    selected_process_val = str(row[mcols.get("process")]) if mcols.get("process") else ""
+                                    mextra = _master_extra_cols(master_df)
+                                    if mextra.get("qtso"):
+                                        selected_qtso_val = str(row[mextra.get("qtso")])
+                                    if mextra.get("rev"):
+                                        selected_rev_val = str(row[mextra.get("rev")])
+                                    if mextra.get("qty"):
+                                        selected_qty_val = str(row[mextra.get("qty")])
+                                    if mextra.get("contact"):
+                                        selected_contact_val = str(row[mextra.get("contact")])
                                     st.success(
                                         f"Auto-matched RFQ: RFQ {selected_rfq_num_val} — {selected_part_val} — {selected_vendor_val} — {selected_process_val}"
                                     )
@@ -830,10 +852,17 @@ def display_responses(user, role):
                                             row = cands.iloc[idx]
                                             selected_rfq_num_val = str(row[mcols["rfq"]]) if mcols.get("rfq") else ""
                                             selected_part_val = str(row[mcols["part"]]) if mcols.get("part") else ""
-                                            selected_vendor_val = str(row[mcols["vendor"]]) if mcols.get(
-                                                "vendor") else ""
-                                            selected_process_val = str(row[mcols["process"]]) if mcols.get(
-                                                "process") else ""
+                                            selected_vendor_val = str(row[mcols["vendor"]]) if mcols.get("vendor") else ""
+                                            selected_process_val = str(row[mcols["process"]]) if mcols.get("process") else ""
+                                            mextra = _master_extra_cols(master_df)
+                                            if mextra.get("qtso"):
+                                                selected_qtso_val = str(row[mextra.get("qtso")])
+                                            if mextra.get("rev"):
+                                                selected_rev_val = str(row[mextra.get("rev")])
+                                            if mextra.get("qty"):
+                                                selected_qty_val = str(row[mextra.get("qty")])
+                                            if mextra.get("contact"):
+                                                selected_contact_val = str(row[mextra.get("contact")])
                                         except Exception:
                                             pass
 
@@ -885,6 +914,11 @@ def display_responses(user, role):
                             part_in = st.text_input("Part #", value=selected_part_val)
                             process_in = st.text_input("Process", value=selected_process_val)
                             vendor_in = st.text_input("Vendor", value=selected_vendor_val)
+                            # From master (editable)
+                            qtso_in = st.text_input("QT/SO #", value=selected_qtso_val)
+                            rev_in = st.text_input("Rev", value=selected_rev_val)
+                            qty_in = st.text_input("Qty", value=selected_qty_val)
+                            contact_in = st.text_input("Contact", value=selected_contact_val)
 
                             unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
                             lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
@@ -895,6 +929,7 @@ def display_responses(user, role):
                             )
                             received_ts_in = st.text_input("Received timestamp (ISO)", value=str(received_ts))
                             scope_notes_in = st.text_area("Scope notes", value=scope_notes_val or "")
+                            valid_through_in = st.text_input("Valid through (date or notes)", value="")
 
                             subject_val = st.text_input("Subject (if email)", value=subject or "")
                             notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
@@ -912,7 +947,9 @@ def display_responses(user, role):
                                     needed_cols = [
                                         "processed_at", "file_id", "file_name", "file_type",
                                         "rfq#", "part_number", "process", "vendor",
+                                        "qt/so #", "rev", "qty", "contact",
                                         "unit_price", "lot_min", "lead_time_days", "received_timestamp", "scope_notes",
+                                        "valid_through",
                                         "subject", "body_excerpt", "notes",
                                     ]
                                     for c in needed_cols:
@@ -928,11 +965,16 @@ def display_responses(user, role):
                                         "part_number": part_in,
                                         "process": process_in,
                                         "vendor": vendor_in,
+                                        "qt/so #": qtso_in,
+                                        "rev": rev_in,
+                                        "qty": qty_in,
+                                        "contact": contact_in,
                                         "unit_price": unit_price_in,
                                         "lot_min": lot_min_in,
                                         "lead_time_days": str(lead_time_in),
                                         "received_timestamp": received_ts_in,
                                         "scope_notes": scope_notes_in,
+                                        "valid_through": valid_through_in,
                                         "subject": subject_val or "",
                                         "body_excerpt": body_excerpt or "",
                                         "notes": notes_val or "",
@@ -1246,6 +1288,11 @@ def display_responses(user, role):
                     selected_part_val = ""
                     selected_vendor_val = ""
                     selected_process_val = ""
+                    # Additional values from RFQ master
+                    selected_qtso_val = ""
+                    selected_rev_val = ""
+                    selected_qty_val = ""
+                    selected_contact_val = ""
                     received_ts = _first_nonempty(
                         (preview_data.get("date") if isinstance(preview_data, dict) else ""),
                         _now_utc_iso()
@@ -1266,6 +1313,15 @@ def display_responses(user, role):
                                 selected_part_val = str(row[mcols.get("part")]) if mcols.get("part") else ""
                                 selected_vendor_val = str(row[mcols.get("vendor")]) if mcols.get("vendor") else ""
                                 selected_process_val = str(row[mcols.get("process")]) if mcols.get("process") else ""
+                                mextra = _master_extra_cols(master_df)
+                                if mextra.get("qtso"):
+                                    selected_qtso_val = str(row[mextra.get("qtso")])
+                                if mextra.get("rev"):
+                                    selected_rev_val = str(row[mextra.get("rev")])
+                                if mextra.get("qty"):
+                                    selected_qty_val = str(row[mextra.get("qty")])
+                                if mextra.get("contact"):
+                                    selected_contact_val = str(row[mextra.get("contact")])
                                 st.success(
                                     f"Auto-matched RFQ: RFQ {selected_rfq_num_val} — {selected_part_val} — {selected_vendor_val} — {selected_process_val}"
                                 )
@@ -1305,6 +1361,15 @@ def display_responses(user, role):
                                         selected_part_val = str(row[mcols["part"]]) if mcols.get("part") else ""
                                         selected_vendor_val = str(row[mcols["vendor"]]) if mcols.get("vendor") else ""
                                         selected_process_val = str(row[mcols["process"]]) if mcols.get("process") else ""
+                                        mextra = _master_extra_cols(master_df)
+                                        if mextra.get("qtso"):
+                                            selected_qtso_val = str(row[mextra.get("qtso")])
+                                        if mextra.get("rev"):
+                                            selected_rev_val = str(row[mextra.get("rev")])
+                                        if mextra.get("qty"):
+                                            selected_qty_val = str(row[mextra.get("qty")])
+                                        if mextra.get("contact"):
+                                            selected_contact_val = str(row[mextra.get("contact")])
                                     except Exception:
                                         pass
 
@@ -1352,6 +1417,11 @@ def display_responses(user, role):
                         part_in = st.text_input("Part #", value=selected_part_val)
                         process_in = st.text_input("Process", value=selected_process_val)
                         vendor_in = st.text_input("Vendor", value=selected_vendor_val)
+                        # From master (editable)
+                        qtso_in = st.text_input("QT/SO #", value=selected_qtso_val)
+                        rev_in = st.text_input("Rev", value=selected_rev_val)
+                        qty_in = st.text_input("Qty", value=selected_qty_val)
+                        contact_in = st.text_input("Contact", value=selected_contact_val)
 
                         unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
                         lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
@@ -1362,6 +1432,7 @@ def display_responses(user, role):
                         )
                         received_ts_in = st.text_input("Received timestamp (ISO)", value=str(received_ts))
                         scope_notes_in = st.text_area("Scope notes", value=scope_notes_val or "")
+                        valid_through_in = st.text_input("Valid through (date or notes)", value="")
 
                         subject_val = st.text_input("Subject (if email)", value=subject or "")
                         notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
@@ -1379,7 +1450,9 @@ def display_responses(user, role):
                                 needed_cols = [
                                     "processed_at", "file_id", "file_name", "file_type",
                                     "rfq#", "part_number", "process", "vendor",
+                                    "qt/so #", "rev", "qty", "contact",
                                     "unit_price", "lot_min", "lead_time_days", "received_timestamp", "scope_notes",
+                                    "valid_through",
                                     "subject", "body_excerpt", "notes",
                                 ]
                                 for c in needed_cols:
@@ -1395,11 +1468,16 @@ def display_responses(user, role):
                                     "part_number": part_in,
                                     "process": process_in,
                                     "vendor": vendor_in,
+                                    "qt/so #": qtso_in,
+                                    "rev": rev_in,
+                                    "qty": qty_in,
+                                    "contact": contact_in,
                                     "unit_price": unit_price_in,
                                     "lot_min": lot_min_in,
                                     "lead_time_days": str(lead_time_in),
                                     "received_timestamp": received_ts_in,
                                     "scope_notes": scope_notes_in,
+                                    "valid_through": valid_through_in,
                                     "subject": subject_val or "",
                                     "body_excerpt": body_excerpt or "",
                                     "notes": notes_val or "",
