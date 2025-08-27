@@ -268,15 +268,15 @@ def main():
     st.sidebar.markdown(f"**User:** {user['name']}")
     st.sidebar.markdown(f"**Role:** {role}")
     
-    # Create tabs for Add Specification and View Specifications
-    tab1, tab2 = st.tabs(["Add Specification", "View Specifications"])
+    # Create tabs for View Specifications and Add Specification (View is default)
+    view_tab, add_tab = st.tabs(["View Specifications", "Add Specification"]) 
     
-    with tab1:
+    with view_tab:
+        display_specs_data(user, role)
+    
+    with add_tab:
         display_add_spec_form(user, role)
         display_current_specs()
-    
-    with tab2:
-        display_specs_data(user, role)
 
 if __name__ == "__main__":
     main()
