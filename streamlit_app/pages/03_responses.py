@@ -1782,7 +1782,9 @@ def display_responses(user, role):
             st.error(f"Refresh from Box failed: {e}")
             logger.exception("Refresh from Box failed for rfq_responses.csv")
 
-
+    if st.button("Open RFQ Master Editor"):
+        st.session_state["return_to_page"] = "Responses"
+        st.switch_page("pages/02_Rfq_Master.py")
 
 def main():
     setup_page()
