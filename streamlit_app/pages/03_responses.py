@@ -195,6 +195,58 @@ def _guess_vendor(name: str, email_from: str = "", body: str = "") -> str:
         pass
     return ""
 
+# Contacts-based vendor helpers
+@st.cache_data(show_spinner=False)
+def _build_domain_vendor_map(df_contacts: pd.DataFrame) -> dict:
+    """Build mapping: email domain -> set of Vendor names from contacts.csv.
+    Expects df_contacts to contain columns named (case-insensitive) 'Email' and 'Vendor'."""
+    mapping: dict[str, set[str]] = {}
+    try:
+        if df_contacts is None or df_contacts.empty:
+            return mapping
+        cols = {str(c).strip().lower(): c for c in df_contacts.columns}
+        email_col = cols.get("email")
+        vendor_col = cols.get("vendor")
+        if not email_col or not vendor_col:
+            return mapping
+        for _, r in df_contacts.iterrows():
+            em = str(r.get(email_col, "") or "").strip()
+            vend = str(r.get(vendor_col, "") or "").strip()
+            if not em or not vend or "@" not in em:
+                continue
+            dom = em.split("@", 1)[-1].split(">")[0].strip().lower().strip("<>\"' ")
+            if not dom:
+                continue
+            mapping.setdefault(dom, set()).add(vend)
+            parts = dom.split(".")
+            if len(parts) > 2:
+                base = ".".join(parts[-2:])
+                mapping.setdefault(base, set()).add(vend)
+    except Exception:
+        # Fail quietly; caller will handle empty mapping
+        return mapping
+    return mapping
+
+def _vendor_from_sender_domain(email_from: str, domain_map: dict) -> str:
+    """Return canonical Vendor when sender domain maps to exactly one vendor; else ''."""
+    try:
+        if not email_from or "@" not in email_from or not domain_map:
+            return ""
+        dom = email_from.split("@", 1)[-1].split(">")[0].strip().lower().strip("<>\"' ")
+        cands = domain_map.get(dom, set())
+        if isinstance(cands, set) and len(cands) == 1:
+            return next(iter(cands))
+        # Try eTLD+1
+        parts = dom.split(".")
+        if len(parts) > 2:
+            base = ".".join(parts[-2:])
+            cands2 = domain_map.get(base, set())
+            if isinstance(cands2, set) and len(cands2) == 1:
+                return next(iter(cands2))
+    except Exception:
+        return ""
+    return ""
+
 def _load_master_df():
     """Load rfq_master.csv via RFQTracking (Box if configured, else local)."""
     tracker = get_tracker()
@@ -854,7 +906,14 @@ def display_responses(user, role):
                                 subject = preview_data.get("subject", "")
                                 email_from = preview_data.get("from", "")
                                 body_excerpt = _safe_preview_text(preview_data.get("body", ""))
-                                vendor_guess = _guess_vendor(selected_name, email_from, body_excerpt)
+                                # Prefer contacts-based vendor mapping
+                                try:
+                                    tracker = get_tracker()
+                                    domain_map = _build_domain_vendor_map(getattr(tracker, "contacts_df", pd.DataFrame()))
+                                except Exception:
+                                    domain_map = {}
+                                vendor_from_contacts = _vendor_from_sender_domain(email_from, domain_map)
+                                vendor_guess = vendor_from_contacts or _guess_vendor(selected_name, email_from, body_excerpt)
                                 st.write(f"Subject: {subject}")
                                 st.write(f"From: {email_from}")
                                 st.text_area("Body preview", body_excerpt, height=200)
@@ -867,7 +926,14 @@ def display_responses(user, role):
                                 subject = preview_data.get("subject", "")
                                 email_from = preview_data.get("from", "")
                                 body_excerpt = _safe_preview_text(preview_data.get("body", ""))
-                                vendor_guess = _guess_vendor(selected_name, email_from, body_excerpt)
+                                # Prefer contacts-based vendor mapping
+                                try:
+                                    tracker = get_tracker()
+                                    domain_map = _build_domain_vendor_map(getattr(tracker, "contacts_df", pd.DataFrame()))
+                                except Exception:
+                                    domain_map = {}
+                                vendor_from_contacts = _vendor_from_sender_domain(email_from, domain_map)
+                                vendor_guess = vendor_from_contacts or _guess_vendor(selected_name, email_from, body_excerpt)
                                 st.write(f"Subject: {subject}")
                                 st.write(f"From: {email_from}")
                                 st.text_area("Body preview", body_excerpt, height=200)
@@ -1410,7 +1476,14 @@ def display_responses(user, role):
                             subject = preview_data.get("subject", "")
                             email_from = preview_data.get("from", "")
                             body_excerpt = _safe_preview_text(preview_data.get("body", ""))
-                            vendor_guess = _guess_vendor(selected_name, email_from, body_excerpt)
+                            # Prefer contacts-based vendor mapping
+                            try:
+                                tracker = get_tracker()
+                                domain_map = _build_domain_vendor_map(getattr(tracker, "contacts_df", pd.DataFrame()))
+                            except Exception:
+                                domain_map = {}
+                            vendor_from_contacts = _vendor_from_sender_domain(email_from, domain_map)
+                            vendor_guess = vendor_from_contacts or _guess_vendor(selected_name, email_from, body_excerpt)
                             st.write(f"Subject: {subject}")
                             st.write(f"From: {email_from}")
                             st.text_area("Body preview", body_excerpt, height=200)
@@ -1423,7 +1496,14 @@ def display_responses(user, role):
                             subject = preview_data.get("subject", "")
                             email_from = preview_data.get("from", "")
                             body_excerpt = _safe_preview_text(preview_data.get("body", ""))
-                            vendor_guess = _guess_vendor(selected_name, email_from, body_excerpt)
+                            # Prefer contacts-based vendor mapping
+                            try:
+                                tracker = get_tracker()
+                                domain_map = _build_domain_vendor_map(getattr(tracker, "contacts_df", pd.DataFrame()))
+                            except Exception:
+                                domain_map = {}
+                            vendor_from_contacts = _vendor_from_sender_domain(email_from, domain_map)
+                            vendor_guess = vendor_from_contacts or _guess_vendor(selected_name, email_from, body_excerpt)
                             st.write(f"Subject: {subject}")
                             st.write(f"From: {email_from}")
                             st.text_area("Body preview", body_excerpt, height=200)
