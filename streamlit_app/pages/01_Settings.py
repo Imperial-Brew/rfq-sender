@@ -85,8 +85,12 @@ def _test_email_connection(config: dict):
         return False, f"Email test failed: {e}"
 
 def main():
-    user = require_authentication()
-    role = get_user_role(user)
+    # Enforce authentication; returns bool, not a user object
+    require_authentication()
+
+    # Retrieve user set by middleware and derive role safely
+    user = st.session_state.get("user")
+    role = get_user_role(user) if user else get_user_role(None)
 
     st.title("Settings")
     st.caption("Configure Email and Box connections. Editing can be restricted to Admins.")

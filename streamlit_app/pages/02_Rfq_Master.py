@@ -116,8 +116,10 @@ def _import_csv(uploaded_file) -> pd.DataFrame:
 # -------- Page
 
 def main():
-    user = require_authentication()
-    role = get_user_role(user)
+    # Enforce authentication and get user/role correctly
+    require_authentication()
+    user = st.session_state.get("user")
+    role = get_user_role(user) if user else get_user_role(None)
     is_admin_or_editor = str(role).lower() in {"admin", "owner", "administrator", "editor"}
 
     st.title("RFQ Master")
@@ -144,12 +146,15 @@ def main():
                 st.success(f"Loaded {len(new_df)} rows into editor (not yet saved)")
             else:
                 st.warning("Imported CSV is empty or failed to parse")
-        if col_ie2.button("Download current (editor) as CSV"):
-            to_dl = st.session_state.get("rfq_master_editor_df", df)
+        # Always offer a direct download of the current editor view
+        to_dl = st.session_state.get("rfq_master_editor_df", df)
+        with col_ie2:
             st.download_button(
                 label="Download (current editor view) as CSV",
                 data=to_dl.to_csv(index=False).encode("utf-8"),
-                file_name="rfq_master_export.csv", mime="text/csv" )
+                file_name="rfq_master_export.csv",
+                mime="text/csv"
+            )
 
     # Decide which DF to show in the editor
     editor_df = st.session_state.get("rfq_master_editor_df", df.copy())
