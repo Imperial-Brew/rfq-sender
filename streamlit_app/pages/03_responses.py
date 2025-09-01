@@ -30,7 +30,7 @@ if not require_authentication():
 logger = get_logger(__name__)
 
 # Build info to make changes visible in UI
-BUILD_INFO = "RFQ Responses — clears form after successful save to prevent carryover (2025-09-01 16:13)"
+BUILD_INFO = "RFQ Responses — file move to RFQ folder executed after save (pending-move handler); diagnostics shown (2025-09-01 16:18)"
 
 
 def setup_page():
@@ -485,8 +485,10 @@ def _ensure_rfq_folder(client, rfq_root_id: str, rfq_num: str) -> str | None:
         return None
 
 
-def _move_file_to_rfq_folder(client, file_id: str, rfq_num: str) -> None:
-    """Move a Box file into the RFQ folder under the RFQs root; no-op if not resolvable."""
+def _move_file_to_rfq_folder(client, file_id: str, rfq_num: str) -> dict:
+    """Move a Box file into the RFQ folder under the RFQs root.
+    Returns dict: {"ok": bool, "rfq_folder_id": str|None, "message": str}
+    """
     try:
         rfq_root_id = _get_rfq_root_folder_id()
         if not rfq_root_id:
@@ -500,21 +502,23 @@ def _move_file_to_rfq_folder(client, file_id: str, rfq_num: str) -> None:
                     # parent of Responses folder is RFQs
                     resp_parent = client2.folder(store.folder_id).get().parent
                     rfq_root_id = getattr(resp_parent, "id", None)
-            except Exception:
+            except Exception as e:
                 pass
         if not rfq_root_id:
-            return
+            return {"ok": False, "rfq_folder_id": None, "message": "RFQs root not configured"}
         rfq_folder_id = _ensure_rfq_folder(client, rfq_root_id, rfq_num)
         if not rfq_folder_id:
-            return
+            return {"ok": False, "rfq_folder_id": None, "message": "Failed to resolve/create RFQ folder"}
         fobj = client.file(file_id).get()
         parent = getattr(getattr(fobj, "parent", None), "id", None)
         if parent == rfq_folder_id:
-            return
+            return {"ok": True, "rfq_folder_id": rfq_folder_id, "message": "Already in RFQ folder"}
         client.file(file_id).move(parent_folder={'id': rfq_folder_id})
-    except Exception:
-        # silent fail; caller logs a warning
-        return
+        return {"ok": True, "rfq_folder_id": rfq_folder_id, "message": "Moved"}
+    except BoxAPIException as e:
+        return {"ok": False, "rfq_folder_id": None, "message": f"BoxAPIException {getattr(e,'status', '')} {getattr(e,'code','')}"}
+    except Exception as e:
+        return {"ok": False, "rfq_folder_id": None, "message": f"Move failed: {e}"}
 
 def _get_rfq_folder_id(client, rfq_num: str) -> str | None:
     rfq_root_id = _get_rfq_root_folder_id()
@@ -558,6 +562,44 @@ def _clear_response_form_state():
             pass
 
 def display_responses(user, role):
+    # Handle any pending post-save move across reruns (centralized)
+    try:
+        pend = st.session_state.get("responses_pending_move")
+        if pend:
+            tracker = get_tracker()
+            store = getattr(tracker, "responses_store", None)
+            box = getattr(store, "box", None) if store else None
+            client = getattr(box, "client", None) if box else None
+            file_id = str(pend.get("file_id", ""))
+            rfq_num_clean = str(pend.get("rfq", "")).strip()
+            if client and file_id.isdigit() and rfq_num_clean:
+                res = _move_file_to_rfq_folder(client, file_id, rfq_num_clean)
+                if res.get("ok"):
+                    st.success("Moved file to RFQ folder on previous save")
+                else:
+                    st.warning(f"Move on previous save failed/skipped: {res.get('message','unknown')}")
+                # Try to set quote_folder link
+                try:
+                    rfq_folder_id = res.get("rfq_folder_id") or _get_rfq_folder_id(client, rfq_num_clean)
+                    if rfq_folder_id:
+                        quote_url = f"https://app.box.com/folder/{rfq_folder_id}"
+                        try:
+                            df_curr = tracker.responses_store.load_df() if tracker.responses_store is not None else _load_responses_df()
+                        except Exception:
+                            df_curr = _load_responses_df()
+                        if isinstance(df_curr, pd.DataFrame) and not df_curr.empty and "quote_folder" in df_curr.columns:
+                            mask = (df_curr["file_id"].astype(str) == file_id) & (df_curr["rfq#"].astype(str).str.strip() == rfq_num_clean)
+                            df_curr.loc[mask, "quote_folder"] = quote_url
+                            if tracker.responses_store is not None:
+                                tracker.responses_store.save_df(df_curr)
+                            else:
+                                df_curr.to_csv(tracker.responses_path, index=False)
+                except Exception as le:
+                    logger.warning(f"quote_folder link update failed: {le}")
+            st.session_state.pop("responses_pending_move", None)
+    except Exception as _ex:
+        logger.warning(f"pending move handler error: {_ex}")
+
     # Tabs: Upload/Process vs. Files list
     tab_upload, tab_files = st.tabs(["Upload / Process", "Responses Files"])
 
@@ -1469,7 +1511,11 @@ def display_responses(user, role):
                                     except Exception as me:
                                         logger.warning(f"Setting quote_folder skipped/failed: {me}")
 
-                                    # Clear form state and rerun to reset UI
+                                    # Stash a pending move across rerun, then clear form and rerun
+                                    try:
+                                        st.session_state["responses_pending_move"] = {"file_id": selected_id, "rfq": rfq_num_in}
+                                    except Exception:
+                                        pass
                                     _clear_response_form_state()
                                     st.rerun()
                                 except Exception as e:
@@ -2103,7 +2149,11 @@ def display_responses(user, role):
                                 except Exception as me:
                                     logger.warning(f"Setting quote_folder skipped/failed: {me}")
 
-                                # Clear form state and rerun to reset UI
+                                # Stash a pending move across rerun, then clear form and rerun
+                                try:
+                                    st.session_state["responses_pending_move"] = {"file_id": selected_id, "rfq": rfq_num_in}
+                                except Exception:
+                                    pass
                                 _clear_response_form_state()
                                 st.rerun()
                             except Exception as e:
