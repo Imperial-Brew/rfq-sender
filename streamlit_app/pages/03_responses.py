@@ -30,7 +30,7 @@ if not require_authentication():
 logger = get_logger(__name__)
 
 # Build info to make changes visible in UI
-BUILD_INFO = "RFQ Responses — dedupe + overwrite prompt; move file to RFQ folder after save (2025-09-01 14:35)"
+BUILD_INFO = "RFQ Responses — clears form after successful save to prevent carryover (2025-09-01 16:13)"
 
 
 def setup_page():
@@ -532,6 +532,30 @@ def _get_rfq_folder_id(client, rfq_num: str) -> str | None:
     if not rfq_root_id:
         return None
     return _ensure_rfq_folder(client, rfq_root_id, str(rfq_num or "").strip())
+
+# Helper to clear form/session state after saving to prevent accidental reuse
+def _clear_response_form_state():
+    keys = [
+        "responses_selected_file_id",
+        "responses_selected_file_name",
+        "responses_valid_through_from_table",
+        "responses_scope_from_table",
+        "overwrite_confirm_master",
+        "overwrite_confirm_master_always",
+        "nq_mark_master",
+        "nq_mark_master_always",
+        "responses_pick_master",
+        "responses_pick_master_always",
+        "responses_select_file",
+        "responses_select_file_always",
+        "responses_select_file_local",
+        "responses_select_file_local_always",
+    ]
+    for k in keys:
+        try:
+            st.session_state.pop(k, None)
+        except Exception:
+            pass
 
 def display_responses(user, role):
     # Tabs: Upload/Process vs. Files list
@@ -1444,6 +1468,10 @@ def display_responses(user, role):
                                                         df_out.to_csv(tracker.responses_path, index=False)
                                     except Exception as me:
                                         logger.warning(f"Setting quote_folder skipped/failed: {me}")
+
+                                    # Clear form state and rerun to reset UI
+                                    _clear_response_form_state()
+                                    st.rerun()
                                 except Exception as e:
                                     st.error(f"Failed to append/overwrite record: {e}")
 
@@ -2074,6 +2102,10 @@ def display_responses(user, role):
                                                     df_out.to_csv(tracker.responses_path, index=False)
                                 except Exception as me:
                                     logger.warning(f"Setting quote_folder skipped/failed: {me}")
+
+                                # Clear form state and rerun to reset UI
+                                _clear_response_form_state()
+                                st.rerun()
                             except Exception as e:
                                 st.error(f"Failed to append/overwrite record: {e}")
 
