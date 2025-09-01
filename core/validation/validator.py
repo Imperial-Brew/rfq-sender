@@ -243,23 +243,34 @@ class SpecValidator:
 
         removed = False
 
-        for v in self.ref.get('vendors', []):
+        # Try exact vendor name match first, then case-insensitive fallback
+        vendors_list = self.ref.get('vendors', []) or []
+        target_vendor_entry = None
+        for v in vendors_list:
             if v.get('name') == target_vendor:
-                for p in v.get('processes', []) or []:
-                    if self.normalize(p.get('name', '')) == norm_process:
-                        specs = p.get('specs') or []
-                        new_specs = []
-                        for s in specs:
-                            # keep entries that do NOT match the target spec
-                            if isinstance(s, dict):
-                                s_norm = self.normalize(s.get('number', ''))
-                                if s_norm == norm_spec:
-                                    removed = True
-                                    continue
-                            new_specs.append(s)
-                        p['specs'] = new_specs
-                        break
+                target_vendor_entry = v
                 break
+        if target_vendor_entry is None:
+            tv_lower = target_vendor.lower()
+            for v in vendors_list:
+                if str(v.get('name', '')).lower() == tv_lower:
+                    target_vendor_entry = v
+                    break
+        if target_vendor_entry is not None:
+            for p in target_vendor_entry.get('processes', []) or []:
+                if self.normalize(p.get('name', '')) == norm_process:
+                    specs = p.get('specs') or []
+                    new_specs = []
+                    for s in specs:
+                        # keep entries that do NOT match the target spec
+                        if isinstance(s, dict):
+                            s_norm = self.normalize(s.get('number', ''))
+                            if s_norm == norm_spec:
+                                removed = True
+                                continue
+                        new_specs.append(s)
+                    p['specs'] = new_specs
+                    break
 
         if removed:
             self._save_reference()
@@ -274,19 +285,29 @@ class SpecValidator:
         target_vendor = vendor_name.strip()
         norm_process = self.normalize(process_name)
         removed = False
-        for v in self.ref.get('vendors', []):
+        vendors_list = self.ref.get('vendors', []) or []
+        target_vendor_entry = None
+        for v in vendors_list:
             if v.get('name') == target_vendor:
-                processes = v.get('processes', []) or []
-                new_processes = []
-                for p in processes:
-                    if self.normalize(p.get('name', '')) == norm_process:
-                        specs = p.get('specs') or []
-                        if len(specs) == 0:
-                            removed = True
-                            continue
-                    new_processes.append(p)
-                v['processes'] = new_processes
+                target_vendor_entry = v
                 break
+        if target_vendor_entry is None:
+            tv_lower = target_vendor.lower()
+            for v in vendors_list:
+                if str(v.get('name', '')).lower() == tv_lower:
+                    target_vendor_entry = v
+                    break
+        if target_vendor_entry is not None:
+            processes = target_vendor_entry.get('processes', []) or []
+            new_processes = []
+            for p in processes:
+                if self.normalize(p.get('name', '')) == norm_process:
+                    specs = p.get('specs') or []
+                    if len(specs) == 0:
+                        removed = True
+                        continue
+                new_processes.append(p)
+            target_vendor_entry['processes'] = new_processes
         if removed:
             self._save_reference()
             self._build_normalized_maps()
