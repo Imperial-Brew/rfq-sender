@@ -1292,8 +1292,17 @@ def display_responses(user, role):
                             contact_default = selected_contact_val or _extract_email_address(email_from)
                             contact_in = st.text_input("Contact", value=contact_default)
 
-                            unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
-                            lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
+                            # No-Quote control
+                            nq_mark = st.checkbox("Mark as No-Quote (NQ)", key="nq_mark_master")
+
+                            if nq_mark:
+                                # Force values to NQ and render as disabled for clarity
+                                unit_price_in = st.text_input("Unit price", value="NQ", disabled=True)
+                                lot_min_in = st.text_input("Lot min", value="NQ", disabled=True)
+                            else:
+                                unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
+                                lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
+
                             lead_time_in = st.number_input(
                                 "Lead time (days)",
                                 value=int(lead_time_days_val) if isinstance(lead_time_days_val, int) else 0,
@@ -1303,11 +1312,23 @@ def display_responses(user, role):
                             # Use prefilled scope/valid_through from table if available
                             pref_valid = st.session_state.get("responses_valid_through_from_table", "")
                             pref_scope = scope_notes_val or st.session_state.get("responses_scope_from_table", "")
+
+                            # Require a reason when NQ is marked; otherwise optional
+                            nq_reason = ""
+                            if nq_mark:
+                                nq_reason = st.text_area("Reason for no-quote (required)", value="")
                             scope_notes_in = st.text_area("Scope notes", value=pref_scope)
                             valid_through_in = st.text_input("Valid through (date or notes)", value=pref_valid)
 
                             # subject_val = st.text_input("Subject (if email)", value=subject or "")
-                            notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
+                            base_notes = f"Processed preview for {selected_name}"
+                            notes_val = st.text_area("Notes", value=base_notes)
+
+                            # Suggest adjusting vendor approvals (stub for now)
+                            if nq_mark:
+                                st.info(f"No-Quote flagged for Vendor '{vendor_in}' on Process '{process_in}'. Consider updating vendor approvals to exclude this process/spec.")
+                                st.button("Open Vendors (adjust approvals)", key="open_vendors_from_nq_master", disabled=True)
+
                             overwrite_ok = st.checkbox("Overwrite existing log entry", key="overwrite_confirm_master")
 
                             if st.button("Confirm and append record", key="confirm_append_response_record_master"):
@@ -1330,6 +1351,19 @@ def display_responses(user, role):
                                     for c in needed_cols:
                                         if c not in df_curr.columns:
                                             df_curr[c] = pd.Series(dtype="object")
+
+                                    # If NQ is marked, enforce values and inject reason
+                                    if 'nq_mark_master' in st.session_state and st.session_state['nq_mark_master']:
+                                        # Validate reason
+                                        if not (locals().get('nq_reason', '') or '').strip():
+                                            st.error("Please provide a reason for the no-quote.")
+                                            return
+                                        unit_price_in = "NQ"
+                                        lot_min_in = "NQ"
+                                        reason_txt = (locals().get('nq_reason', '') or '').strip()
+                                        prefix = f"no quote per vendor — {reason_txt}"
+                                        scope_notes_in = (prefix + (f" | {scope_notes_in}" if str(scope_notes_in).strip() else ""))
+                                        notes_val = (prefix + (f" | {notes_val}" if str(notes_val).strip() else ""))
 
                                     new_row = pd.DataFrame([{
                                         "processed_at": _now_utc_iso(),
@@ -1892,8 +1926,17 @@ def display_responses(user, role):
                         contact_default = selected_contact_val or _extract_email_address(email_from)
                         contact_in = st.text_input("Contact", value=contact_default)
 
-                        unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
-                        lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
+                        # No-Quote control
+                        nq_mark_always = st.checkbox("Mark as No-Quote (NQ)", key="nq_mark_master_always")
+
+                        if nq_mark_always:
+                            # Force values to NQ and render as disabled for clarity
+                            unit_price_in = st.text_input("Unit price", value="NQ", disabled=True)
+                            lot_min_in = st.text_input("Lot min", value="NQ", disabled=True)
+                        else:
+                            unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
+                            lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
+
                         lead_time_in = st.number_input(
                             "Lead time (days)",
                             value=int(lead_time_days_val) if isinstance(lead_time_days_val, int) else 0,
@@ -1902,11 +1945,23 @@ def display_responses(user, role):
                         received_ts_in = st.text_input("Received timestamp (ISO)", value=str(received_ts))
                         pref_valid = st.session_state.get("responses_valid_through_from_table", "")
                         pref_scope = scope_notes_val or st.session_state.get("responses_scope_from_table", "")
+
+                        # Require a reason when NQ is marked; otherwise optional
+                        nq_reason_always = ""
+                        if nq_mark_always:
+                            nq_reason_always = st.text_area("Reason for no-quote (required)", value="")
                         scope_notes_in = st.text_area("Scope notes", value=pref_scope)
                         valid_through_in = st.text_input("Valid through (date or notes)", value=pref_valid)
 
                         # subject_val = st.text_input("Subject (if email)", value=subject or "")
-                        notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
+                        base_notes = f"Processed preview for {selected_name}"
+                        notes_val = st.text_area("Notes", value=base_notes)
+
+                        # Suggest adjusting vendor approvals (stub for now)
+                        if nq_mark_always:
+                            st.info(f"No-Quote flagged for Vendor '{vendor_in}' on Process '{process_in}'. Consider updating vendor approvals to exclude this process/spec.")
+                            st.button("Open Vendors (adjust approvals)", key="open_vendors_from_nq_master_always", disabled=True)
+
                         overwrite_ok_always = st.checkbox("Overwrite existing log entry", key="overwrite_confirm_master_always")
 
                         if st.button("Confirm and append record", key="confirm_append_response_record_master_always"):
@@ -1929,6 +1984,18 @@ def display_responses(user, role):
                                 for c in needed_cols:
                                     if c not in df_curr.columns:
                                         df_curr[c] = pd.Series(dtype="object")
+
+                                # If NQ is marked, enforce values and inject reason
+                                if 'nq_mark_master_always' in st.session_state and st.session_state['nq_mark_master_always']:
+                                    if not (locals().get('nq_reason_always', '') or '').strip():
+                                        st.error("Please provide a reason for the no-quote.")
+                                        return
+                                    unit_price_in = "NQ"
+                                    lot_min_in = "NQ"
+                                    reason_txt = (locals().get('nq_reason_always', '') or '').strip()
+                                    prefix = f"no quote per vendor — {reason_txt}"
+                                    scope_notes_in = (prefix + (f" | {scope_notes_in}" if str(scope_notes_in).strip() else ""))
+                                    notes_val = (prefix + (f" | {notes_val}" if str(notes_val).strip() else ""))
 
                                 new_row = pd.DataFrame([{
                                     "processed_at": _now_utc_iso(),
