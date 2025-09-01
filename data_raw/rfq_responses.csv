@@ -1,0 +1,5 @@
+processed_at,file_id,file_name,quote_folder,rfq#,part_number,process,vendor,qt/so #,qty,contact,unit_price,lot_min,lead_time_days,received_timestamp,scope_notes,valid_through,notes
+,,,,56347-4,425-03568-001,,"Turn-key Coatings, Inc.",56347,30,sales@turnkeycoatings.com,15.75,150,5,8/26/2025 10:14,"Chemical conversion coat per MIL-DTL-5541, Type I (yellow), Class 3",10/26/2025,
+,,,,55149-1,512-030-430-325,,Mayday Manufacturing,55149,22,htestimators@maydaymfg.com,3.3,100,5,8/26/2025 10:30,Chromic Anodize PER BPS4001,2/26/2026,
+2025-08-27T22:09:00.292727+00:00,1.96757E+12,CAUTION - EXTERNAL EMAIL - RE_ RFQ for 512-030-610-095 - Chromate Conversion.msg,,55987-3,512-030-610-095,Chromate Conversion,Hytek Finishes,,,,$35.90 ,495,14,2025-08-27 20:11:26+00:00,,,
+2025-08-27T22:25:24.040740+00:00,1.96747E+12,CAUTION - EXTERNAL EMAIL - Re_ RFQ for 425-03568-001 - Chromate Conversion.msg,,56347-4,425-03568-001,Chromate Conversion,"Turn-key Coatings, Inc.",56347,,sales@turnkeycoatings.com,$15.75 ,150,5,2025-08-26 15:13:30+00:00,"Chemical conversion coat per MIL-DTL-5541, Type I (yellow), Class 3",,

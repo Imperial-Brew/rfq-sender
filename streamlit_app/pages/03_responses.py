@@ -516,6 +516,23 @@ def _move_file_to_rfq_folder(client, file_id: str, rfq_num: str) -> None:
         # silent fail; caller logs a warning
         return
 
+def _get_rfq_folder_id(client, rfq_num: str) -> str | None:
+    rfq_root_id = _get_rfq_root_folder_id()
+    if not rfq_root_id:
+        try:
+            tracker = get_tracker()
+            store = getattr(tracker, "responses_store", None)
+            box = getattr(store, "box", None) if store else None
+            client2 = getattr(box, "client", None) if box else None
+            if client2 and getattr(store, "folder_id", None):
+                resp_parent = client2.folder(store.folder_id).get().parent
+                rfq_root_id = getattr(resp_parent, "id", None)
+        except Exception:
+            rfq_root_id = None
+    if not rfq_root_id:
+        return None
+    return _ensure_rfq_folder(client, rfq_root_id, str(rfq_num or "").strip())
+
 def display_responses(user, role):
     # Tabs: Upload/Process vs. Files list
     tab_upload, tab_files = st.tabs(["Upload / Process", "Responses Files"])
@@ -1289,7 +1306,7 @@ def display_responses(user, role):
                             scope_notes_in = st.text_area("Scope notes", value=pref_scope)
                             valid_through_in = st.text_input("Valid through (date or notes)", value=pref_valid)
 
-                            subject_val = st.text_input("Subject (if email)", value=subject or "")
+                            # subject_val = st.text_input("Subject (if email)", value=subject or "")
                             notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
 
                             if st.button("Confirm and append record", key="confirm_append_response_record_master"):
@@ -1303,12 +1320,11 @@ def display_responses(user, role):
                                         df_curr = pd.DataFrame()
 
                                     needed_cols = [
-                                        "processed_at", "file_id", "file_name", "file_type",
+                                        "processed_at", "file_id", "file_name", "quote_folder",
                                         "rfq#", "part_number", "process", "vendor",
                                         "qt/so #", "qty", "contact",
-                                        "unit_price", "lot_min", "lead_time_days", "received_timestamp", "scope_notes",
-                                        "valid_through",
-                                        "subject", "body_excerpt", "notes",
+                                        "unit_price", "lot_min", "lead_time_days", "received_timestamp",
+                                        "scope_notes", "valid_through", "notes",
                                     ]
                                     for c in needed_cols:
                                         if c not in df_curr.columns:
@@ -1318,7 +1334,7 @@ def display_responses(user, role):
                                         "processed_at": _now_utc_iso(),
                                         "file_id": selected_id,
                                         "file_name": selected_name,
-                                        "file_type": ext or "",
+                                        "quote_folder": "",  # will set after Box move
                                         "rfq#": rfq_num_in,
                                         "part_number": part_in,
                                         "process": process_in,
@@ -1332,8 +1348,6 @@ def display_responses(user, role):
                                         "received_timestamp": received_ts_in,
                                         "scope_notes": scope_notes_in,
                                         "valid_through": valid_through_in,
-                                        "subject": subject_val or "",
-                                        "body_excerpt": body_excerpt or "",
                                         "notes": notes_val or "",
                                     }])
 
@@ -1379,10 +1393,22 @@ def display_responses(user, role):
                                         store = getattr(tracker, "responses_store", None)
                                         box = getattr(store, "box", None) if store else None
                                         client = getattr(box, "client", None) if box else None
-                                        if client and str(selected_id).isdigit() and str(rfq_num_in).strip():
-                                            _move_file_to_rfq_folder(client, selected_id, str(rfq_num_in).strip())
+                                        rfq_num_clean = str(rfq_num_in).strip()
+                                        if client and str(selected_id).isdigit() and rfq_num_clean:
+                                            # Folder move is already attempted above
+                                            rfq_folder_id = _get_rfq_folder_id(client, rfq_num_clean)
+                                            if rfq_folder_id:
+                                                quote_url = f"https://app.box.com/folder/{rfq_folder_id}"
+                                                mask = (df_out["file_id"].astype(str) == str(selected_id)) & \
+                                                       (df_out["rfq#"].astype(str).str.strip() == rfq_num_clean)
+                                                if "quote_folder" in df_out.columns:
+                                                    df_out.loc[mask, "quote_folder"] = quote_url
+                                                    if tracker.responses_store is not None:
+                                                        tracker.responses_store.save_df(df_out)
+                                                    else:
+                                                        df_out.to_csv(tracker.responses_path, index=False)
                                     except Exception as me:
-                                        logger.warning(f"Move to RFQ folder skipped/failed: {me}")
+                                        logger.warning(f"Setting quote_folder skipped/failed: {me}")
                                 except Exception as e:
                                     st.error(f"Failed to append/overwrite record: {e}")
 
@@ -1878,7 +1904,7 @@ def display_responses(user, role):
                         scope_notes_in = st.text_area("Scope notes", value=pref_scope)
                         valid_through_in = st.text_input("Valid through (date or notes)", value=pref_valid)
 
-                        subject_val = st.text_input("Subject (if email)", value=subject or "")
+                        # subject_val = st.text_input("Subject (if email)", value=subject or "")
                         notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
 
                         if st.button("Confirm and append record", key="confirm_append_response_record_master_always"):
@@ -1892,12 +1918,11 @@ def display_responses(user, role):
                                     df_curr = pd.DataFrame()
 
                                 needed_cols = [
-                                    "processed_at", "file_id", "file_name", "file_type",
+                                    "processed_at", "file_id", "file_name", "quote_folder",
                                     "rfq#", "part_number", "process", "vendor",
                                     "qt/so #", "qty", "contact",
-                                    "unit_price", "lot_min", "lead_time_days", "received_timestamp", "scope_notes",
-                                    "valid_through",
-                                    "subject", "body_excerpt", "notes",
+                                    "unit_price", "lot_min", "lead_time_days", "received_timestamp",
+                                    "scope_notes", "valid_through", "notes",
                                 ]
                                 for c in needed_cols:
                                     if c not in df_curr.columns:
@@ -1907,7 +1932,7 @@ def display_responses(user, role):
                                     "processed_at": _now_utc_iso(),
                                     "file_id": selected_id,
                                     "file_name": selected_name,
-                                    "file_type": ext or "",
+                                    "quote_folder": "",  # will set after Box move
                                     "rfq#": rfq_num_in,
                                     "part_number": part_in,
                                     "process": process_in,
@@ -1921,8 +1946,6 @@ def display_responses(user, role):
                                     "received_timestamp": received_ts_in,
                                     "scope_notes": scope_notes_in,
                                     "valid_through": valid_through_in,
-                                    "subject": subject_val or "",
-                                    "body_excerpt": body_excerpt or "",
                                     "notes": notes_val or "",
                                 }])
 
@@ -1966,10 +1989,22 @@ def display_responses(user, role):
                                     store = getattr(tracker, "responses_store", None)
                                     box = getattr(store, "box", None) if store else None
                                     client = getattr(box, "client", None) if box else None
-                                    if client and str(selected_id).isdigit() and str(rfq_num_in).strip():
-                                        _move_file_to_rfq_folder(client, selected_id, str(rfq_num_in).strip())
+                                    rfq_num_clean = str(rfq_num_in).strip()
+                                    if client and str(selected_id).isdigit() and rfq_num_clean:
+                                        # Folder move is already attempted above
+                                        rfq_folder_id = _get_rfq_folder_id(client, rfq_num_clean)
+                                        if rfq_folder_id:
+                                            quote_url = f"https://app.box.com/folder/{rfq_folder_id}"
+                                            mask = (df_out["file_id"].astype(str) == str(selected_id)) & \
+                                                   (df_out["rfq#"].astype(str).str.strip() == rfq_num_clean)
+                                            if "quote_folder" in df_out.columns:
+                                                df_out.loc[mask, "quote_folder"] = quote_url
+                                                if tracker.responses_store is not None:
+                                                    tracker.responses_store.save_df(df_out)
+                                                else:
+                                                    df_out.to_csv(tracker.responses_path, index=False)
                                 except Exception as me:
-                                    logger.warning(f"Move to RFQ folder skipped/failed: {me}")
+                                    logger.warning(f"Setting quote_folder skipped/failed: {me}")
                             except Exception as e:
                                 st.error(f"Failed to append/overwrite record: {e}")
 
