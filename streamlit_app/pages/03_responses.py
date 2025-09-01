@@ -30,7 +30,7 @@ if not require_authentication():
 logger = get_logger(__name__)
 
 # Build info to make changes visible in UI
-BUILD_INFO = "RFQ Responses — contact auto-filled from sender; unit_price saved (2025-09-01 14:12)"
+BUILD_INFO = "RFQ Responses — dedupe + overwrite prompt; move file to RFQ folder after save (2025-09-01 14:35)"
 
 
 def setup_page():
@@ -433,6 +433,88 @@ def _resolve_responses_folder_id(tracker) -> str | None:
     except Exception:
         return None
     return None
+
+# ---- Box helpers: resolve RFQs root, find/create RFQ folder, move file ----
+
+def _get_rfq_root_folder_id() -> str | None:
+    """Return Box RFQs root folder id from secrets if available, else None."""
+    try:
+        from core.secrets import get_section
+        bx = get_section("box") or {}
+        rid = str(bx.get("BOX_RFQS_FOLDER_ID", "")).strip()
+        if rid:
+            return rid
+    except Exception:
+        pass
+    # Optional known constant from earlier notes; use only if present in secrets ideally
+    return None
+
+
+def _find_child_folder_by_name(client, parent_folder_id: str, child_name: str) -> str | None:
+    try:
+        items = client.folder(parent_folder_id).get_items(limit=1000, fields=["id", "name", "type"])
+        for it in items:
+            try:
+                if getattr(it, "type", None) == "folder" and getattr(it, "name", "") == child_name:
+                    return getattr(it, "id", None)
+            except Exception:
+                continue
+    except Exception:
+        return None
+    return None
+
+
+def _ensure_rfq_folder(client, rfq_root_id: str, rfq_num: str) -> str | None:
+    name = str(rfq_num).strip()
+    if not name:
+        return None
+    # find
+    fid = _find_child_folder_by_name(client, rfq_root_id, name)
+    if fid:
+        return fid
+    # create if missing
+    try:
+        newf = client.folder(rfq_root_id).create_subfolder(name)
+        return getattr(newf, "id", None)
+    except BoxAPIException as e:
+        # If 409, fetch existing
+        if getattr(e, "status", None) == 409:
+            return _find_child_folder_by_name(client, rfq_root_id, name)
+        return None
+    except Exception:
+        return None
+
+
+def _move_file_to_rfq_folder(client, file_id: str, rfq_num: str) -> None:
+    """Move a Box file into the RFQ folder under the RFQs root; no-op if not resolvable."""
+    try:
+        rfq_root_id = _get_rfq_root_folder_id()
+        if not rfq_root_id:
+            # If not configured, try to infer from Responses folder's parent (often RFQs)
+            try:
+                tracker = get_tracker()
+                store = getattr(tracker, "responses_store", None)
+                box = getattr(store, "box", None) if store else None
+                client2 = getattr(box, "client", None) if box else None
+                if client2 and getattr(store, "folder_id", None):
+                    # parent of Responses folder is RFQs
+                    resp_parent = client2.folder(store.folder_id).get().parent
+                    rfq_root_id = getattr(resp_parent, "id", None)
+            except Exception:
+                pass
+        if not rfq_root_id:
+            return
+        rfq_folder_id = _ensure_rfq_folder(client, rfq_root_id, rfq_num)
+        if not rfq_folder_id:
+            return
+        fobj = client.file(file_id).get()
+        parent = getattr(getattr(fobj, "parent", None), "id", None)
+        if parent == rfq_folder_id:
+            return
+        client.file(file_id).move(parent_folder={'id': rfq_folder_id})
+    except Exception:
+        # silent fail; caller logs a warning
+        return
 
 def display_responses(user, role):
     # Tabs: Upload/Process vs. Files list
@@ -1223,7 +1305,7 @@ def display_responses(user, role):
                                     needed_cols = [
                                         "processed_at", "file_id", "file_name", "file_type",
                                         "rfq#", "part_number", "process", "vendor",
-                                        "qt/so #", "rev", "qty", "contact",
+                                        "qt/so #", "qty", "contact",
                                         "unit_price", "lot_min", "lead_time_days", "received_timestamp", "scope_notes",
                                         "valid_through",
                                         "subject", "body_excerpt", "notes",
@@ -1242,7 +1324,6 @@ def display_responses(user, role):
                                         "process": process_in,
                                         "vendor": vendor_in,
                                         "qt/so #": qtso_in,
-                                        "rev": rev_in,
                                         "qty": qty_in,
                                         "contact": contact_in,
                                         "unit_price": unit_price_in,
@@ -1256,18 +1337,54 @@ def display_responses(user, role):
                                         "notes": notes_val or "",
                                     }])
 
-                                    df_out = pd.concat([df_curr, new_row], ignore_index=True)
+                                    # Duplicate detection by file_id (Box) or fallback rfq#+file_name
+                                    dup_mask = pd.Series(False, index=df_curr.index)
+                                    try:
+                                        if "file_id" in df_curr.columns:
+                                            dup_mask = dup_mask | (df_curr["file_id"].astype(str) == str(selected_id))
+                                    except Exception:
+                                        pass
+                                    try:
+                                        if not dup_mask.any() and "rfq#" in df_curr.columns and "file_name" in df_curr.columns:
+                                            dup_mask = (df_curr["rfq#"].astype(str).str.strip() == str(rfq_num_in).strip()) & \
+                                                       (df_curr["file_name"].astype(str).str.strip().str.lower() == str(selected_name or "").strip().lower())
+                                    except Exception:
+                                        pass
+
+                                    if dup_mask.any():
+                                        st.warning("This response is already logged — would you like to overwrite the log?")
+                                        if st.checkbox("Overwrite existing log entry", key="overwrite_confirm_master"):
+                                            try:
+                                                df_kept = df_curr[~dup_mask].copy()
+                                                df_out = pd.concat([df_kept, new_row], ignore_index=True)
+                                            except Exception:
+                                                df_out = pd.concat([df_curr, new_row], ignore_index=True)
+                                        else:
+                                            st.info("Canceled. Existing log kept unchanged.")
+                                            return
+                                    else:
+                                        df_out = pd.concat([df_curr, new_row], ignore_index=True)
 
                                     if tracker.responses_store is not None:
                                         tracker.responses_store.save_df(df_out)
                                         st.success(
-                                            f"Appended record to rfq_responses.csv in Box. Total rows: {len(df_out)}")
+                                            f"Saved record to rfq_responses.csv in Box. Total rows: {len(df_out)}")
                                     else:
                                         df_out.to_csv(tracker.responses_path, index=False)
                                         st.success(
-                                            f"Appended record to local rfq_responses.csv. Total rows: {len(df_out)}")
+                                            f"Saved record to local rfq_responses.csv. Total rows: {len(df_out)}")
+
+                                    # After save: attempt to move the processed file to the RFQ folder (Box only)
+                                    try:
+                                        store = getattr(tracker, "responses_store", None)
+                                        box = getattr(store, "box", None) if store else None
+                                        client = getattr(box, "client", None) if box else None
+                                        if client and str(selected_id).isdigit() and str(rfq_num_in).strip():
+                                            _move_file_to_rfq_folder(client, selected_id, str(rfq_num_in).strip())
+                                    except Exception as me:
+                                        logger.warning(f"Move to RFQ folder skipped/failed: {me}")
                                 except Exception as e:
-                                    st.error(f"Failed to append record: {e}")
+                                    st.error(f"Failed to append/overwrite record: {e}")
 
 
                     except Exception as e:
@@ -1809,16 +1926,52 @@ def display_responses(user, role):
                                     "notes": notes_val or "",
                                 }])
 
-                                df_out = pd.concat([df_curr, new_row], ignore_index=True)
+                                # Duplicate detection by file_id (Box) or fallback rfq#+file_name
+                                dup_mask = pd.Series(False, index=df_curr.index)
+                                try:
+                                    if "file_id" in df_curr.columns:
+                                        dup_mask = dup_mask | (df_curr["file_id"].astype(str) == str(selected_id))
+                                except Exception:
+                                    pass
+                                try:
+                                    if not dup_mask.any() and "rfq#" in df_curr.columns and "file_name" in df_curr.columns:
+                                        dup_mask = (df_curr["rfq#"].astype(str).str.strip() == str(rfq_num_in).strip()) & \
+                                                   (df_curr["file_name"].astype(str).str.strip().str.lower() == str(selected_name or "").strip().lower())
+                                except Exception:
+                                    pass
+
+                                if dup_mask.any():
+                                    st.warning("This response is already logged — would you like to overwrite the log?")
+                                    if st.checkbox("Overwrite existing log entry", key="overwrite_confirm_master_always"):
+                                        try:
+                                            df_kept = df_curr[~dup_mask].copy()
+                                            df_out = pd.concat([df_kept, new_row], ignore_index=True)
+                                        except Exception:
+                                            df_out = pd.concat([df_curr, new_row], ignore_index=True)
+                                    else:
+                                        st.info("Canceled. Existing log kept unchanged.")
+                                        return
+                                else:
+                                    df_out = pd.concat([df_curr, new_row], ignore_index=True)
 
                                 if tracker.responses_store is not None:
                                     tracker.responses_store.save_df(df_out)
-                                    st.success(f"Appended record to rfq_responses.csv in Box. Total rows: {len(df_out)}")
+                                    st.success(f"Saved record to rfq_responses.csv in Box. Total rows: {len(df_out)}")
                                 else:
                                     df_out.to_csv(tracker.responses_path, index=False)
-                                    st.success(f"Appended record to local rfq_responses.csv. Total rows: {len(df_out)}")
+                                    st.success(f"Saved record to local rfq_responses.csv. Total rows: {len(df_out)}")
+
+                                # After save: attempt to move the processed file to the RFQ folder (Box only)
+                                try:
+                                    store = getattr(tracker, "responses_store", None)
+                                    box = getattr(store, "box", None) if store else None
+                                    client = getattr(box, "client", None) if box else None
+                                    if client and str(selected_id).isdigit() and str(rfq_num_in).strip():
+                                        _move_file_to_rfq_folder(client, selected_id, str(rfq_num_in).strip())
+                                except Exception as me:
+                                    logger.warning(f"Move to RFQ folder skipped/failed: {me}")
                             except Exception as e:
-                                st.error(f"Failed to append record: {e}")
+                                st.error(f"Failed to append/overwrite record: {e}")
 
                 except Exception as e:
                     st.error(f"Processing failed: {e}")
