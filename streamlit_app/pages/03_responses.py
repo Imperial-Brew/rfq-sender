@@ -29,6 +29,9 @@ if not require_authentication():
 # Logger
 logger = get_logger(__name__)
 
+# Build info to make changes visible in UI
+BUILD_INFO = "RFQ Responses — contacts.csv vendor mapping active; vendor source captions (2025-09-01 13:50)"
+
 
 def setup_page():
     st.title("RFQ Responses")
@@ -38,6 +41,7 @@ def setup_page():
         Use the Refresh button to re-load from Box. You can also download the current view as CSV.
         """
     )
+    st.caption(BUILD_INFO)
 
 
 def _load_responses_df():
@@ -916,6 +920,7 @@ def display_responses(user, role):
                                 vendor_guess = vendor_from_contacts or _guess_vendor(selected_name, email_from, body_excerpt)
                                 st.write(f"Subject: {subject}")
                                 st.write(f"From: {email_from}")
+                                st.caption("Vendor source: " + ("contacts.csv domain→vendor" if vendor_from_contacts else "heuristic guess"))
                                 st.text_area("Body preview", body_excerpt, height=200)
 
                         elif ext in ("msg",):
@@ -936,6 +941,7 @@ def display_responses(user, role):
                                 vendor_guess = vendor_from_contacts or _guess_vendor(selected_name, email_from, body_excerpt)
                                 st.write(f"Subject: {subject}")
                                 st.write(f"From: {email_from}")
+                                st.caption("Vendor source: " + ("contacts.csv domain→vendor" if vendor_from_contacts else "heuristic guess"))
                                 st.text_area("Body preview", body_excerpt, height=200)
 
                         elif ext in ("csv", "xls", "xlsx"):
@@ -1486,6 +1492,7 @@ def display_responses(user, role):
                             vendor_guess = vendor_from_contacts or _guess_vendor(selected_name, email_from, body_excerpt)
                             st.write(f"Subject: {subject}")
                             st.write(f"From: {email_from}")
+                            st.caption("Vendor source: " + ("contacts.csv domain→vendor" if vendor_from_contacts else "heuristic guess"))
                             st.text_area("Body preview", body_excerpt, height=200)
 
                     elif ext in ("msg",):
@@ -1506,6 +1513,7 @@ def display_responses(user, role):
                             vendor_guess = vendor_from_contacts or _guess_vendor(selected_name, email_from, body_excerpt)
                             st.write(f"Subject: {subject}")
                             st.write(f"From: {email_from}")
+                            st.caption("Vendor source: " + ("contacts.csv domain→vendor" if vendor_from_contacts else "heuristic guess"))
                             st.text_area("Body preview", body_excerpt, height=200)
 
                     elif ext in ("csv", "xls", "xlsx"):
