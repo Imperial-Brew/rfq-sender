@@ -63,6 +63,59 @@ def display_vendor_list():
     
     return selected_vendor
 
+def safe_get_vendor_approvals(vendor_name: str) -> dict:
+    """Compatibility shim: get approvals defensively even if VendorManager lacks the method."""
+    try:
+        # Preferred path: use VendorManager method if available
+        if hasattr(vendor_manager, "get_vendor_approvals") and callable(getattr(vendor_manager, "get_vendor_approvals")):
+            return vendor_manager.get_vendor_approvals(vendor_name)
+    except Exception as e:
+        try:
+            logger.exception("get_vendor_approvals via VendorManager failed; falling back to direct YAML parse")
+        except Exception:
+            pass
+    # Fallback: read YAML directly and parse safely
+    approvals = {}
+    try:
+        import yaml
+        path = getattr(vendor_manager, "vendor_options_file", "docs/OS/vendor_options.yaml")
+        with open(path, "r", encoding="utf-8") as f:
+            vo = yaml.safe_load(f) or {}
+        vendors = vo.get("vendors", []) or []
+        # Find vendor entry: exact then case-insensitive
+        entry = None
+        for v in vendors:
+            if isinstance(v, dict) and v.get("name") == vendor_name:
+                entry = v
+                break
+        if entry is None:
+            vn = (vendor_name or "").strip().lower()
+            for v in vendors:
+                if isinstance(v, dict) and str(v.get("name", "")).strip().lower() == vn:
+                    entry = v
+                    break
+        if not entry:
+            return {}
+        for p in (entry.get("processes", []) or []):
+            if not isinstance(p, dict):
+                continue
+            pname = p.get("name", "")
+            specs = p.get("specs") or []
+            vals = []
+            for s in specs:
+                if isinstance(s, dict) and "number" in s:
+                    vals.append(s["number"])
+            approvals[pname] = vals
+    except Exception:
+        # Silent fallback to empty approvals to avoid crashing the page
+        try:
+            logger.exception("Failed to parse vendor approvals from YAML fallback")
+        except Exception:
+            pass
+        approvals = {}
+    return approvals
+
+
 def display_vendor_details(vendor):
     """Display detailed information about a selected vendor."""
     if not vendor:
@@ -108,7 +161,7 @@ def display_vendor_details(vendor):
         st.markdown("### Approved Specifications")
 
         vendor_name = vendor.get('name', '')
-        approvals = vendor_manager.get_vendor_approvals(vendor_name)
+        approvals = safe_get_vendor_approvals(vendor_name)
 
         if not approvals:
             st.info("No approvals found for this vendor in vendor_options.yaml.")
@@ -177,7 +230,7 @@ def display_vendor_details(vendor):
                 if failures:
                     st.warning("Failed to remove: " + ", ".join(failures))
                 # Refresh the UI view (reload approvals after write)
-                approvals = vendor_manager.get_vendor_approvals(vendor_name)
+                approvals = safe_get_vendor_approvals(vendor_name)
             else:
                 st.error("No changes were made. Check logs for details.")
 
