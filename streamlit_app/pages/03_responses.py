@@ -1009,6 +1009,13 @@ def display_responses(user, role):
                                     selected_vendor_val = str(row[mcols.get("vendor")]) if mcols.get("vendor") else ""
                                     selected_process_val = str(row[mcols.get("process")]) if mcols.get(
                                         "process") else ""
+                                    # Populate Qty from RFQ Master when available
+                                    try:
+                                        qty_col = _find_col(master_df, ["qty", "quantity", "rfq qty"])
+                                        if qty_col and qty_col in row:
+                                            selected_qty_val = str(row[qty_col]) if pd.notna(row[qty_col]) else ""
+                                    except Exception:
+                                        pass
                                     st.success(
                                         f"Auto-matched RFQ: RFQ {selected_rfq_num_val} — {selected_part_val} — {selected_vendor_val} — {selected_process_val}"
                                     )
@@ -1579,6 +1586,13 @@ def display_responses(user, role):
                                 selected_part_val = str(row[mcols.get("part")]) if mcols.get("part") else ""
                                 selected_vendor_val = str(row[mcols.get("vendor")]) if mcols.get("vendor") else ""
                                 selected_process_val = str(row[mcols.get("process")]) if mcols.get("process") else ""
+                                # Populate Qty from RFQ Master when available
+                                try:
+                                    qty_col = _find_col(master_df, ["qty", "quantity", "rfq qty"])
+                                    if qty_col and qty_col in row:
+                                        selected_qty_val = str(row[qty_col]) if pd.notna(row[qty_col]) else ""
+                                except Exception:
+                                    pass
                                 st.success(
                                     f"Auto-matched RFQ: RFQ {selected_rfq_num_val} — {selected_part_val} — {selected_vendor_val} — {selected_process_val}"
                                 )
@@ -1709,8 +1723,9 @@ def display_responses(user, role):
                         vendor_in = st.text_input("Vendor", value=selected_vendor_val)
                         # From master (editable)
                         qtso_in = st.text_input("QT/SO #", value=selected_qtso_val)
-                        rev_in = st.text_input("Rev", value=selected_rev_val)
-                        qty_in = st.text_input("Qty", value=selected_qty_val)
+                        # Rev removed; Qty is sourced from RFQ Master
+                        st.caption(f"Qty (from RFQ Master): {selected_qty_val or '(none)'}")
+                        qty_in = selected_qty_val
                         contact_in = st.text_input("Contact", value=selected_contact_val)
 
                         unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
@@ -1742,7 +1757,7 @@ def display_responses(user, role):
                                 needed_cols = [
                                     "processed_at", "file_id", "file_name", "file_type",
                                     "rfq#", "part_number", "process", "vendor",
-                                    "qt/so #", "rev", "qty", "contact",
+                                    "qt/so #", "qty", "contact",
                                     "unit_price", "lot_min", "lead_time_days", "received_timestamp", "scope_notes",
                                     "valid_through",
                                     "subject", "body_excerpt", "notes",
@@ -1761,7 +1776,6 @@ def display_responses(user, role):
                                     "process": process_in,
                                     "vendor": vendor_in,
                                     "qt/so #": qtso_in,
-                                    "rev": rev_in,
                                     "qty": qty_in,
                                     "contact": contact_in,
                                     "unit_price": unit_price_in,
