@@ -1308,6 +1308,7 @@ def display_responses(user, role):
 
                             # subject_val = st.text_input("Subject (if email)", value=subject or "")
                             notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
+                            overwrite_ok = st.checkbox("Overwrite existing log entry", key="overwrite_confirm_master")
 
                             if st.button("Confirm and append record", key="confirm_append_response_record_master"):
                                 try:
@@ -1367,7 +1368,7 @@ def display_responses(user, role):
 
                                     if dup_mask.any():
                                         st.warning("This response is already logged — would you like to overwrite the log?")
-                                        if st.checkbox("Overwrite existing log entry", key="overwrite_confirm_master"):
+                                        if overwrite_ok:
                                             try:
                                                 df_kept = df_curr[~dup_mask].copy()
                                                 df_out = pd.concat([df_kept, new_row], ignore_index=True)
@@ -1906,6 +1907,7 @@ def display_responses(user, role):
 
                         # subject_val = st.text_input("Subject (if email)", value=subject or "")
                         notes_val = st.text_area("Notes", value=f"Processed preview for {selected_name}")
+                        overwrite_ok_always = st.checkbox("Overwrite existing log entry", key="overwrite_confirm_master_always")
 
                         if st.button("Confirm and append record", key="confirm_append_response_record_master_always"):
                             try:
@@ -1965,7 +1967,7 @@ def display_responses(user, role):
 
                                 if dup_mask.any():
                                     st.warning("This response is already logged — would you like to overwrite the log?")
-                                    if st.checkbox("Overwrite existing log entry", key="overwrite_confirm_master_always"):
+                                    if overwrite_ok_always:
                                         try:
                                             df_kept = df_curr[~dup_mask].copy()
                                             df_out = pd.concat([df_kept, new_row], ignore_index=True)
