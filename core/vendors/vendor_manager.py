@@ -422,6 +422,52 @@ class VendorManager:
             if k.lower() == v_lower:
                 return v
         return []
+
+    def _get_vendor_option_entry(self, vendor_name: str) -> Optional[Dict[str, Any]]:
+        if not self.vendor_options or 'vendors' not in self.vendor_options:
+            return None
+        # Try exact name first
+        for v in self.vendor_options['vendors']:
+            if v.get('name') == vendor_name:
+                return v
+        # Fallback to case-insensitive match
+        vn = vendor_name.lower().strip()
+        for v in self.vendor_options['vendors']:
+            if str(v.get('name', '')).lower().strip() == vn:
+                return v
+        return None
+
+    def get_vendor_approvals(self, vendor_name: str) -> Dict[str, List[str]]:
+        """
+        Returns a mapping: { process_name: [spec_number, ...], ... }
+        pulled from vendor_options.yaml for the given vendor.
+        """
+        result: Dict[str, List[str]] = {}
+        entry = self._get_vendor_option_entry(vendor_name)
+        if not entry:
+            return result
+        for p in entry.get('processes', []) or []:
+            name = p.get('name', '')
+            specs = p.get('specs') or []
+            result[name] = [s['number'] for s in specs if isinstance(s, dict) and 'number' in s]
+        return result
+
+    def remove_vendor_approval(self, vendor_name: str, process_name: str, spec_number: str) -> bool:
+        """Remove a single spec approval and reload vendor_options/validator maps."""
+        try:
+            removed = self.validator.remove_spec(vendor_name, process_name, spec_number)
+            if removed:
+                # Optionally prune empty process
+                try:
+                    self.validator.remove_process_if_empty(vendor_name, process_name)
+                except Exception:
+                    pass
+                # Reload our cached vendor_options
+                self.vendor_options = self.load_vendor_options(self.vendor_options_file)
+            return removed
+        except Exception:
+            logger.exception("Failed to remove vendor approval")
+            return False
     
     def reload_vendors(self):
         """Reload vendor data from files."""

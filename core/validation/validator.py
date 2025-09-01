@@ -225,6 +225,73 @@ class SpecValidator:
 
         return added
 
+    def remove_spec(self, vendor_name: str, process_name: str, spec_number: str) -> bool:
+        """
+        Remove a spec (by number) from a vendor's process approvals.
+
+        Args:
+            vendor_name: Exact vendor name as it appears in vendor_options.yaml
+            process_name: Process name (any casing; normalized internally)
+            spec_number: Spec identifier (e.g., "BAC 5019"); normalized internally
+
+        Returns:
+            True if a spec was removed and saved, False otherwise.
+        """
+        target_vendor = vendor_name.strip()
+        norm_process = self.normalize(process_name)
+        norm_spec = self.normalize(spec_number)
+
+        removed = False
+
+        for v in self.ref.get('vendors', []):
+            if v.get('name') == target_vendor:
+                for p in v.get('processes', []) or []:
+                    if self.normalize(p.get('name', '')) == norm_process:
+                        specs = p.get('specs') or []
+                        new_specs = []
+                        for s in specs:
+                            # keep entries that do NOT match the target spec
+                            if isinstance(s, dict):
+                                s_norm = self.normalize(s.get('number', ''))
+                                if s_norm == norm_spec:
+                                    removed = True
+                                    continue
+                            new_specs.append(s)
+                        p['specs'] = new_specs
+                        break
+                break
+
+        if removed:
+            self._save_reference()
+            self._build_normalized_maps()
+        return removed
+
+    def remove_process_if_empty(self, vendor_name: str, process_name: str) -> bool:
+        """
+        Optionally prune a process if it now has no specs (keeps data tidy).
+        Returns True if a process was removed.
+        """
+        target_vendor = vendor_name.strip()
+        norm_process = self.normalize(process_name)
+        removed = False
+        for v in self.ref.get('vendors', []):
+            if v.get('name') == target_vendor:
+                processes = v.get('processes', []) or []
+                new_processes = []
+                for p in processes:
+                    if self.normalize(p.get('name', '')) == norm_process:
+                        specs = p.get('specs') or []
+                        if len(specs) == 0:
+                            removed = True
+                            continue
+                    new_processes.append(p)
+                v['processes'] = new_processes
+                break
+        if removed:
+            self._save_reference()
+            self._build_normalized_maps()
+        return removed
+
     def _save_reference(self):
         """Save the reference data back to the YAML file."""
         with open(self.yaml_path, 'w', encoding='utf-8') as f:

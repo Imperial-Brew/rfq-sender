@@ -67,23 +67,17 @@ def display_vendor_details(vendor):
     """Display detailed information about a selected vendor."""
     if not vendor:
         return
-    
+
     st.subheader(f"Vendor Details: {vendor.get('name', '')}")
-    
-    # Create tabs for different sections
+
     tab1, tab2, tab3 = st.tabs(["Contact Information", "Process Capabilities", "Approved Specifications"])
-    
+
     with tab1:
-        st.markdown("### Contact Information")
-        
-        # Display address
+        # existing contact info block...
         address = vendor.get('address', {})
         address_str = ", ".join([v for k, v in address.items() if v])
         st.markdown(f"**Address:** {address_str}")
-        
-        # Display contacts
         contacts = vendor.get('contacts', [])
-        # If no contacts in vendor JSON, try CSV contacts via VendorManager
         if not contacts:
             try:
                 contacts = vendor_manager.get_contacts_for_vendor(vendor.get('name', ''))
@@ -100,40 +94,101 @@ def display_vendor_details(vendor):
                 st.markdown("---")
         else:
             st.info("No contact information available for this vendor.")
-    
+
     with tab2:
         st.markdown("### Process Capabilities")
-        
-        # Display processes
         processes = vendor.get('processes', [])
         if processes:
             for process in sorted(processes):
                 st.markdown(f"- {process}")
         else:
             st.info("No process capabilities listed for this vendor.")
-    
+
     with tab3:
         st.markdown("### Approved Specifications")
-        
-        # Get processes for this vendor
-        processes = vendor.get('processes', [])
-        
-        if not processes:
-            st.info("No processes listed for this vendor, so no specifications can be shown.")
+
+        vendor_name = vendor.get('name', '')
+        approvals = vendor_manager.get_vendor_approvals(vendor_name)
+
+        if not approvals:
+            st.info("No approvals found for this vendor in vendor_options.yaml.")
             return
-        
-        # Create a selectbox for choosing a process
-        selected_process = st.selectbox("Select a Process", options=sorted(processes))
-        
-        # Get specs for the selected process
-        specs = load_specs_for_process(selected_process)
-        
-        if specs:
-            st.markdown(f"#### Specifications for {selected_process}")
-            for spec in specs:
-                st.markdown(f"- {spec}")
-        else:
-            st.info(f"No specifications found for the process '{selected_process}'.")
+
+        # Role-gated edit controls (default read-only for non-admins)
+        role = None
+        try:
+            if "user" in st.session_state:
+                from streamlit_app.utils.auth_shim import get_user_role
+                role = get_user_role(st.session_state.user)
+        except Exception:
+            role = None
+
+        editable = (role and str(role).lower() in {"admin", "editor", "manager"})
+
+        # Process selection
+        process_names = sorted(approvals.keys())
+        sel_process = st.selectbox(
+            "Select a Process",
+            options=process_names,
+            key=f"vendor_proc_{vendor_name}"
+        )
+
+        specs = approvals.get(sel_process, [])
+        if not specs:
+            st.info(f"No specs listed for process '{sel_process}'.")
+            return
+
+        st.markdown(f"#### Specs approved for {sel_process}")
+        st.write("\n")
+
+        # Let user choose one or more specs for removal
+        sel_specs = st.multiselect(
+            "Select spec(s) to remove",
+            options=sorted(specs),
+            key=f"vendor_specs_{vendor_name}_{sel_process}"
+        )
+
+        if not editable:
+            st.caption("You do not have permission to modify approvals. Contact an admin.")
+            return
+
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            remove_clicked = st.button(
+                "Remove selected",
+                key=f"remove_specs_{vendor_name}_{sel_process}",
+                type="primary",
+                disabled=not sel_specs,
+                help="Removes the selected spec approvals from this vendor/process"
+            )
+
+        if remove_clicked and sel_specs:
+            removed_any = False
+            failures = []
+            for sp in sel_specs:
+                ok = vendor_manager.remove_vendor_approval(vendor_name, sel_process, sp)
+                if ok:
+                    removed_any = True
+                else:
+                    failures.append(sp)
+
+            if removed_any:
+                st.success(f"Removed {len(sel_specs) - len(failures)} spec(s) from {vendor_name} → {sel_process}")
+                if failures:
+                    st.warning("Failed to remove: " + ", ".join(failures))
+                # Refresh the UI view (reload approvals after write)
+                approvals = vendor_manager.get_vendor_approvals(vendor_name)
+            else:
+                st.error("No changes were made. Check logs for details.")
+
+        # Readback: show the current remaining specs in an expander
+        with st.expander("View current approvals (all processes)", expanded=False):
+            for p_name in sorted(approvals.keys()):
+                vals = approvals[p_name]
+                if vals:
+                    st.markdown(f"- **{p_name}**: " + ", ".join(vals))
+                else:
+                    st.markdown(f"- **{p_name}**: (none)")
 
 def search_vendors_by_spec():
     """Search for vendors approved for a specific specification."""
