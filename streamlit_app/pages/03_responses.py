@@ -30,7 +30,7 @@ if not require_authentication():
 logger = get_logger(__name__)
 
 # Build info to make changes visible in UI
-BUILD_INFO = "RFQ Responses — contacts.csv vendor mapping active; vendor source captions (2025-09-01 13:50)"
+BUILD_INFO = "RFQ Responses — contact auto-filled from sender; unit_price saved (2025-09-01 14:12)"
 
 
 def setup_page():
@@ -198,6 +198,23 @@ def _guess_vendor(name: str, email_from: str = "", body: str = "") -> str:
     except Exception:
         pass
     return ""
+
+# Email address extraction helper
+def _extract_email_address(raw_from: str) -> str:
+    """Extract bare email from a From header like 'Name <user@domain.com>' or just 'user@domain.com'."""
+    try:
+        s = str(raw_from or "").strip()
+        if not s:
+            return ""
+        # If angle brackets present, take inside
+        if "<" in s and ">" in s:
+            s = s[s.find("<")+1:s.rfind(">")]
+        # Remove quotes and stray characters
+        s = s.strip().strip("'\" ")
+        # Basic sanity check
+        return s if "@" in s else ""
+    except Exception:
+        return ""
 
 # Contacts-based vendor helpers
 @st.cache_data(show_spinner=False)
@@ -1172,7 +1189,9 @@ def display_responses(user, role):
                             qtso_in = st.text_input("QT/SO #", value=selected_qtso_val)
                             rev_in = st.text_input("Rev", value=selected_rev_val)
                             qty_in = st.text_input("Qty", value=selected_qty_val)
-                            contact_in = st.text_input("Contact", value=selected_contact_val)
+                            # Default contact: sender email if available
+                            contact_default = selected_contact_val or _extract_email_address(email_from)
+                            contact_in = st.text_input("Contact", value=contact_default)
 
                             unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
                             lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
@@ -1723,10 +1742,11 @@ def display_responses(user, role):
                         vendor_in = st.text_input("Vendor", value=selected_vendor_val)
                         # From master (editable)
                         qtso_in = st.text_input("QT/SO #", value=selected_qtso_val)
-                        # Rev removed; Qty is sourced from RFQ Master
-                        st.caption(f"Qty (from RFQ Master): {selected_qty_val or '(none)'}")
-                        qty_in = selected_qty_val
-                        contact_in = st.text_input("Contact", value=selected_contact_val)
+                        # Rev removed; Qty is auto-filled from RFQ Master but editable
+                        qty_in = st.text_input("Qty", value=str(selected_qty_val or ""))
+                        # Default contact: sender email if available
+                        contact_default = selected_contact_val or _extract_email_address(email_from)
+                        contact_in = st.text_input("Contact", value=contact_default)
 
                         unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
                         lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
