@@ -30,7 +30,7 @@ if not require_authentication():
 logger = get_logger(__name__)
 
 # Build info to make changes visible in UI
-BUILD_INFO = "RFQ Responses — file move to RFQ folder executed after save (pending-move handler); diagnostics shown (2025-09-01 16:18)"
+BUILD_INFO = "RFQ Responses — Box move bug fix: use Folder object instead of dict during move; includes send-to-RFQ UI (2025-09-02 10:24)"
 
 
 def setup_page():
@@ -513,7 +513,7 @@ def _move_file_to_rfq_folder(client, file_id: str, rfq_num: str) -> dict:
         parent = getattr(getattr(fobj, "parent", None), "id", None)
         if parent == rfq_folder_id:
             return {"ok": True, "rfq_folder_id": rfq_folder_id, "message": "Already in RFQ folder"}
-        client.file(file_id).move(parent_folder={'id': rfq_folder_id})
+        client.file(file_id).move(client.folder(rfq_folder_id))
         return {"ok": True, "rfq_folder_id": rfq_folder_id, "message": "Moved"}
     except BoxAPIException as e:
         return {"ok": False, "rfq_folder_id": None, "message": f"BoxAPIException {getattr(e,'status', '')} {getattr(e,'code','')}"}
