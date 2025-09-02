@@ -102,7 +102,7 @@ def _download_box_file_bytes(client, file_id: str) -> bytes:
     except Exception as e:
         raise RuntimeError(f"Failed to download file content from Box: {e}")
 
-def _safe_preview_text(txt: str, limit: int = 500) -> str:
+def _safe_preview_text(txt: str, limit: int = 100000) -> str:
     if not txt:
         return ""
     return txt if len(txt) <= limit else txt[:limit] + " …"
