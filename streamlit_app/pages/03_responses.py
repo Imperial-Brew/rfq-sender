@@ -30,7 +30,7 @@ if not require_authentication():
 logger = get_logger(__name__)
 
 # Build info to make changes visible in UI
-BUILD_INFO = "RFQ Responses — Box move bug fix: use Folder object instead of dict during move; includes send-to-RFQ UI (2025-09-02 10:24)"
+BUILD_INFO = "RFQ Responses — Email attachments: extract and preview/download from EML/MSG; plus prior Box move fixes (2025-09-02 11:42)"
 
 
 def setup_page():
@@ -115,15 +115,40 @@ def _try_parse_eml(content: bytes) -> dict:
         to = msg.get("to", "")
         date = msg.get("date", "")
         body = ""
+        attachments = []
         if msg.is_multipart():
             for part in msg.walk():
-                if part.get_content_type() == "text/plain":
-                    body = part.get_content()
-                    break
+                cdispo = str(part.get_content_disposition() or "").lower()
+                if part.get_content_type() == "text/plain" and not cdispo == "attachment":
+                    try:
+                        body = part.get_content()
+                    except Exception:
+                        try:
+                            body = part.get_payload(decode=True).decode(part.get_content_charset() or "utf-8", errors="replace")
+                        except Exception:
+                            pass
+                elif cdispo == "attachment":
+                    fname = part.get_filename() or "attachment"
+                    try:
+                        data = part.get_payload(decode=True) or b""
+                    except Exception:
+                        data = b""
+                    attachments.append({
+                        "filename": fname,
+                        "content_type": part.get_content_type() or "application/octet-stream",
+                        "data": data,
+                        "size": len(data) if isinstance(data, (bytes, bytearray)) else 0,
+                    })
         else:
             if msg.get_content_type() == "text/plain":
-                body = msg.get_content()
-        return {"subject": subject or "", "from": sender or "", "to": to or "", "date": date or "", "body": body or ""}
+                try:
+                    body = msg.get_content()
+                except Exception:
+                    try:
+                        body = msg.get_payload(decode=True).decode(msg.get_content_charset() or "utf-8", errors="replace")
+                    except Exception:
+                        body = ""
+        return {"subject": subject or "", "from": sender or "", "to": to or "", "date": date or "", "body": body or "", "attachments": attachments}
     except Exception as e:
         return {"error": f"EML parse failed: {e}"}
 
@@ -137,12 +162,30 @@ def _try_parse_msg(content: bytes) -> dict:
             tf.write(content)
             tmp_path = tf.name
         msg = extract_msg.Message(tmp_path)
+        atts = []
+        try:
+            for a in msg.attachments or []:
+                try:
+                    fname = getattr(a, 'longFilename', None) or getattr(a, 'shortFilename', None) or getattr(a, 'filename', None) or 'attachment'
+                    data = a.data or b""
+                    ctype = getattr(a, 'mimeType', None) or mimetypes.guess_type(fname or '')[0] or 'application/octet-stream'
+                    atts.append({
+                        'filename': fname,
+                        'content_type': ctype,
+                        'data': data,
+                        'size': len(data) if isinstance(data, (bytes, bytearray)) else 0,
+                    })
+                except Exception:
+                    continue
+        except Exception:
+            pass
         return {
             "subject": msg.subject or "",
             "from": msg.sender or "",
             "to": msg.to or "",
             "date": str(msg.date or ""),
             "body": msg.body or "",
+            "attachments": atts,
         }
     except Exception as e:
         return {"error": f"MSG parse failed: {e}"}
@@ -184,6 +227,58 @@ def _try_parse_tabular(ext: str, content: bytes) -> dict:
         return {"dataframe": df.head(10)}
     except Exception as e:
         return {"error": f"Tabular parse failed: {e}"}
+
+# Render attachments found in parsed email data
+# preview_data is dict possibly containing key 'attachments': list of {filename, content_type, data, size}
+# selected_id is used to dedupe Streamlit widget keys across reruns
+
+def _render_attachments(preview_data: dict, selected_id: str):
+    try:
+        atts = []
+        if isinstance(preview_data, dict):
+            atts = preview_data.get("attachments") or []
+        if not atts:
+            return
+        st.subheader("Attachments")
+        for i, att in enumerate(atts):
+            try:
+                fname = att.get("filename") if isinstance(att, dict) else None
+                if not fname:
+                    fname = f"attachment_{i+1}"
+                ctype = (att.get("content_type") if isinstance(att, dict) else None) or "application/octet-stream"
+                data = (att.get("data") if isinstance(att, dict) else None) or b""
+                size = (att.get("size") if isinstance(att, dict) else None) or (len(data) if isinstance(data, (bytes, bytearray)) else 0)
+                st.write(f"{fname} — {ctype} — {size} bytes")
+                try:
+                    st.download_button(
+                        label=f"Download {fname}",
+                        data=data,
+                        file_name=fname,
+                        mime=ctype,
+                        key=f"dl_att_{i}_{selected_id}"
+                    )
+                except Exception:
+                    pass
+                # Quick preview
+                ext_att, mime_att = _detect_filetype(fname)
+                if ext_att in ("pdf",):
+                    prev = _try_parse_pdf(data)
+                    if "text_preview" in prev:
+                        st.text_area(f"{fname} — PDF page 1 text", _safe_preview_text(prev["text_preview"]), height=160, key=f"att_pdf_prev_{i}_{selected_id}")
+                elif ext_att in ("csv","xls","xlsx"):
+                    prev = _try_parse_tabular(ext_att, data)
+                    if "dataframe" in prev:
+                        st.dataframe(prev["dataframe"], width='stretch', hide_index=True, key=f"att_tbl_prev_{i}_{selected_id}")
+                elif ext_att in ("txt",):
+                    try:
+                        t = data.decode("utf-8", errors="replace")
+                    except Exception:
+                        t = ""
+                    st.text_area(f"{fname} — text", _safe_preview_text(t), height=160, key=f"att_txt_prev_{i}_{selected_id}")
+            except Exception:
+                continue
+    except Exception:
+        pass
 
 def _guess_vendor(name: str, email_from: str = "", body: str = "") -> str:
     try:
@@ -1127,6 +1222,7 @@ def display_responses(user, role):
                                 st.write(f"From: {email_from}")
                                 st.caption("Vendor source: " + ("contacts.csv domain→vendor" if vendor_from_contacts else "heuristic guess"))
                                 st.text_area("Body preview", body_excerpt, height=200)
+                                _render_attachments(preview_data, str(selected_id))
 
                         elif ext in ("msg",):
                             preview_data = _try_parse_msg(raw)
@@ -1148,6 +1244,7 @@ def display_responses(user, role):
                                 st.write(f"From: {email_from}")
                                 st.caption("Vendor source: " + ("contacts.csv domain→vendor" if vendor_from_contacts else "heuristic guess"))
                                 st.text_area("Body preview", body_excerpt, height=200)
+                                _render_attachments(preview_data, str(selected_id))
 
                         elif ext in ("csv", "xls", "xlsx"):
                             preview_data = _try_parse_tabular(ext, raw)
@@ -1818,6 +1915,7 @@ def display_responses(user, role):
                             st.write(f"From: {email_from}")
                             st.caption("Vendor source: " + ("contacts.csv domain→vendor" if vendor_from_contacts else "heuristic guess"))
                             st.text_area("Body preview", body_excerpt, height=200)
+                            _render_attachments(preview_data, str(selected_id))
 
                     elif ext in ("msg",):
                         preview_data = _try_parse_msg(raw)
@@ -1839,6 +1937,7 @@ def display_responses(user, role):
                             st.write(f"From: {email_from}")
                             st.caption("Vendor source: " + ("contacts.csv domain→vendor" if vendor_from_contacts else "heuristic guess"))
                             st.text_area("Body preview", body_excerpt, height=200)
+                            _render_attachments(preview_data, str(selected_id))
 
                     elif ext in ("csv", "xls", "xlsx"):
                         preview_data = _try_parse_tabular(ext, raw)
