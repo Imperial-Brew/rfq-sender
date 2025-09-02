@@ -1056,6 +1056,29 @@ def display_responses(user, role):
                 st.session_state["responses_selected_file_id"] = selected_id
                 st.session_state["responses_selected_file_name"] = selected_name
 
+                # New: Allow sending file to RFQ folder without logging to CSV
+                with st.expander("Send file to RFQ folder (no log)", expanded=False):
+                    rfq_move_in = st.text_input("RFQ # to send file to (no log)", value="", key="responses_move_rfq_once")
+                    col_mv1, col_mv2 = st.columns([1, 5])
+                    with col_mv1:
+                        if st.button("Send file to RFQ folder (no log)", key="responses_send_only_once"):
+                            try:
+                                rfq_num_clean = str(rfq_move_in or "").strip()
+                                if not rfq_num_clean:
+                                    st.warning("Please enter an RFQ #.")
+                                else:
+                                    # Only supported in Box mode with numeric file id
+                                    if client and str(selected_id).isdigit():
+                                        res = _move_file_to_rfq_folder(client, str(selected_id), rfq_num_clean)
+                                        if res.get("ok"):
+                                            st.success(f"{res.get('message','Moved')} — file sent to RFQ {rfq_num_clean}")
+                                        else:
+                                            st.warning(f"Move failed/skipped: {res.get('message','unknown')}")
+                                    else:
+                                        st.info("Sending to RFQ folder is only available when Box is configured.")
+                            except Exception as _merr:
+                                st.error(f"Move failed: {_merr}")
+
                 if st.button("Process selected file", key="process_selected_response_file"):
                     try:
                         raw = None
@@ -1701,6 +1724,29 @@ def display_responses(user, role):
         if selected_id:
             st.session_state["responses_selected_file_id"] = selected_id
             st.session_state["responses_selected_file_name"] = selected_name
+
+            # New: Allow sending file to RFQ folder without logging to CSV
+            with st.expander("Send file to RFQ folder (no log)", expanded=False):
+                rfq_move_in2 = st.text_input("RFQ # to send file to (no log)", value="", key="responses_move_rfq_always")
+                col_mvA, col_mvB = st.columns([1, 5])
+                with col_mvA:
+                    if st.button("Send file to RFQ folder (no log)", key="responses_send_only_always"):
+                        try:
+                            rfq_num_clean2 = str(rfq_move_in2 or "").strip()
+                            if not rfq_num_clean2:
+                                st.warning("Please enter an RFQ #.")
+                            else:
+                                # Only supported in Box mode with numeric file id
+                                if client and str(selected_id).isdigit():
+                                    res = _move_file_to_rfq_folder(client, str(selected_id), rfq_num_clean2)
+                                    if res.get("ok"):
+                                        st.success(f"{res.get('message','Moved')} — file sent to RFQ {rfq_num_clean2}")
+                                    else:
+                                        st.warning(f"Move failed/skipped: {res.get('message','unknown')}")
+                                else:
+                                    st.info("Sending to RFQ folder is only available when Box is configured.")
+                        except Exception as _merr2:
+                            st.error(f"Move failed: {_merr2}")
 
             start_processing = st.button("Process selected file", key="process_selected_response_file_always")
             if start_processing:
