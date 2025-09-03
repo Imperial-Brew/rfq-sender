@@ -709,6 +709,143 @@ def display_responses(user, role):
             key="responses_uploader",
         )
 
+        if uploaded:
+            st.info(f"Selected {len(uploaded)} file(s). Click Upload to send to Box.")
+            if st.button("Upload selected to Box", key="upload_to_box"):
+                tracker = get_tracker()
+                store = getattr(tracker, "responses_store", None)
+                box = getattr(store, "box", None) if store else None
+                client = getattr(box, "client", None) if box else None
+
+                # Resolve the target folder id deterministically
+                target_folder_id = None
+                try:
+                    file_parent_id = None
+                    if store and getattr(store, "file_id", None) and client:
+                        try:
+                            fobj = client.file(store.file_id).get()
+                            if getattr(fobj, "parent", None) and getattr(fobj.parent, "id", None):
+                                file_parent_id = fobj.parent.id
+                        except Exception:
+                            file_parent_id = None
+                    explicit_folder_id = None
+                    if store and getattr(store, "folder_id", None):
+                        explicit_folder_id = store.folder_id
+                    target_folder_id = file_parent_id or explicit_folder_id
+                    if not target_folder_id:
+                        try:
+                            from core.secrets import get_section as _get_secret_section
+                            _bx = _get_secret_section("box") or {}
+                            val = str(_bx.get("BOX_RFQ_RESPONSES_FOLDER_ID", "")).strip()
+                            target_folder_id = val or None
+                        except Exception:
+                            target_folder_id = None
+                    if file_parent_id and explicit_folder_id and file_parent_id != explicit_folder_id:
+                        target_folder_id = file_parent_id
+                except Exception:
+                    target_folder_id = None
+
+                successes, failures = [], []
+                if client and target_folder_id:
+                    # Show which folder we will upload to
+                    folder_name = "(unknown)"
+                    try:
+                        fobj = client.folder(target_folder_id).get()
+                        folder_name = getattr(fobj, "name", folder_name)
+                    except Exception:
+                        pass
+                    st.caption(f"Upload target: Box folder {target_folder_id} — {folder_name}")
+                    try:
+                        if store and target_folder_id and getattr(store, "folder_id", None) != target_folder_id:
+                            store.folder_id = target_folder_id
+                    except Exception:
+                        pass
+                    try:
+                        file_parent_id_msg = None
+                        explicit_folder_id_msg = None
+                        if store and getattr(store, "file_id", None):
+                            try:
+                                pf = client.file(store.file_id).get()
+                                if getattr(pf, "parent", None) and getattr(pf.parent, "id", None):
+                                    file_parent_id_msg = pf.parent.id
+                            except Exception:
+                                pass
+                        if store and getattr(store, "folder_id", None):
+                            explicit_folder_id_msg = store.folder_id
+                        if file_parent_id_msg and explicit_folder_id_msg and file_parent_id_msg != explicit_folder_id_msg:
+                            try:
+                                resp_folder_name = client.folder(file_parent_id_msg).get().name
+                            except Exception:
+                                resp_folder_name = "(unknown)"
+                            try:
+                                exp_folder_name = client.folder(explicit_folder_id_msg).get().name
+                            except Exception:
+                                exp_folder_name = "(unknown)"
+                            st.warning(
+                                f"Detected mismatch between responses file parent ({file_parent_id_msg} — {resp_folder_name}) "
+                                f"and configured folder_id ({explicit_folder_id_msg} — {exp_folder_name}). Using the responses file parent."
+                            )
+                    except Exception:
+                        pass
+
+                    # Upload to Box
+                    for uf in uploaded:
+                        try:
+                            uf.seek(0)
+                            bio = BytesIO(uf.read())
+                            bio.seek(0)
+                            client.folder(target_folder_id).upload_stream(bio, uf.name)
+                            successes.append(uf.name)
+                        except BoxAPIException as e:
+                            if e.status == 409:
+                                try:
+                                    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+                                    if "." in uf.name:
+                                        base, ext = uf.name.rsplit(".", 1)
+                                        alt_name = f"{base} ({ts}).{ext}"
+                                    else:
+                                        alt_name = f"{uf.name} ({ts})"
+                                    bio.seek(0)
+                                    client.folder(target_folder_id).upload_stream(bio, alt_name)
+                                    successes.append(f"{uf.name} -> {alt_name}")
+                                except Exception as _re:
+                                    failures.append(f"{uf.name}: 409 conflict and rename failed: {_re}")
+                            else:
+                                failures.append(f"{uf.name}: BoxAPIException {e.status} {getattr(e, 'code', '')}")
+                        except Exception as e:
+                            failures.append(f"{uf.name}: {e}")
+                else:
+                    # Local fallback if Box not configured/available
+                    try:
+                        local_base = getattr(tracker, "responses_path", None)
+                        if local_base is not None:
+                            local_folder = local_base.parent / "responses_uploads"
+                            local_folder.mkdir(parents=True, exist_ok=True)
+                            for uf in uploaded:
+                                try:
+                                    uf.seek(0)
+                                    data = uf.read()
+                                    (local_folder / uf.name).write_bytes(data)
+                                    successes.append(f"{uf.name} (saved locally to {local_folder})")
+                                except Exception as e:
+                                    failures.append(f"{uf.name}: {e}")
+                        else:
+                            failures.append("Local fallback path not available")
+                    except Exception as e:
+                        failures.append(f"Local fallback failed: {e}")
+
+                if successes:
+                    st.success(f"Uploaded {len(successes)} file(s): " + ", ".join(successes))
+                    with st.expander("Next steps", expanded=False):
+                        st.markdown("- If you uploaded CSV updates, click ‘Refresh from Box’ below to reload the table.")
+                if failures:
+                    st.error("Some files could not be uploaded:")
+                    for msg in failures:
+                        st.write(f"- {msg}")
+
+                st.session_state["responses_uploader"] = None
+                st.rerun()
+
     # Second tab: show files in Responses folder
     with tab_files:
         st.subheader("Files in Responses folder")
@@ -844,151 +981,6 @@ def display_responses(user, role):
         except Exception as e:
             st.error(f"Failed to list files in the Responses folder: {e}")
 
-    if uploaded:
-        tracker = get_tracker()
-        store = getattr(tracker, "responses_store", None)
-        box = getattr(store, "box", None) if store else None
-        client = getattr(box, "client", None) if box else None
-
-        # Resolve the target folder id deterministically
-        # Prefer the parent of the configured responses file_id (authoritative),
-        # then fallback to an explicit folder_id, then secrets.
-        target_folder_id = None
-        try:
-            file_parent_id = None
-            if store and getattr(store, "file_id", None) and client:
-                try:
-                    fobj = client.file(store.file_id).get()
-                    if getattr(fobj, "parent", None) and getattr(fobj.parent, "id", None):
-                        file_parent_id = fobj.parent.id
-                except Exception:
-                    file_parent_id = None
-            explicit_folder_id = None
-            if store and getattr(store, "folder_id", None):
-                explicit_folder_id = store.folder_id
-
-            # Choose parent-of-file first if available
-            target_folder_id = file_parent_id or explicit_folder_id
-
-            # Final fallback to secrets
-            if not target_folder_id:
-                try:
-                    from core.secrets import get_section as _get_secret_section
-                    _bx = _get_secret_section("box") or {}
-                    val = str(_bx.get("BOX_RFQ_RESPONSES_FOLDER_ID", "")).strip()
-                    target_folder_id = val or None
-                except Exception:
-                    target_folder_id = None
-
-            # If both exist and differ, prefer the file parent (more authoritative)
-            if file_parent_id and explicit_folder_id and file_parent_id != explicit_folder_id:
-                target_folder_id = file_parent_id
-        except Exception:
-            target_folder_id = None
-
-        successes, failures = [], []
-        if client and target_folder_id:
-            # Show which folder we will upload to
-            folder_name = "(unknown)"
-            try:
-                fobj = client.folder(target_folder_id).get()
-                folder_name = getattr(fobj, "name", folder_name)
-            except Exception:
-                pass
-            st.caption(f"Upload target: Box folder {target_folder_id} — {folder_name}")
-            # Ensure the store reflects the chosen folder id for consistency in this session
-            try:
-                if store and target_folder_id and getattr(store, "folder_id", None) != target_folder_id:
-                    store.folder_id = target_folder_id
-            except Exception:
-                pass
-            # Warn if a configured folder_id differs from the responses file parent
-            try:
-                # Recompute the two candidates for messaging
-                file_parent_id_msg = None
-                explicit_folder_id_msg = None
-                if store and getattr(store, "file_id", None):
-                    try:
-                        pf = client.file(store.file_id).get()
-                        if getattr(pf, "parent", None) and getattr(pf.parent, "id", None):
-                            file_parent_id_msg = pf.parent.id
-                    except Exception:
-                        pass
-                if store and getattr(store, "folder_id", None):
-                    explicit_folder_id_msg = store.folder_id
-                if file_parent_id_msg and explicit_folder_id_msg and file_parent_id_msg != explicit_folder_id_msg:
-                    try:
-                        resp_folder_name = client.folder(file_parent_id_msg).get().name
-                    except Exception:
-                        resp_folder_name = "(unknown)"
-                    try:
-                        exp_folder_name = client.folder(explicit_folder_id_msg).get().name
-                    except Exception:
-                        exp_folder_name = "(unknown)"
-                    st.warning(
-                        f"Detected mismatch between responses file parent ({file_parent_id_msg} — {resp_folder_name}) "
-                        f"and configured folder_id ({explicit_folder_id_msg} — {exp_folder_name}). Using the responses file parent."
-                    )
-            except Exception:
-                pass
-
-            # Upload to Box
-            for uf in uploaded:
-                try:
-                    uf.seek(0)
-                    bio = BytesIO(uf.read())
-                    bio.seek(0)
-                    client.folder(target_folder_id).upload_stream(bio, uf.name)
-                    successes.append(uf.name)
-                except BoxAPIException as e:
-                    if e.status == 409:
-                        # Auto-rename on conflict and retry
-                        try:
-                            ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-                            if "." in uf.name:
-                                base, ext = uf.name.rsplit(".", 1)
-                                alt_name = f"{base} ({ts}).{ext}"
-                            else:
-                                alt_name = f"{uf.name} ({ts})"
-                            bio.seek(0)
-                            client.folder(target_folder_id).upload_stream(bio, alt_name)
-                            successes.append(f"{uf.name} -> {alt_name}")
-                        except Exception as _re:
-                            failures.append(f"{uf.name}: 409 conflict and rename failed: {_re}")
-                    else:
-                        failures.append(f"{uf.name}: BoxAPIException {e.status} {getattr(e, 'code', '')}")
-                except Exception as e:
-                    failures.append(f"{uf.name}: {e}")
-        else:
-            # Local fallback if Box not configured/available
-            try:
-                local_base = getattr(tracker, "responses_path", None)
-                if local_base is not None:
-                    local_folder = local_base.parent / "responses_uploads"
-                    local_folder.mkdir(parents=True, exist_ok=True)
-                    for uf in uploaded:
-                        try:
-                            uf.seek(0)
-                            data = uf.read()
-                            (local_folder / uf.name).write_bytes(data)
-                            successes.append(f"{uf.name} (saved locally to {local_folder})")
-                        except Exception as e:
-                            failures.append(f"{uf.name}: {e}")
-                else:
-                    failures.append("Local fallback path not available")
-            except Exception as e:
-                failures.append(f"Local fallback failed: {e}")
-
-        if successes:
-            st.success(f"Uploaded {len(successes)} file(s): " + ", ".join(successes))
-            with st.expander("Next steps", expanded=False):
-                st.markdown("- If you uploaded CSV updates, click ‘Refresh from Box’ below to reload the table.")
-        if failures:
-            st.error("Some files could not be uploaded:")
-            for msg in failures:
-                st.write(f"- {msg}")
-
-        # List files available to process in the Responses folder
         st.subheader("Files in Responses folder")
         try:
             tracker = get_tracker()
