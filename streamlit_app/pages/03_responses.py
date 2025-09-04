@@ -392,6 +392,18 @@ def _master_cols(df: pd.DataFrame) -> dict:
         "process": _find_col(df, ["process"]),
     }
 
+def _rfq_options_from_master(master_df: pd.DataFrame) -> list[str]:
+    try:
+        if master_df is None or master_df.empty:
+            return []
+        cols = _master_cols(master_df)
+        rfq_col = cols.get("rfq")
+        if not rfq_col:
+            return []
+        return sorted(master_df[rfq_col].dropna().astype(str).unique(), key=lambda x: (len(x), x))
+    except Exception:
+        return []
+
 def _extract_numbers(text: str) -> list[int]:
     if not text:
         return []
@@ -1145,7 +1157,20 @@ def display_responses(user, role):
 
                 # New: Allow sending file to RFQ folder without logging to CSV
                 with st.expander("Send file to RFQ folder (no log)", expanded=False):
-                    rfq_move_in = st.text_input("RFQ # to send file to (no log)", value="", key="responses_move_rfq_once")
+                    rfq_options = _rfq_options_from_master(_load_master_df())
+                    if rfq_options:
+                        rfq_move_in = st.selectbox(
+                            "RFQ # to send file to (no log)",
+                            options=rfq_options,
+                            index=0,
+                            key="responses_move_rfq_once",
+                        )
+                    else:
+                        rfq_move_in = st.text_input(
+                            "RFQ # to send file to (no log)",
+                            value="",
+                            key="responses_move_rfq_once"
+                        )
                     col_mv1, col_mv2 = st.columns([1, 5])
                     with col_mv1:
                         if st.button("Send file to RFQ folder (no log)", key="responses_send_only_once"):
@@ -1458,7 +1483,18 @@ def display_responses(user, role):
 
                         # -- Final confirmation UI (replaces the old one) --
                         with st.expander("Record this processing in rfq_responses.csv?", expanded=True):
-                            rfq_num_in = st.text_input("RFQ #", value=selected_rfq_num_val)
+                            # Build options from master
+                            rfq_options = _rfq_options_from_master(master_df)
+
+                            if rfq_options:
+                                # Preselect if there’s an inferred value
+                                preselect = selected_rfq_num_val if selected_rfq_num_val in rfq_options else None
+                                idx = rfq_options.index(preselect) if preselect in rfq_options else 0
+                                rfq_num_in = st.selectbox("RFQ #", options=rfq_options, index=idx)
+                            else:
+                                # Fallback if master is empty or RFQ column not found
+                                rfq_num_in = st.text_input("RFQ #", value=selected_rfq_num_val)
+
                             part_in = st.text_input("Part #", value=selected_part_val)
                             process_in = st.text_input("Process", value=selected_process_val)
                             vendor_in = st.text_input("Vendor", value=selected_vendor_val)
@@ -1816,7 +1852,20 @@ def display_responses(user, role):
 
             # New: Allow sending file to RFQ folder without logging to CSV
             with st.expander("Send file to RFQ folder (no log)", expanded=False):
-                rfq_move_in2 = st.text_input("RFQ # to send file to (no log)", value="", key="responses_move_rfq_always")
+                rfq_options = _rfq_options_from_master(_load_master_df())
+                if rfq_options:
+                    rfq_move_in2 = st.selectbox(
+                        "RFQ # to send file to (no log)",
+                        options=rfq_options,
+                        index=0,
+                        key="responses_move_rfq_always",
+                    )
+                else:
+                    rfq_move_in2 = st.text_input(
+                        "RFQ # to send file to (no log)",
+                        value="",
+                        key="responses_move_rfq_always"
+                    )
                 col_mvA, col_mvB = st.columns([1, 5])
                 with col_mvA:
                     if st.button("Send file to RFQ folder (no log)", key="responses_send_only_always"):
