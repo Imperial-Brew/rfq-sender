@@ -1396,6 +1396,23 @@ def display_responses(user, role):
                                                 "vendor") else ""
                                             selected_process_val = str(row[mcols["process"]]) if mcols.get(
                                                 "process") else ""
+                                            # Also populate QT/SO # and Qty from the selected master row when available
+                                            try:
+                                                qtso_col = _find_col(master_df, [
+                                                    "qt/so #", "qt/so#", "qt so #", "qt", "so", "quote", "so #", "qt #"
+                                                ])
+                                                if qtso_col and qtso_col in row:
+                                                    selected_qtso_val = str(row[qtso_col]) if pd.notna(row[qtso_col]) else ""
+                                            except Exception:
+                                                pass
+                                            try:
+                                                qty_col = _find_col(master_df, [
+                                                    "qty", "quantity", "quantities", "order qty", "order quantity", "rfq qty"
+                                                ])
+                                                if qty_col and qty_col in row:
+                                                    selected_qty_val = str(row[qty_col]) if pd.notna(row[qty_col]) else ""
+                                            except Exception:
+                                                pass
                                         except Exception:
                                             pass
 
@@ -2074,11 +2091,22 @@ def display_responses(user, role):
                                 selected_part_val = str(row[mcols.get("part")]) if mcols.get("part") else ""
                                 selected_vendor_val = str(row[mcols.get("vendor")]) if mcols.get("vendor") else ""
                                 selected_process_val = str(row[mcols.get("process")]) if mcols.get("process") else ""
-                                # Populate Qty from RFQ Master when available
+                                # Populate Qty from RFQ Master when available (include template header "quantities")
                                 try:
-                                    qty_col = _find_col(master_df, ["qty", "quantity", "rfq qty"])
+                                    qty_col = _find_col(master_df, [
+                                        "qty", "quantity", "quantities", "order qty", "order quantity", "rfq qty"
+                                    ])
                                     if qty_col and qty_col in row:
                                         selected_qty_val = str(row[qty_col]) if pd.notna(row[qty_col]) else ""
+                                except Exception:
+                                    pass
+                                # Populate QT/SO # from RFQ Master when available
+                                try:
+                                    qtso_col = _find_col(master_df, [
+                                        "qt/so #", "qt/so#", "qt so #", "qt", "so", "quote", "so #", "qt #"
+                                    ])
+                                    if qtso_col and qtso_col in row:
+                                        selected_qtso_val = str(row[qtso_col]) if pd.notna(row[qtso_col]) else ""
                                 except Exception:
                                     pass
                                 st.success(
@@ -2120,6 +2148,23 @@ def display_responses(user, role):
                                         selected_part_val = str(row[mcols["part"]]) if mcols.get("part") else ""
                                         selected_vendor_val = str(row[mcols["vendor"]]) if mcols.get("vendor") else ""
                                         selected_process_val = str(row[mcols["process"]]) if mcols.get("process") else ""
+                                        # Also populate QT/SO # and Qty from the selected master row when available
+                                        try:
+                                            qtso_col = _find_col(master_df, [
+                                                "qt/so #", "qt/so#", "qt so #", "qt", "so", "quote", "so #", "qt #"
+                                            ])
+                                            if qtso_col and qtso_col in row:
+                                                selected_qtso_val = str(row[qtso_col]) if pd.notna(row[qtso_col]) else ""
+                                        except Exception:
+                                            pass
+                                        try:
+                                            qty_col = _find_col(master_df, [
+                                                "qty", "quantity", "quantities", "order qty", "order quantity", "rfq qty"
+                                            ])
+                                            if qty_col and qty_col in row:
+                                                selected_qty_val = str(row[qty_col]) if pd.notna(row[qty_col]) else ""
+                                        except Exception:
+                                            pass
                                     except Exception:
                                         pass
 
