@@ -20,7 +20,7 @@ from utils.rfq_logging import get_logger
 from utils.rfq_tracking import get_tracker
 from io import BytesIO
 from boxsdk.exception import BoxAPIException
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Require authentication for this page
 if not require_authentication():
@@ -1559,9 +1559,11 @@ def display_responses(user, role):
                                 unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
                                 lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
 
+                            # Default lead time to 7 days if not parsed/found
+                            default_lead = int(lead_time_days_val) if isinstance(lead_time_days_val, int) else 7
                             lead_time_in = st.number_input(
                                 "Lead time (days)",
-                                value=int(lead_time_days_val) if isinstance(lead_time_days_val, int) else 0,
+                                value=default_lead,
                                 min_value=0, step=1
                             )
                             received_ts_in = st.text_input("Received timestamp (ISO)", value=str(received_ts))
@@ -1574,7 +1576,41 @@ def display_responses(user, role):
                             if nq_mark:
                                 nq_reason = st.text_area("Reason for no-quote (required)", value="")
                             scope_notes_in = st.text_area("Scope notes", value=pref_scope)
-                            valid_through_in = st.text_input("Valid through (date or notes)", value=pref_valid)
+                            # Valid-through quick picks: default to 30 days unless pref_valid already provided
+                            from datetime import datetime, timedelta
+                            base_dt = None
+                            try:
+                                base_dt = datetime.fromisoformat(str(received_ts).replace("Z", "+00:00"))
+                            except Exception:
+                                try:
+                                    base_dt = datetime.utcnow()
+                                except Exception:
+                                    base_dt = None
+                            # Determine initial valid value
+                            if str(pref_valid).strip():
+                                valid_default = str(pref_valid)
+                            else:
+                                try:
+                                    valid_default = (base_dt + timedelta(days=30)).date().isoformat() if base_dt else ""
+                                except Exception:
+                                    valid_default = ""
+                            col_v1, col_v2, col_v3, col_v4 = st.columns(4)
+                            valid_choice = None
+                            with col_v1:
+                                if st.button("30 days", key="valid_30_master"):
+                                    valid_choice = 30
+                            with col_v2:
+                                if st.button("60 days", key="valid_60_master"):
+                                    valid_choice = 60
+                            with col_v3:
+                                if st.button("90 days", key="valid_90_master"):
+                                    valid_choice = 90
+                            with col_v4:
+                                st.caption("Quick set Valid through")
+                            # Compute chosen value if any
+                            if valid_choice and base_dt:
+                                valid_default = (base_dt + timedelta(days=valid_choice)).date().isoformat()
+                            valid_through_in = st.text_input("Valid through (date or notes)", value=valid_default)
 
                             # subject_val = st.text_input("Subject (if email)", value=subject or "")
                             base_notes = f"Processed preview for {selected_name}"
@@ -2288,9 +2324,11 @@ def display_responses(user, role):
                             unit_price_in = st.text_input("Unit price", value=str(unit_price_val or ""))
                             lot_min_in = st.text_input("Lot min", value=str(lot_min_val or ""))
 
+                        # Default lead time to 7 days if not parsed/found
+                        default_lead = int(lead_time_days_val) if isinstance(lead_time_days_val, int) else 7
                         lead_time_in = st.number_input(
                             "Lead time (days)",
-                            value=int(lead_time_days_val) if isinstance(lead_time_days_val, int) else 0,
+                            value=default_lead,
                             min_value=0, step=1
                         )
                         received_ts_in = st.text_input("Received timestamp (ISO)", value=str(received_ts))
@@ -2302,7 +2340,39 @@ def display_responses(user, role):
                         if nq_mark_always:
                             nq_reason_always = st.text_area("Reason for no-quote (required)", value="")
                         scope_notes_in = st.text_area("Scope notes", value=pref_scope)
-                        valid_through_in = st.text_input("Valid through (date or notes)", value=pref_valid)
+                        # Valid-through quick picks: default to 30 days unless pref_valid already provided
+                        from datetime import datetime, timedelta
+                        base_dt2 = None
+                        try:
+                            base_dt2 = datetime.fromisoformat(str(received_ts).replace("Z", "+00:00"))
+                        except Exception:
+                            try:
+                                base_dt2 = datetime.utcnow()
+                            except Exception:
+                                base_dt2 = None
+                        if str(pref_valid).strip():
+                            valid_default2 = str(pref_valid)
+                        else:
+                            try:
+                                valid_default2 = (base_dt2 + timedelta(days=30)).date().isoformat() if base_dt2 else ""
+                            except Exception:
+                                valid_default2 = ""
+                        col_w1, col_w2, col_w3, col_w4 = st.columns(4)
+                        valid_choice2 = None
+                        with col_w1:
+                            if st.button("30 days", key="valid_30_master_always"):
+                                valid_choice2 = 30
+                        with col_w2:
+                            if st.button("60 days", key="valid_60_master_always"):
+                                valid_choice2 = 60
+                        with col_w3:
+                            if st.button("90 days", key="valid_90_master_always"):
+                                valid_choice2 = 90
+                        with col_w4:
+                            st.caption("Quick set Valid through")
+                        if valid_choice2 and base_dt2:
+                            valid_default2 = (base_dt2 + timedelta(days=valid_choice2)).date().isoformat()
+                        valid_through_in = st.text_input("Valid through (date or notes)", value=valid_default2)
 
                         # subject_val = st.text_input("Subject (if email)", value=subject or "")
                         base_notes = f"Processed preview for {selected_name}"
