@@ -1336,11 +1336,22 @@ def display_responses(user, role):
                                     selected_vendor_val = str(row[mcols.get("vendor")]) if mcols.get("vendor") else ""
                                     selected_process_val = str(row[mcols.get("process")]) if mcols.get(
                                         "process") else ""
-                                    # Populate Qty from RFQ Master when available
+                                    # Populate Qty from RFQ Master when available (include template header "quantities")
                                     try:
-                                        qty_col = _find_col(master_df, ["qty", "quantity", "rfq qty"])
+                                        qty_col = _find_col(master_df, [
+                                            "qty", "quantity", "quantities", "order qty", "order quantity", "rfq qty"
+                                        ])
                                         if qty_col and qty_col in row:
                                             selected_qty_val = str(row[qty_col]) if pd.notna(row[qty_col]) else ""
+                                    except Exception:
+                                        pass
+                                    # Populate QT/SO # from RFQ Master when available
+                                    try:
+                                        qtso_col = _find_col(master_df, [
+                                            "qt/so #", "qt/so#", "qt", "so", "quote", "so #", "qt #"
+                                        ])
+                                        if qtso_col and qtso_col in row:
+                                            selected_qtso_val = str(row[qtso_col]) if pd.notna(row[qtso_col]) else ""
                                     except Exception:
                                         pass
                                     st.success(
@@ -2194,7 +2205,22 @@ def display_responses(user, role):
 
                     # -- Final confirmation UI (replaces the old one) --
                     with st.expander("Record this processing in rfq_responses.csv?", expanded=True):
-                        rfq_num_in = st.text_input("RFQ #", value=selected_rfq_num_val)
+                        # Build options from master (same as earlier UI)
+                        rfq_options = _rfq_options_from_master(master_df)
+
+                        if rfq_options:
+                            preselect = selected_rfq_num_val if selected_rfq_num_val in rfq_options else None
+                            idx = rfq_options.index(preselect) if preselect in rfq_options else 0
+                            rfq_num_in = st.selectbox("RFQ #", options=rfq_options, index=idx)
+                        else:
+                            rfq_num_in = st.text_input("RFQ #", value=selected_rfq_num_val)
+                            src = "Box" if getattr(get_tracker(), "master_store", None) is not None else "local"
+                            try:
+                                mdf = master_df if isinstance(master_df, pd.DataFrame) else pd.DataFrame()
+                                st.caption(f"RFQ dropdown unavailable — RFQ master empty or RFQ column not found. Source: {src}; columns: {list(mdf.columns) if not mdf.empty else '[]'}")
+                            except Exception:
+                                st.caption("RFQ dropdown unavailable — RFQ master empty or RFQ column not found.")
+
                         part_in = st.text_input("Part #", value=selected_part_val)
                         process_in = st.text_input("Process", value=selected_process_val)
                         vendor_in = st.text_input("Vendor", value=selected_vendor_val)
