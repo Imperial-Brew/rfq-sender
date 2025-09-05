@@ -386,7 +386,9 @@ def _load_master_df():
 
 def _master_cols(df: pd.DataFrame) -> dict:
     return {
-        "rfq": _find_col(df, ["rfq#", "rfq #", "rfqno", "rfqid"]),
+        "rfq": _find_col(df, [
+            "rfq#", "rfq #", "rfqno", "rfqid", "rfq number", "rfq no", "rfq_num", "rfq num", "rfq"
+        ]),
         "part": _find_col(df, ["part_number", "part number", "part", "pn"]),
         "vendor": _find_col(df, ["vendor", "vendor_name", "vendor name"]),
         "process": _find_col(df, ["process"]),
@@ -1171,6 +1173,12 @@ def display_responses(user, role):
                             value="",
                             key="responses_move_rfq_once"
                         )
+                        try:
+                            mdf = _load_master_df()
+                            src = "Box" if getattr(get_tracker(), "master_store", None) is not None else "local"
+                            st.caption(f"RFQ dropdown unavailable — RFQ master empty or RFQ column not found. Source: {src}; columns: {list(mdf.columns) if not mdf.empty else '[]'}")
+                        except Exception:
+                            st.caption("RFQ dropdown unavailable — RFQ master empty or RFQ column not found.")
                     col_mv1, col_mv2 = st.columns([1, 5])
                     with col_mv1:
                         if st.button("Send file to RFQ folder (no log)", key="responses_send_only_once"):
@@ -1494,6 +1502,12 @@ def display_responses(user, role):
                             else:
                                 # Fallback if master is empty or RFQ column not found
                                 rfq_num_in = st.text_input("RFQ #", value=selected_rfq_num_val)
+                                src = "Box" if getattr(get_tracker(), "master_store", None) is not None else "local"
+                                try:
+                                    mdf = master_df if isinstance(master_df, pd.DataFrame) else pd.DataFrame()
+                                    st.caption(f"RFQ dropdown unavailable — RFQ master empty or RFQ column not found. Source: {src}; columns: {list(mdf.columns) if not mdf.empty else '[]'}")
+                                except Exception:
+                                    st.caption("RFQ dropdown unavailable — RFQ master empty or RFQ column not found.")
 
                             part_in = st.text_input("Part #", value=selected_part_val)
                             process_in = st.text_input("Process", value=selected_process_val)
@@ -1866,6 +1880,12 @@ def display_responses(user, role):
                         value="",
                         key="responses_move_rfq_always"
                     )
+                    try:
+                        mdf2 = _load_master_df()
+                        src2 = "Box" if getattr(get_tracker(), "master_store", None) is not None else "local"
+                        st.caption(f"RFQ dropdown unavailable — RFQ master empty or RFQ column not found. Source: {src2}; columns: {list(mdf2.columns) if not mdf2.empty else '[]'}")
+                    except Exception:
+                        st.caption("RFQ dropdown unavailable — RFQ master empty or RFQ column not found.")
                 col_mvA, col_mvB = st.columns([1, 5])
                 with col_mvA:
                     if st.button("Send file to RFQ folder (no log)", key="responses_send_only_always"):
