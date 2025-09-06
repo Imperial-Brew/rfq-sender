@@ -5,6 +5,7 @@ import logging
 import pandas as pd
 from typing import Dict, List, Optional, Any, Tuple
 from core.validation.validator import SpecValidator
+from .models import Vendor, Contact
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -37,24 +38,32 @@ class VendorManager:
         self.validator = SpecValidator(self.vendor_options_file)
         
         # Load vendor data
-        self.vendors = self.load_vendors(self.vendor_file)
+        self.vendors: List[Vendor] = self.load_vendors(self.vendor_file)
         self.vendor_options = self.load_vendor_options(self.vendor_options_file)
-        self.contacts = self.load_contacts(self.contacts_file)
+        self.contacts: Dict[str, List[Contact]] = self.load_contacts(self.contacts_file)
     
-    def load_vendors(self, vendor_file: str) -> List[Dict[str, Any]]:
-        """
-        Load vendor information from JSON file.
-        
-        Args:
-            vendor_file: Path to the vendor JSON file
-            
-        Returns:
-            List of vendor dictionaries
-        """
+    def load_vendors(self, vendor_file: str) -> List[Vendor]:
+        """Load vendor information from JSON file and return Vendor objects."""
         try:
-            with open(vendor_file, 'r') as f:
+            with open(vendor_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            return data.get('vendors', [])
+            vendors_raw = data.get("vendors", [])
+            vendors: List[Vendor] = []
+            for v in vendors_raw:
+                contacts = [Contact(**c) for c in v.get("contacts", [])]
+                vendors.append(
+                    Vendor(
+                        id=v.get("id", ""),
+                        name=v.get("name", ""),
+                        processes=v.get("processes", []),
+                        contacts=contacts,
+                        address=v.get("address", {}),
+                        notes=v.get("notes", ""),
+                        rating=v.get("rating", 0),
+                        active=v.get("active", True),
+                    )
+                )
+            return vendors
         except FileNotFoundError:
             logger.error(f"Vendor file not found: {vendor_file}")
             return []
@@ -115,18 +124,10 @@ class VendorManager:
                 n = n.strip()
         return n
     
-    def load_contacts(self, contacts_file: str) -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Load vendor contacts from CSV file.
-        
-        Args:
-            contacts_file: Path to the contacts CSV file
-            
-        Returns:
-            Dictionary mapping vendor names to lists of contact dictionaries
-        """
-        contacts_by_vendor = {}
-        self._contacts_by_norm: Dict[str, List[Dict[str, Any]]] = {}
+    def load_contacts(self, contacts_file: str) -> Dict[str, List[Contact]]:
+        """Load vendor contacts from CSV file and return Contact objects."""
+        contacts_by_vendor: Dict[str, List[Contact]] = {}
+        self._contacts_by_norm: Dict[str, List[Contact]] = {}
         
         try:
             if not os.path.exists(contacts_file):
@@ -168,18 +169,18 @@ class VendorManager:
                 if not vendor_name:
                     continue
                 
-                # Create contact dictionary
-                contact = {
-                    'name': safe_str_strip(row.get('Contact', '')),
-                    'first_name': safe_str_strip(row.get('First', '')),
-                    'last_name': safe_str_strip(row.get('Last', '')),
-                    'email': safe_str_strip(row.get('Email', '')),
-                    'phone': safe_str_strip(row.get('Phone', '')),
-                    'type': safe_str_strip(row.get('type', '')),
-                    'state': safe_str_strip(row.get('State', '')),
-                    'primary': is_primary(row.get('P/S', '')),
-                    'website': safe_str_strip(row.get('website', ''))
-                }
+                # Create contact object
+                contact = Contact(
+                    name=safe_str_strip(row.get("Contact", "")),
+                    first_name=safe_str_strip(row.get("First", "")),
+                    last_name=safe_str_strip(row.get("Last", "")),
+                    email=safe_str_strip(row.get("Email", "")),
+                    phone=safe_str_strip(row.get("Phone", "")),
+                    type=safe_str_strip(row.get("type", "")),
+                    state=safe_str_strip(row.get("State", "")),
+                    primary=is_primary(row.get("P/S", "")),
+                    website=safe_str_strip(row.get("website", "")),
+                )
                 
                 # Add to contacts dictionary (original key)
                 if vendor_name not in contacts_by_vendor:
@@ -203,7 +204,7 @@ class VendorManager:
             logger.error(f"Error loading contacts file {contacts_file}: {str(e)}")
             return contacts_by_vendor
     
-    def find_vendors_for_process(self, process: str) -> List[Dict[str, Any]]:
+    def find_vendors_for_process(self, process: str) -> List[Vendor]:
         """
         Find vendors that support a specific process.
         
@@ -213,13 +214,13 @@ class VendorManager:
         Returns:
             List of vendor dictionaries that support the process
         """
-        return [v for v in self.vendors if process.lower() in [p.lower() for p in v.get('processes', [])]]
+        return [v for v in self.vendors if process.lower() in [p.lower() for p in v.processes]]
     
     def find_vendors_for_process_and_spec(
             self,
             process: str,
             spec: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> List[Vendor]:
         """
         Find vendors that support a specific process and spec.
         
@@ -239,7 +240,7 @@ class VendorManager:
         
         # Find vendors that support this spec
         suitable_vendors = []
-        vendor_names_by_spec = []
+        vendor_names_by_spec: List[str] = []
         
         # First try to find vendors by spec
         if "vendors" in self.vendor_options:
@@ -262,7 +263,7 @@ class VendorManager:
         
         # Now find the matching vendors in the original vendors list
         for vendor in self.vendors:
-            if vendor.get("name") in vendor_names_by_spec:
+            if vendor.name in vendor_names_by_spec:
                 suitable_vendors.append(vendor)
         
         # If no vendors found by spec, fall back to process-only filtering
@@ -271,7 +272,7 @@ class VendorManager:
         
         return suitable_vendors
     
-    def get_primary_contact(self, vendor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def get_primary_contact(self, vendor: Vendor) -> Optional[Contact]:
         """
         Get the primary contact for a vendor.
         
@@ -283,18 +284,16 @@ class VendorManager:
         Returns:
             Primary contact dictionary or first contact if no primary is specified
         """
-        vendor_name = vendor.get('name', '')
+        vendor_name = vendor.name
         
         # First try to get contacts from CSV with exact match
         if vendor_name in self.contacts:
             csv_contacts = self.contacts[vendor_name]
-            
-            # Look for primary contact
+
             for contact in csv_contacts:
-                if contact.get('primary', False):
+                if contact.primary:
                     return contact
-            
-            # If no primary contact found, return the first one
+
             if csv_contacts:
                 return csv_contacts[0]
         
@@ -302,12 +301,10 @@ class VendorManager:
         vendor_name_lower = vendor_name.lower()
         for csv_vendor_name, csv_contacts in self.contacts.items():
             if csv_vendor_name.lower() == vendor_name_lower:
-                # Look for primary contact
                 for contact in csv_contacts:
-                    if contact.get('primary', False):
+                    if contact.primary:
                         return contact
-                
-                # If no primary contact found, return the first one
+
                 if csv_contacts:
                     return csv_contacts[0]
         
@@ -316,7 +313,7 @@ class VendorManager:
             norm_contacts = self.get_contacts_for_vendor(vendor_name)
             if norm_contacts:
                 for contact in norm_contacts:
-                    if contact.get('primary', False):
+                    if contact.primary:
                         return contact
                 return norm_contacts[0]
         except Exception:
@@ -327,12 +324,10 @@ class VendorManager:
             # Look for "TURNKEY Coatings" in CSV
             if "TURNKEY Coatings" in self.contacts:
                 csv_contacts = self.contacts["TURNKEY Coatings"]
-                # Look for primary contact
                 for contact in csv_contacts:
-                    if contact.get('primary', False):
+                    if contact.primary:
                         return contact
-                
-                # If no primary contact found, return the first one
+
                 if csv_contacts:
                     return csv_contacts[0]
         
@@ -341,12 +336,10 @@ class VendorManager:
             # Look for vendors with "Turn-key" in the name
             for csv_vendor_name, csv_contacts in self.contacts.items():
                 if "Turn-key" in csv_vendor_name:
-                    # Look for primary contact
                     for contact in csv_contacts:
-                        if contact.get('primary', False):
+                        if contact.primary:
                             return contact
-                    
-                    # If no primary contact found, return the first one
+
                     if csv_contacts:
                         return csv_contacts[0]
                         
@@ -358,24 +351,22 @@ class VendorManager:
                 if "turn" in csv_vendor_name_lower and "key" in csv_vendor_name_lower:
                     # Look for primary contact
                     for contact in csv_contacts:
-                        if contact.get('primary', False):
+                        if contact.primary:
                             return contact
-                    
-                    # If no primary contact found, return the first one
+
                     if csv_contacts:
                         return csv_contacts[0]
         
         # Fall back to contacts in vendor JSON
-        json_contacts = vendor.get('contacts', [])
+        json_contacts = vendor.contacts
         for contact in json_contacts:
-            if contact.get('primary', False):
+            if contact.primary:
                 return contact
-        
-        # If no contacts found in either source, return None or the first JSON contact
+
         if not json_contacts:
             logger.warning(f"No valid contact found for vendor: {vendor_name}")
             return None
-        
+
         return json_contacts[0]
     
     def _normalize_process_spec(self, text: str) -> str:
@@ -404,19 +395,18 @@ class VendorManager:
         return normalized
     
     # Public helper to fetch contacts with normalization-aware lookup
-    def get_contacts_for_vendor(self, vendor_name: str) -> List[Dict[str, Any]]:
+    def get_contacts_for_vendor(self, vendor_name: str) -> List[Contact]:
         if not vendor_name:
             return []
         norm = self._normalize_vendor_name(vendor_name)
         # Prefer normalized index if available
-        contacts = []
+        contacts: List[Contact] = []
         try:
             contacts = self._contacts_by_norm.get(norm, [])
         except Exception:
             contacts = []
         if contacts:
             return contacts
-        # Fallback to case-insensitive exact match over original keys
         v_lower = vendor_name.lower()
         for k, v in self.contacts.items():
             if k.lower() == v_lower:
