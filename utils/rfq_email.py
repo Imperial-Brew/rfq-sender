@@ -9,6 +9,7 @@ import os  # Still needed for path operations
 from exchangelib import Credentials, Account, Configuration, DELEGATE, Message, Mailbox, FileAttachment
 # Import the vendor manager and config
 from core.vendors.vendor_manager import VendorManager
+from core.vendors.models import Vendor, Contact
 from core.config import Paths, CompanyInfo
 from core.email.ews_client import get_exchange_account, extract_rfq_fields
 from core.secrets import get_section
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 # They are kept here as wrappers for backward compatibility
 
 # Load vendor information
-def load_vendors(vendor_file: str, contacts_file: str = None) -> List[Dict[str, Any]]:
+def load_vendors(vendor_file: str, contacts_file: str = None) -> List[Vendor]:
     """
     Load vendor information from JSON file and contacts from CSV file.
     
@@ -51,11 +52,11 @@ def load_vendor_options(vendor_options_file: str) -> Dict[str, Any]:
 
 
 def find_vendors_for_process_and_spec(
-        vendors: List[Dict[str, Any]],
+        vendors: List[Vendor],
         vendor_options: Dict[str, Any],
         process: str,
         spec: Optional[str] = None
-) -> List[Dict[str, Any]]:
+) -> List[Vendor]:
     """
     Find vendors that support a specific process and spec.
 
@@ -94,7 +95,7 @@ def normalize_process_spec(text: str, validator: Optional[Any] = None) -> str:
     return vendor_manager._normalize_process_spec(text)
 
 # Find vendors for a specific process
-def find_vendors_for_process(vendors: List[Dict[str, Any]], process: str) -> List[Dict[str, Any]]:
+def find_vendors_for_process(vendors: List[Vendor], process: str) -> List[Vendor]:
     """
     Find vendors that support a specific process.
     
@@ -116,7 +117,7 @@ def find_vendors_for_process(vendors: List[Dict[str, Any]], process: str) -> Lis
 
 
 # Get primary contact for a vendor
-def get_primary_contact(vendor: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def get_primary_contact(vendor: Vendor) -> Optional[Contact]:
     """
     Get the primary contact for a vendor.
     
@@ -172,8 +173,8 @@ def render_template(template_path: str, context: Dict[str, Any]) -> str:
 # Create email for RFQ
 def create_rfq_email(
     queue_item,      # <-- single row (Series or dict), not a whole DataFrame
-    vendor: Dict[str, Any],
-    contact: Dict[str, Any],
+    vendor: Vendor,
+    contact: Contact,
     template_path: str,
     company_info: Dict[str, Any] = None
 ) -> Tuple[str, str, str]:
@@ -185,7 +186,7 @@ def create_rfq_email(
         company_info = company_info or get_section("company") or {}
 
         context = {
-            'contact_name': contact.get('name', ''),
+            'contact_name': contact.name,
             'part_number': fields['part_number'],
             'process': fields['process'],
             'spec': fields['spec'],
@@ -201,7 +202,7 @@ def create_rfq_email(
         }
 
         body = render_template(template_path, context)
-        return contact.get('email', ''), subject, body
+        return contact.email, subject, body
     except Exception as e:
         logger.error(f"Error creating RFQ email: {str(e)}")
         return '', '', ''
