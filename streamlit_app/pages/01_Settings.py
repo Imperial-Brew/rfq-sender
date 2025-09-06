@@ -72,17 +72,118 @@ def _test_box_connection():
         return False, f"Box test failed: {e}", ""
 
 def _test_email_connection(config: dict):
-    # Placeholder: adapt for IMAP/SMTP/Graph per your project
-    # Return (ok: bool, message: str)
+    """Test email connectivity for IMAP, SMTP, or Graph."""
+    provider = str(config.get("provider", "")).strip().upper()
     try:
-        required = ["provider", "username"]
-        missing = [k for k in required if not str(config.get(k, "")).strip()]
-        if missing:
-            return False, f"Missing fields: {', '.join(missing)}"
-        # TODO: implement actual IMAP/SMTP/Graph tests
-        return True, "Email settings look plausible (no live test implemented)"
+        if provider == "GRAPH":
+            import os
+            import requests
+            from core.email import graph_client
+
+            tenant = config.get("graph_tenant") or os.getenv("AZURE_TENANT_ID")
+            client_id = config.get("graph_client_id") or os.getenv("AZURE_CLIENT_ID")
+            client_secret = (
+                config.get("graph_client_secret")
+                or os.getenv("AZURE_CLIENT_SECRET")
+            )
+            missing = [
+                k
+                for k, v in {
+                    "graph_tenant": tenant,
+                    "graph_client_id": client_id,
+                    "graph_client_secret": client_secret,
+                }.items()
+                if not v
+            ]
+            if missing:
+                return False, f"Missing fields: {', '.join(missing)}"
+
+            os.environ["AZURE_TENANT_ID"] = tenant
+            os.environ["AZURE_CLIENT_ID"] = client_id
+            os.environ["AZURE_CLIENT_SECRET"] = client_secret
+
+            token = graph_client._get_token()
+            headers = {"Authorization": f"Bearer {token}"}
+            resp = requests.get(
+                f"{graph_client.GRAPH}/me", headers=headers, timeout=5
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            name = data.get("displayName") or data.get("userPrincipalName", "user")
+            return True, f"Graph connection successful for {name}"
+
+        if provider == "IMAP":
+            import os
+            import imaplib
+
+            host = config.get("imap_host")
+            port = int(config.get("imap_port") or 0)
+            username = config.get("username")
+            password = (
+                config.get("password")
+                or os.getenv("IMAP_PASSWORD")
+                or os.getenv("EMAIL_PASSWORD")
+                or os.getenv("SMTP_PASSWORD")
+            )
+            missing = [
+                k
+                for k, v in {
+                    "imap_host": host,
+                    "imap_port": port,
+                    "username": username,
+                    "password": password,
+                }.items()
+                if not v
+            ]
+            if missing:
+                return False, f"Missing fields: {', '.join(missing)}"
+
+            with imaplib.IMAP4_SSL(host, port, timeout=5) as conn:
+                conn.login(username, password)
+            return True, "IMAP login successful"
+
+        if provider == "SMTP":
+            import os
+            import smtplib
+
+            host = config.get("smtp_host")
+            port = int(config.get("smtp_port") or 0)
+            username = config.get("username")
+            password = (
+                config.get("password")
+                or os.getenv("SMTP_PASSWORD")
+                or os.getenv("EMAIL_PASSWORD")
+                or os.getenv("IMAP_PASSWORD")
+            )
+            missing = [
+                k
+                for k, v in {
+                    "smtp_host": host,
+                    "smtp_port": port,
+                    "username": username,
+                    "password": password,
+                }.items()
+                if not v
+            ]
+            if missing:
+                return False, f"Missing fields: {', '.join(missing)}"
+
+            if port == 465:
+                with smtplib.SMTP_SSL(host, port, timeout=5) as conn:
+                    conn.login(username, password)
+            else:
+                with smtplib.SMTP(host, port, timeout=5) as conn:
+                    try:
+                        conn.starttls()
+                    except smtplib.SMTPException:
+                        pass
+                    conn.login(username, password)
+            return True, "SMTP login successful"
+
+        return False, f"Unsupported provider: {provider}"
+
     except Exception as e:
-        return False, f"Email test failed: {e}"
+        return False, f"{provider} test failed: {e}"
 
 def main():
     # Enforce authentication; returns bool, not a user object
