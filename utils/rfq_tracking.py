@@ -67,7 +67,7 @@ class RFQTracking:
                     # Prepare headers from templates (first row)
                     master_header = self._template_header(self.master_tmpl, default=[
                         "rfq#", "date", "qt/so #", "part_number", "process", "spec", "quantities",
-                        "vendor", "contact", "rfq_folder", "status", "notes"
+                        "vendor", "vendor_contact", "rfq_folder", "status", "notes"
                     ])
                     responses_header = self._template_header(self.responses_tmpl, default=[])
                     if file_id_master or folder_id_master:
@@ -122,7 +122,7 @@ class RFQTracking:
             return
         header = self._template_header(template, default=[
             "rfq#", "date", "qt/so #", "part_number", "process", "spec", "quantities",
-            "vendor", "contact", "rfq_folder", "status", "notes"
+            "vendor", "vendor_contact", "rfq_folder", "status", "notes"
         ])
         try:
             with open(dest, "w", newline="", encoding="utf-8") as fout:
@@ -342,8 +342,10 @@ class RFQTracking:
                 col_qt = _col(df, "qt/so #")
                 col_part = _col(df, "part_number")
                 col_proc = _col(df, "process")
-                col_vendor = _col(df, "vendor")
-                col_contact = _col(df, "contact")
+                col_vendor = _col(df, "vendor") or _col(df, "vendor name") or _col(df, "vendor_name")
+                col_contact = (
+                    _col(df, "contact") or _col(df, "vendor_contact") or _col(df, "contact email") or _col(df, "contact_email") or _col(df, "email")
+                )
                 col_rfq = _col(df, "rfq#") or _col(df, "rfq #")
                 # Only attempt match if all key cols exist
                 if all([col_qt, col_part, col_proc, col_vendor, col_contact, col_rfq]):
@@ -410,7 +412,8 @@ class RFQTracking:
         # Assign rfq# only when appending a new row
         rfq_id = self._next_rfq_id_for_qtso(qt_so)
 
-        # Map values to potential columns
+        # Map values to potential columns (supporting header aliases for contact/vendor)
+        contact_value = contact_email if contact_email else (contact_name or "")
         values_map = {
             "rfq#": rfq_id,
             "rfq #": rfq_id,
@@ -421,7 +424,13 @@ class RFQTracking:
             "spec": spec,
             "quantities": quantities,
             "vendor": vendor_name,
-            "contact": contact_email if contact_email else (contact_name or ""),
+            "vendor name": vendor_name,
+            "vendor_name": vendor_name,
+            "contact": contact_value,
+            "vendor_contact": contact_value,
+            "contact email": contact_value,
+            "contact_email": contact_value,
+            "email": contact_value,
             "rfq_folder": rfq_folder,
             "status": status,
             "notes": notes or "",
