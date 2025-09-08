@@ -146,32 +146,38 @@ class RFQTracking:
             logger.error(f"Error loading contacts: {e}")
             return pd.DataFrame()
 
-    def _next_rfq_num(self) -> int:
-        """Return the next integer rfq# based on existing master (Box-first if configured)."""
+    def _load_master_df(self) -> Optional[pd.DataFrame]:
+        df = None
         try:
-            df = None
-            # Prefer Box-backed master if configured and accessible
             if getattr(self, "master_store", None) is not None:
                 try:
                     df = self.master_store.load_df()
                 except Exception as _e:
-                    logger.debug(f"Box load for rfq_master failed in _next_rfq_num: {_e}")
+                    logger.debug(f"Box load for rfq_master failed in _load_master_df: {_e}")
                     df = None
-            # Fallback to local file if Box not used or failed
             if df is None or (isinstance(df, pd.DataFrame) and df.empty):
                 if not self.master_path.exists():
-                    return 1
+                    return None
                 try:
                     df = pd.read_csv(self.master_path, encoding="utf-8")
                 except UnicodeDecodeError:
                     df = pd.read_csv(self.master_path, encoding="cp1252")
                 except Exception as _e:
-                    logger.debug(f"Local load for rfq_master failed in _next_rfq_num: {_e}")
-                    return 1
-            # Guard: empty dataframe
+                    logger.debug(f"Local load for rfq_master failed in _load_master_df: {_e}")
+                    return None
+            if df is None or (isinstance(df, pd.DataFrame) and df.empty):
+                return None
+            return df
+        except Exception as e:
+            logger.debug(f"_load_master_df unexpected error: {e}")
+            return None
+
+    def _next_rfq_num(self) -> int:
+        """Return the next integer rfq# based on existing master (Box-first if configured)."""
+        try:
+            df = self._load_master_df()
             if df is None or df.empty:
                 return 1
-            # Normalize possible column names
             cols_lower = [str(c).lower().strip() for c in df.columns]
             target_col = None
             if "rfq#" in cols_lower:
@@ -179,14 +185,12 @@ class RFQTracking:
             elif "rfq #" in cols_lower:
                 target_col = df.columns[cols_lower.index("rfq #")]
             else:
-                # Try to infer a numeric rfq-like column
                 for cand in df.columns:
                     if str(cand).lower().replace(" ", "") in ("rfq#", "rfq#", "rfqno", "rfqid"):
                         target_col = cand
                         break
                 if target_col is None:
                     return 1
-            # Coerce to numeric and find max
             nums = pd.to_numeric(df[target_col], errors="coerce").dropna()
             if nums.empty:
                 return 1
@@ -194,6 +198,47 @@ class RFQTracking:
         except Exception as e:
             logger.debug(f"_next_rfq_num unexpected error: {e}")
             return 1
+
+    def _next_rfq_id_for_qtso(self, qt_so: str) -> str:
+        qt = str(qt_so or "").strip()
+        if not qt:
+            return str(self._next_rfq_num())
+        df = self._load_master_df()
+        if df is None or df.empty:
+            return f"{qt}-1"
+        cols = {str(c).lower().strip(): c for c in df.columns}
+        col_rfq = cols.get("rfq#") or cols.get("rfq #")
+        # Try to find qt/so col variants
+        col_qt = None
+        for k, v in cols.items():
+            if k in ("qt/so #", "qt/so#", "qt", "so", "quote", "so #", "qt #"):
+                col_qt = v
+                break
+        if not col_rfq:
+            return f"{qt}-1"
+        subset = df
+        if col_qt:
+            subset = df[df[col_qt].astype(str).str.strip().str.lower() == qt.lower()]
+        import re
+        pat = re.compile(rf"^{re.escape(qt)}-(\d+)$", re.IGNORECASE)
+        max_n = 0
+        def maybe_update_max(val):
+            nonlocal max_n
+            s = str(val or "").strip()
+            m = pat.match(s)
+            if m:
+                try:
+                    n = int(m.group(1))
+                    if n > max_n:
+                        max_n = n
+                except Exception:
+                    pass
+        for v in subset[col_rfq].tolist():
+            maybe_update_max(v)
+        if max_n == 0 and (col_qt is None):
+            for v in df[col_rfq].tolist():
+                maybe_update_max(v)
+        return f"{qt}-{max_n + 1 if max_n >= 0 else 1}"
 
     def _validate_vendor_contact(self, vendor_name: str, contact_email: str) -> Tuple[bool, str]:
         """
@@ -320,7 +365,7 @@ class RFQTracking:
                         if not matches.empty:
                             match_idx = matches.index[0]
                             try:
-                                existing_rfq_num = int(pd.to_numeric(matches.iloc[0][col_rfq], errors="coerce"))
+                                existing_rfq_num = str(matches.iloc[0][col_rfq])
                             except Exception:
                                 existing_rfq_num = None
                             # Handle duplicate per policy
@@ -363,12 +408,12 @@ class RFQTracking:
                         logger.debug(f"Error during duplicate detection: {_e}")
 
         # Assign rfq# only when appending a new row
-        rfq_num = self._next_rfq_num()
+        rfq_id = self._next_rfq_id_for_qtso(qt_so)
 
         # Map values to potential columns
         values_map = {
-            "rfq#": rfq_num,
-            "rfq #": rfq_num,
+            "rfq#": rfq_id,
+            "rfq #": rfq_id,
             "date": datetime.now().isoformat(timespec="seconds"),
             "qt/so #": qt_so,
             "part_number": part_number,
@@ -409,16 +454,16 @@ class RFQTracking:
                     writer = csv.writer(f)
                     writer.writerow(row)
         except Exception as _e:
-            logger.error(f"Failed to append RFQ master row (rfq#={rfq_num}) to Box; falling back to local. Err: {_e}")
+            logger.error(f"Failed to append RFQ master row (rfq#={rfq_id}) to Box; falling back to local. Err: {_e}")
             try:
                 with open(self.master_path, "a", newline="", encoding="utf-8") as f:
                     writer = csv.writer(f)
                     writer.writerow(row)
             except Exception as _e2:
-                logger.error(f"Also failed local append for rfq#={rfq_num}: {_e2}")
+                logger.error(f"Also failed local append for rfq#={rfq_id}: {_e2}")
 
-        logger.info(f"Appended RFQ master row rfq#={rfq_num} vendor={vendor_name} contact={contact_email}")
-        return {"rfq#": rfq_num, "validation_ok": ok, "duplicate": False, "action": "appended"}
+        logger.info(f"Appended RFQ master row rfq#={rfq_id} vendor={vendor_name} contact={contact_email}")
+        return {"rfq#": rfq_id, "validation_ok": ok, "duplicate": False, "action": "appended"}
 
     def ensure_responses_file(self) -> None:
         """Ensure responses file exists in Box if configured; else locally."""
