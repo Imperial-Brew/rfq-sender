@@ -1,23 +1,20 @@
-import sys
-from pathlib import Path
 import streamlit as st
-
-# Add project root to path so we can import shared utils
-parent_dir = Path(__file__).parent.parent.parent
-if str(parent_dir) not in sys.path:
-    sys.path.insert(0, str(parent_dir))
 
 from streamlit_app.utils.auth_middleware import require_authentication
 from streamlit_app.utils.auth_shim import get_user_role
 from utils.rfq_tracking import get_tracker
 
+
 # Optional secret helpers (graceful fallback if not present)
+
+
 def _get_secrets_section(section: str) -> dict:
     try:
         from core.secrets import get_section
         return get_section(section) or {}
     except Exception:
         return {}
+
 
 def _set_secrets_section(section: str, data: dict) -> bool:
     try:
@@ -27,8 +24,10 @@ def _set_secrets_section(section: str, data: dict) -> bool:
     except Exception:
         return False
 
+
 def _test_box_connection():
-    ok, msg, folder_name = False, "", ""
+    """Attempt a minimal Box API call to confirm connectivity."""
+
     try:
         tracker = get_tracker()
         store = getattr(tracker, "responses_store", None)
@@ -37,7 +36,11 @@ def _test_box_connection():
         box_client = None
         if store and getattr(store, "box", None) and getattr(store.box, "client", None):
             box_client = store.box.client
-        elif mstore and getattr(mstore, "box", None) and getattr(mstore.box, "client", None):
+        elif (
+            mstore
+            and getattr(mstore, "box", None)
+            and getattr(mstore.box, "client", None)
+        ):
             box_client = mstore.box.client
 
         if not box_client:
@@ -62,27 +65,138 @@ def _test_box_connection():
                 pass
 
         if not folder_id:
-            return False, "Could not resolve a Box folder to test (configure Responses/Master first)", ""
+            return (
+                False,
+                "Could not resolve a Box folder to test (configure Responses/Master first)",
+                "",
+            )
 
         folder = box_client.folder(folder_id).get()
         # Attempt a lightweight list
         _ = list(box_client.folder(folder_id).get_items(limit=1))
-        return True, f"Connected to Box folder {folder_id}", getattr(folder, "name", "")
+        return (
+            True,
+            f"Connected to Box folder {folder_id}",
+            getattr(folder, "name", ""),
+        )
     except Exception as e:
         return False, f"Box test failed: {e}", ""
 
+
 def _test_email_connection(config: dict):
-    # Placeholder: adapt for IMAP/SMTP/Graph per your project
-    # Return (ok: bool, message: str)
+    """Test email connectivity for IMAP, SMTP, or Graph."""
+    provider = str(config.get("provider", "")).strip().upper()
     try:
-        required = ["provider", "username"]
-        missing = [k for k in required if not str(config.get(k, "")).strip()]
-        if missing:
-            return False, f"Missing fields: {', '.join(missing)}"
-        # TODO: implement actual IMAP/SMTP/Graph tests
-        return True, "Email settings look plausible (no live test implemented)"
+        if provider == "GRAPH":
+            import os
+            import requests
+            from core.email import graph_client
+
+            tenant = config.get("graph_tenant") or os.getenv("AZURE_TENANT_ID")
+            client_id = config.get("graph_client_id") or os.getenv("AZURE_CLIENT_ID")
+            client_secret = (
+                config.get("graph_client_secret")
+                or os.getenv("AZURE_CLIENT_SECRET")
+            )
+            missing = [
+                k
+                for k, v in {
+                    "graph_tenant": tenant,
+                    "graph_client_id": client_id,
+                    "graph_client_secret": client_secret,
+                }.items()
+                if not v
+            ]
+            if missing:
+                return False, f"Missing fields: {', '.join(missing)}"
+
+            os.environ["AZURE_TENANT_ID"] = tenant
+            os.environ["AZURE_CLIENT_ID"] = client_id
+            os.environ["AZURE_CLIENT_SECRET"] = client_secret
+
+            token = graph_client._get_token()
+            headers = {"Authorization": f"Bearer {token}"}
+            resp = requests.get(
+                f"{graph_client.GRAPH}/me", headers=headers, timeout=5
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            name = data.get("displayName") or data.get("userPrincipalName", "user")
+            return True, f"Graph connection successful for {name}"
+
+        if provider == "IMAP":
+            import os
+            import imaplib
+
+            host = config.get("imap_host")
+            port = int(config.get("imap_port") or 0)
+            username = config.get("username")
+            password = (
+                config.get("password")
+                or os.getenv("IMAP_PASSWORD")
+                or os.getenv("EMAIL_PASSWORD")
+                or os.getenv("SMTP_PASSWORD")
+            )
+            missing = [
+                k
+                for k, v in {
+                    "imap_host": host,
+                    "imap_port": port,
+                    "username": username,
+                    "password": password,
+                }.items()
+                if not v
+            ]
+            if missing:
+                return False, f"Missing fields: {', '.join(missing)}"
+
+            with imaplib.IMAP4_SSL(host, port, timeout=5) as conn:
+                conn.login(username, password)
+            return True, "IMAP login successful"
+
+        if provider == "SMTP":
+            import os
+            import smtplib
+
+            host = config.get("smtp_host")
+            port = int(config.get("smtp_port") or 0)
+            username = config.get("username")
+            password = (
+                config.get("password")
+                or os.getenv("SMTP_PASSWORD")
+                or os.getenv("EMAIL_PASSWORD")
+                or os.getenv("IMAP_PASSWORD")
+            )
+            missing = [
+                k
+                for k, v in {
+                    "smtp_host": host,
+                    "smtp_port": port,
+                    "username": username,
+                    "password": password,
+                }.items()
+                if not v
+            ]
+            if missing:
+                return False, f"Missing fields: {', '.join(missing)}"
+
+            if port == 465:
+                with smtplib.SMTP_SSL(host, port, timeout=5) as conn:
+                    conn.login(username, password)
+            else:
+                with smtplib.SMTP(host, port, timeout=5) as conn:
+                    try:
+                        conn.starttls()
+                    except smtplib.SMTPException:
+                        pass
+                    conn.login(username, password)
+            return True, "SMTP login successful"
+
+        return False, f"Unsupported provider: {provider}"
+
     except Exception as e:
-        return False, f"Email test failed: {e}"
+        return False, f"{provider} test failed: {e}"
+
 
 def main():
     # Enforce authentication; returns bool, not a user object
@@ -102,22 +216,57 @@ def main():
     box_secrets = _get_secrets_section("box")
 
     with st.expander("Email Settings", expanded=True):
+        providers = ["IMAP", "SMTP", "Graph", "Other"]
+        current = email_secrets.get("provider")
         provider = st.selectbox(
             "Provider",
-            options=["IMAP", "SMTP", "Graph", "Other"],
-            index=["IMAP", "SMTP", "Graph", "Other"].index(
-                str(email_secrets.get("provider", "IMAP")) if email_secrets.get("provider") in ["IMAP","SMTP","Graph","Other"] else "IMAP"
-            ),
-            disabled=not is_admin
+            options=providers,
+            index=providers.index(current) if current in providers else 0,
+            disabled=not is_admin,
         )
-        username = st.text_input("Username", value=str(email_secrets.get("username", "")), disabled=not is_admin)
-        imap_host = st.text_input("IMAP Host", value=str(email_secrets.get("imap_host", "")), disabled=not is_admin)
-        imap_port = st.number_input("IMAP Port", value=int(email_secrets.get("imap_port", 993) or 993), step=1, disabled=not is_admin)
-        smtp_host = st.text_input("SMTP Host", value=str(email_secrets.get("smtp_host", "")), disabled=not is_admin)
-        smtp_port = st.number_input("SMTP Port", value=int(email_secrets.get("smtp_port", 587) or 587), step=1, disabled=not is_admin)
-        graph_tenant = st.text_input("Graph Tenant", value=str(email_secrets.get("graph_tenant", "")), disabled=not is_admin)
-        graph_client_id = st.text_input("Graph Client ID", value=str(email_secrets.get("graph_client_id", "")), disabled=not is_admin)
-        graph_client_secret = st.text_input("Graph Client Secret", value=str(email_secrets.get("graph_client_secret", "")), type="password", disabled=not is_admin)
+        username = st.text_input(
+            "Username",
+            value=str(email_secrets.get("username", "")),
+            disabled=not is_admin,
+        )
+        imap_host = st.text_input(
+            "IMAP Host",
+            value=str(email_secrets.get("imap_host", "")),
+            disabled=not is_admin,
+        )
+        imap_port = st.number_input(
+            "IMAP Port",
+            value=int(email_secrets.get("imap_port", 993) or 993),
+            step=1,
+            disabled=not is_admin,
+        )
+        smtp_host = st.text_input(
+            "SMTP Host",
+            value=str(email_secrets.get("smtp_host", "")),
+            disabled=not is_admin,
+        )
+        smtp_port = st.number_input(
+            "SMTP Port",
+            value=int(email_secrets.get("smtp_port", 587) or 587),
+            step=1,
+            disabled=not is_admin,
+        )
+        graph_tenant = st.text_input(
+            "Graph Tenant",
+            value=str(email_secrets.get("graph_tenant", "")),
+            disabled=not is_admin,
+        )
+        graph_client_id = st.text_input(
+            "Graph Client ID",
+            value=str(email_secrets.get("graph_client_id", "")),
+            disabled=not is_admin,
+        )
+        graph_client_secret = st.text_input(
+            "Graph Client Secret",
+            value=str(email_secrets.get("graph_client_secret", "")),
+            type="password",
+            disabled=not is_admin,
+        )
 
         col_e1, col_e2 = st.columns(2)
         with col_e1:
@@ -158,26 +307,28 @@ def main():
             "Responses Folder ID (Box)",
             value=str(box_secrets.get("BOX_RFQ_RESPONSES_FOLDER_ID", "")),
             help="Folder where incoming response files are uploaded/listed.",
-            disabled=not is_admin
+            disabled=not is_admin,
         )
         master_file_id = st.text_input(
             "RFQ Master File ID (Box)",
             value=str(box_secrets.get("BOX_RFQ_MASTER_FILE_ID", "")),
             help="If using a single master CSV file on Box, set its file ID.",
-            disabled=not is_admin
+            disabled=not is_admin,
         )
         master_folder_id = st.text_input(
             "RFQ Master Folder ID (Box)",
             value=str(box_secrets.get("BOX_RFQ_MASTER_FOLDER_ID", "")),
             help="If your master store uses a folder container, specify here (optional).",
-            disabled=not is_admin
+            disabled=not is_admin,
         )
 
         col_b1, col_b2, col_b3 = st.columns(3)
         with col_b1:
             if st.button("Test Box Connection"):
                 ok, msg, fname = _test_box_connection()
-                (st.success if ok else st.error)(msg + (f" — {fname}" if fname else ""))
+                (st.success if ok else st.error)(
+                    msg + (f" — {fname}" if fname else "")
+                )
 
         with col_b2:
             if is_admin and st.button("Save Box Settings"):
@@ -195,13 +346,23 @@ def main():
                 try:
                     tracker = get_tracker()
                     st.write("Tracker fields:")
-                    st.code({
-                        "master_path": getattr(tracker, "master_path", None),
-                        "has_master_store": getattr(tracker, "master_store", None) is not None,
-                        "has_responses_store": getattr(tracker, "responses_store", None) is not None,
-                    }, language="json")
+                    st.code(
+                        {
+                            "master_path": getattr(tracker, "master_path", None),
+                            "has_master_store": getattr(
+                                tracker, "master_store", None
+                            )
+                            is not None,
+                            "has_responses_store": getattr(
+                                tracker, "responses_store", None
+                            )
+                            is not None,
+                        },
+                        language="json",
+                    )
                 except Exception as e:
                     st.error(f"Failed to load tracker: {e}")
+
 
 if __name__ == "__main__":
     main()

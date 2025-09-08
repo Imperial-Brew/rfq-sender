@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Import the VendorManager class
 from core.vendors.vendor_manager import VendorManager
+from core.vendors.models import Vendor
 
 def test_load_contacts():
     """Test loading contacts from CSV file."""
@@ -53,7 +54,7 @@ def test_load_contacts():
     
     for vendor_name in test_vendors:
         # Find the vendor in the vendors list
-        vendor = next((v for v in vendor_manager.vendors if v.get("name") == vendor_name), None)
+        vendor = next((v for v in vendor_manager.vendors if v.name == vendor_name), None)
         
         if not vendor:
             logger.warning(f"Vendor not found in JSON: {vendor_name}")
@@ -63,15 +64,15 @@ def test_load_contacts():
         contact = vendor_manager.get_primary_contact(vendor)
         
         if contact:
-            logger.info(f"Found contact for {vendor_name}: {contact.get('name')} ({contact.get('email')})")
+            logger.info(f"Found contact for {vendor_name}: {contact.name} ({contact.email})")
             # Check if contact came from CSV or JSON
             contact_source = "JSON"
             
             # Check exact match
             if vendor_name in vendor_manager.contacts:
                 csv_contacts = vendor_manager.contacts[vendor_name]
-                csv_emails = [c.get('email', '') for c in csv_contacts]
-                if contact.get('email') in csv_emails:
+                csv_emails = [c.email for c in csv_contacts]
+                if contact.email in csv_emails:
                     contact_source = "CSV (exact match)"
             
             # Check case-insensitive match
@@ -79,16 +80,16 @@ def test_load_contacts():
                 vendor_name_lower = vendor_name.lower()
                 for csv_vendor_name, csv_contacts in vendor_manager.contacts.items():
                     if csv_vendor_name.lower() == vendor_name_lower:
-                        csv_emails = [c.get('email', '') for c in csv_contacts]
-                        if contact.get('email') in csv_emails:
+                        csv_emails = [c.email for c in csv_contacts]
+                        if contact.email in csv_emails:
                             contact_source = f"CSV (case-insensitive: {csv_vendor_name})"
             
             # Check special case for Turn-key/TURNKEY
             if "Turn-key" in vendor_name or "TURNKEY" in vendor_name:
                 for csv_vendor_name, csv_contacts in vendor_manager.contacts.items():
                     if ("Turn" in csv_vendor_name or "TURN" in csv_vendor_name) and "key" in csv_vendor_name.lower():
-                        csv_emails = [c.get('email', '') for c in csv_contacts]
-                        if contact.get('email') in csv_emails:
+                        csv_emails = [c.email for c in csv_contacts]
+                        if contact.email in csv_emails:
                             contact_source = f"CSV (special match: {csv_vendor_name})"
             
             logger.info(f"  Contact source: {contact_source}")
@@ -110,18 +111,18 @@ def test_turnkey_matching():
     )
     
     # Create a test vendor with the name "Turn-key Coatings, Inc."
-    test_vendor = {"name": "Turn-key Coatings, Inc."}
+    test_vendor = Vendor(name="Turn-key Coatings, Inc.")
     
     # Get the primary contact
     contact = vendor_manager.get_primary_contact(test_vendor)
     
     if contact:
-        logger.info(f"Found contact for Turn-key Coatings, Inc.: {contact.get('name')} ({contact.get('email')})")
+        logger.info(f"Found contact for Turn-key Coatings, Inc.: {contact.name} ({contact.email})")
         # Check if contact came from CSV
         if "TURNKEY Coatings" in vendor_manager.contacts:
             csv_contacts = vendor_manager.contacts["TURNKEY Coatings"]
-            csv_emails = [c.get('email', '') for c in csv_contacts]
-            if contact.get('email') in csv_emails:
+            csv_emails = [c.email for c in csv_contacts]
+            if contact.email in csv_emails:
                 logger.info(f"  Contact source: CSV (TURNKEY Coatings)")
             else:
                 logger.info(f"  Contact source: JSON")
@@ -136,7 +137,7 @@ def test_turnkey_matching():
         csv_contacts = vendor_manager.contacts["TURNKEY Coatings"]
         if csv_contacts:
             contact = csv_contacts[0]
-            logger.info(f"Found contact for TURNKEY Coatings: {contact.get('name')} ({contact.get('email')})")
+            logger.info(f"Found contact for TURNKEY Coatings: {contact.name} ({contact.email})")
         else:
             logger.warning("No contacts found for TURNKEY Coatings in CSV")
     else:
