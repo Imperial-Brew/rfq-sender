@@ -39,26 +39,32 @@ def setup_page():
 def display_add_to_queue_form(user):
     """Display the form for adding a part to the queue."""
     processes = load_process_list()
-    
+    if not processes:
+        st.error("FamiliarSpecs.csv not found in Box or local path.")
+        return
+
     # Process selection outside the form
     st.subheader("Select Process and Spec")
     selected_process = st.selectbox(
-        "Process", 
-        options=sorted(processes), 
+        "Process",
+        options=sorted(processes),
         help="Select the manufacturing process"
     )
-    
+
     # Load specs based on selected process (guard against None/empty)
     if selected_process:
         available_specs = load_specs_for_process(selected_process)
+        if not available_specs:
+            st.error("FamiliarSpecs.csv not found in Box or local path.")
+            return
     else:
         available_specs = []
     spec = st.selectbox(
-        "Spec (optional)", 
-        options=available_specs, 
+        "Spec (optional)",
+        options=available_specs,
         help="Select the specification if applicable"
     )
-    
+
     st.subheader("Part Details")
     with st.form("rfq_form"):
         col1, col2 = st.columns(2)

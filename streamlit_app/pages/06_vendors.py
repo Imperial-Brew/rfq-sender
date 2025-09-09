@@ -250,9 +250,9 @@ def search_vendors_by_spec():
     # Get all processes
     processes = load_process_list()
 
-    # If no processes are available, guide the user and exit early
+    # If processes list is empty, show error and exit early
     if not processes:
-        st.info("No processes are available. Add specifications in the Specifications page first.")
+        st.error("FamiliarSpecs.csv not found in Box or local path.")
         return
     
     # Create a selectbox for choosing a process
@@ -265,12 +265,12 @@ def search_vendors_by_spec():
     # Get specs for the selected process (guard against None/empty)
     if selected_process:
         specs = load_specs_for_process(selected_process)
+        if not specs:
+            st.error("FamiliarSpecs.csv not found in Box or local path.")
+            return
     else:
         specs = []
-    
-    if not specs:
-        st.warning("No specifications found for the selected process.")
-        return
+
     
     # Create a selectbox for choosing a spec
     selected_spec = st.selectbox("Select Specification", options=sorted(specs))

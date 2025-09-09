@@ -45,6 +45,9 @@ def display_add_spec_form(user, role):
     
     # Get existing processes and issuers for dropdowns
     processes = load_process_list()
+    if not processes:
+        st.error("FamiliarSpecs.csv not found in Box or local path.")
+        return
     issuers = load_issuers()
     
     with st.form("add_spec_form"):
@@ -169,7 +172,11 @@ def display_specs_data(user, role):
         
         with col1:
             # Filter by process
-            processes = ["All"] + sorted(load_process_list())
+            process_list = load_process_list()
+            if not process_list:
+                st.error("FamiliarSpecs.csv not found in Box or local path.")
+                return
+            processes = ["All"] + sorted(process_list)
             process_filter = st.selectbox("Filter by Process", processes)
         
         with col2:
