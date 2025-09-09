@@ -20,6 +20,7 @@ from utils.rfq_logging import get_logger
 from utils.rfq_tracking import get_tracker
 from io import BytesIO
 from boxsdk.exception import BoxAPIException
+from streamlit_app.utils.box_client import get_box_client
 from datetime import datetime, timedelta
 
 # Require authentication for this page
@@ -67,6 +68,49 @@ def _load_responses_df():
     except Exception as e:
         logger.error(f"Failed loading local rfq_responses.csv: {e}")
         return pd.DataFrame()
+
+
+@st.cache_data(ttl=60)
+def load_responses_df() -> pd.DataFrame:
+    """Cached loader for rfq_responses.csv using Box if available.
+
+    Returns:
+        pd.DataFrame: The current responses table.
+    """
+    return _load_responses_df()
+
+
+def save_responses_df(df: pd.DataFrame) -> None:
+    """Persist responses DataFrame and clear cached reads.
+
+    This writes to Box when configured (via tracker.responses_store),
+    otherwise saves to the local path. After saving, the cached loader
+    is invalidated so the UI shows the latest data.
+
+    Args:
+        df: Responses dataframe to persist.
+    """
+    tracker = get_tracker()
+    try:
+        if getattr(tracker, "responses_store", None) is not None:
+            tracker.responses_store.save_df(df)
+        else:
+            try:
+                tracker.ensure_responses_file()
+            except Exception:
+                pass
+            df.to_csv(tracker.responses_path, index=False)
+    except BoxAPIException as e:
+        logger.error(f"Failed to save responses to Box: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to save responses: {e}")
+        raise
+    finally:
+        try:
+            load_responses_df.clear()  # invalidate cache
+        except Exception:
+            pass
 
 
 def _find_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
@@ -699,10 +743,7 @@ def display_responses(user, role):
                         if isinstance(df_curr, pd.DataFrame) and not df_curr.empty and "quote_folder" in df_curr.columns:
                             mask = (df_curr["file_id"].astype(str) == file_id) & (df_curr["rfq#"].astype(str).str.strip() == rfq_num_clean)
                             df_curr.loc[mask, "quote_folder"] = quote_url
-                            if tracker.responses_store is not None:
-                                tracker.responses_store.save_df(df_curr)
-                            else:
-                                df_curr.to_csv(tracker.responses_path, index=False)
+                            save_responses_df(df_curr)
                 except Exception as le:
                     logger.warning(f"quote_folder link update failed: {le}")
             st.session_state.pop("responses_pending_move", None)
@@ -1706,14 +1747,9 @@ def display_responses(user, role):
                                     else:
                                         df_out = pd.concat([df_curr, new_row], ignore_index=True)
 
-                                    if tracker.responses_store is not None:
-                                        tracker.responses_store.save_df(df_out)
-                                        st.success(
-                                            f"Saved record to rfq_responses.csv in Box. Total rows: {len(df_out)}")
-                                    else:
-                                        df_out.to_csv(tracker.responses_path, index=False)
-                                        st.success(
-                                            f"Saved record to local rfq_responses.csv. Total rows: {len(df_out)}")
+                                    save_responses_df(df_out)
+                                    st.success(
+                                        f"Saved record to rfq_responses.csv. Total rows: {len(df_out)}")
 
                                     # After save: attempt to move the processed file to the RFQ folder (Box only)
                                     try:

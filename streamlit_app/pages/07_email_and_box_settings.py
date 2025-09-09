@@ -25,6 +25,7 @@ from streamlit_app.utils.auth_middleware import require_authentication
 from scripts.utils.spec_check import SpecProcessValidator
 from utils.rfq_tracking import get_tracker
 from scripts.box.box_integration import BoxIntegration
+from streamlit_app.utils.box_client import get_box_client
 from boxsdk.exception import BoxAPIException
 import secrets
 import string
@@ -54,6 +55,74 @@ from streamlit_app.utils.box_helpers import (
     upload_and_share_for_part,
     persist_box_update as _persist_box_update,
 )
+
+# Box IO helpers for loading config/data files from Box
+from streamlit_app.utils import box_io
+
+
+def _box_available() -> bool:
+    """Return True if Box secrets with required IDs are available."""
+    try:
+        bx = st.secrets.get("box", {})
+        required = [
+            "BOX_CONTACTS_FILE_ID",
+            "BOX_VENDOR_OPTIONS_FILE_ID",
+            "BOX_FAMILIAR_SPECS_FILE_ID",
+            "BOX_VENDORS_JSON_FILE_ID",
+        ]
+        return bool(bx) and all(k in bx and str(bx[k]).strip() for k in required)
+    except Exception:
+        return False
+
+
+@st.cache_data(ttl=300)
+def load_contacts_df_box() -> pd.DataFrame:
+    """Load contacts.csv from Box or raise on failure.
+
+    Returns:
+        pd.DataFrame: Contacts table.
+    """
+    client = get_box_client()
+    fid = st.secrets["box"]["BOX_CONTACTS_FILE_ID"]
+    return box_io.read_csv(client, fid)
+
+
+@st.cache_data(ttl=300)
+def load_vendor_options_box() -> dict:
+    """Load vendor_options.yaml from Box into a dict.
+
+    Returns:
+        dict: Parsed YAML content.
+    """
+    client = get_box_client()
+    fid = st.secrets["box"]["BOX_VENDOR_OPTIONS_FILE_ID"]
+    data = box_io.read_yaml_obj(client, fid)
+    return data if isinstance(data, dict) else {}
+
+
+@st.cache_data(ttl=300)
+def load_familiar_specs_df_box() -> pd.DataFrame:
+    """Load FamiliarSpecs.csv from Box.
+
+    Returns:
+        pd.DataFrame: Familiar specs table.
+    """
+    client = get_box_client()
+    fid = st.secrets["box"]["BOX_FAMILIAR_SPECS_FILE_ID"]
+    return box_io.read_csv(client, fid)
+
+
+@st.cache_data(ttl=300)
+def load_vendors_json_box() -> dict:
+    """Load vendors.json from Box.
+
+    Returns:
+        dict: Vendors mapping.
+    """
+    client = get_box_client()
+    fid = st.secrets["box"]["BOX_VENDORS_JSON_FILE_ID"]
+    data = box_io.read_json_obj(client, fid)
+    return data if isinstance(data, dict) else {}
 
 def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
               logger: logging.Logger = None) -> Tuple[pd.DataFrame, Dict[Any, Dict[str, Any]]]:
@@ -87,7 +156,7 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
     else:
         print(f"Loading contacts data from {contacts_file}")
 
-    if not os.path.exists(contacts_file):
+    if not os.path.exists(contacts_file) and not _box_available():
         if logger:
             logger.error(f"Contacts file not found: {contacts_file}")
         else:
@@ -99,7 +168,7 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
     else:
         print(f"Loading vendor options from {vendor_options_file}")
 
-    if not os.path.exists(vendor_options_file):
+    if not os.path.exists(vendor_options_file) and not _box_available():
         if logger:
             logger.error(f"Vendor options file not found: {vendor_options_file}")
         else:
@@ -139,16 +208,35 @@ def load_data(queue_file: str, contacts_file: str, vendor_options_file: str,
             else:
                 print(f"Found {sent_items_count} items where SENT=YES. Total items: {len(queue)}")
 
-        # Load contacts data with UTF-8 encoding and error handling
-        try:
-            contacts = pd.read_csv(contacts_file, encoding='utf-8')
-        except UnicodeDecodeError:
-            # Fall back to cp1252 if UTF-8 fails
-            contacts = pd.read_csv(contacts_file, encoding='cp1252')
+        # Load contacts data (prefer Box)
+        if _box_available():
+            try:
+                contacts = load_contacts_df_box()
+            except Exception as _bx_e:
+                if logger:
+                    logger.warning(f"Box contacts load failed: {_bx_e}; falling back to local CSV")
+                try:
+                    contacts = pd.read_csv(contacts_file, encoding='utf-8')
+                except UnicodeDecodeError:
+                    contacts = pd.read_csv(contacts_file, encoding='cp1252')
+        else:
+            try:
+                contacts = pd.read_csv(contacts_file, encoding='utf-8')
+            except UnicodeDecodeError:
+                contacts = pd.read_csv(contacts_file, encoding='cp1252')
 
-        # Load vendor options data
-        with open(vendor_options_file, 'r', encoding='utf-8') as f:
-            vendor_options = yaml.safe_load(f)
+        # Load vendor options data (prefer Box)
+        if _box_available():
+            try:
+                vendor_options = load_vendor_options_box()
+            except Exception as _bx_e:
+                if logger:
+                    logger.warning(f"Box vendor_options load failed: {_bx_e}; falling back to local YAML")
+                with open(vendor_options_file, 'r', encoding='utf-8') as f:
+                    vendor_options = yaml.safe_load(f)
+        else:
+            with open(vendor_options_file, 'r', encoding='utf-8') as f:
+                vendor_options = yaml.safe_load(f)
 
         # Rename queue columns to match expected names
         queue_column_mapping = {
