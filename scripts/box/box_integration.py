@@ -74,6 +74,7 @@ class BoxIntegration:
         New discovery order (secrets-only):
         1) st.secrets["box"]["BOX_JWT_JSON"] (Streamlit secrets)
         2) os.environ["BOX_JWT_JSON"]
+        3) .streamlit/secrets.toml → [box].BOX_JWT_JSON (when running outside Streamlit)
 
         Returns:
             Box client if authentication is successful, None otherwise
@@ -102,6 +103,21 @@ class BoxIntegration:
                     jwt_json = env_jwt
                     tried.append("<env:BOX_JWT_JSON>")
                     self.config_path = "<env:BOX_JWT_JSON>"
+
+            # Fallback to reading .streamlit/secrets.toml directly (outside Streamlit)
+            if not jwt_json:
+                try:
+                    from core.secrets import get_section as _get_secret_section
+                    box_section = _get_secret_section("box") or {}
+                    file_jwt = str(box_section.get("BOX_JWT_JSON", "") or "").strip()
+                    if file_jwt:
+                        jwt_json = file_jwt
+                        tried.append("<file:.streamlit/secrets.toml [box].BOX_JWT_JSON>")
+                        self.config_path = "<file:.streamlit/secrets.toml>"
+                        # Make available to downstream code in this process
+                        os.environ.setdefault("BOX_JWT_JSON", jwt_json)
+                except Exception:
+                    pass
 
             # Record diagnostics
             self.tried_paths = tried

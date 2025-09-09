@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Box Familiar Specs save now uses a BytesIO stream with size when calling
   `update_contents_with_stream`, preventing silent fallback to local path.
   Added exception logging in Box load/save paths to surface underlying issues.
+- BoxIntegration authentication now falls back to reading `.streamlit/secrets.toml`
+  when running outside Streamlit (e.g., local scripts/tests). This resolves
+  `AttributeError: 'NoneType' object has no attribute 'file'` in test.py by
+  sourcing `[box].BOX_JWT_JSON` without requiring Streamlit or pre-set env.
 
 ## [0.2.1] - 2025-08-25
 
