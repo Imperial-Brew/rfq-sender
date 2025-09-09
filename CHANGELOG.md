@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Prevented AttributeError when no process is selected in Streamlit Queue
+  Management by making load_specs_for_process handle None/empty safely in
+  core/specs/spec_manager.py. Added Optional[str] typing and docstrings in
+  utils/specs.py. Introduced regression tests in tests/specs/ to guard this
+  behavior.
+
 ## [0.2.1] - 2025-08-25
 
 ### Added
