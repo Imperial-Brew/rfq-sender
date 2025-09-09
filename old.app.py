@@ -174,7 +174,7 @@ with tab2:
         search = st.text_input("Search", "")
         if search:
             df = df[df.apply(lambda row: row.astype(str).str.contains(search, case=False).any(), axis=1)]
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
 
 # --- Add Spec/Process ---
 with tab3:
@@ -215,7 +215,7 @@ with tab4:
         search_term = st.text_input("Search spec or process", "")
         if search_term:
             spec_df = spec_df[spec_df.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)]
-        st.dataframe(spec_df, use_container_width=True)
+        st.dataframe(spec_df, width="stretch")
 
 # --- Send RFQ Emails ---
 with tab5:

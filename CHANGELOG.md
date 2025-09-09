@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Migrated Streamlit deprecations: replaced `use_container_width` with
+  `width` API (using `width='stretch'` where applicable) across Queue and
+  Specifications pages to silence warnings before 2025-12-31 removal.
+- Added UI guard in Queue Management to avoid loading specs when no process
+  is selected.
+
 ### Fixed
 - Prevented AttributeError when no process is selected in Streamlit Queue
   Management by making load_specs_for_process handle None/empty safely in

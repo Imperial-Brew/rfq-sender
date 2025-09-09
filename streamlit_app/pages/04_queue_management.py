@@ -48,8 +48,11 @@ def display_add_to_queue_form(user):
         help="Select the manufacturing process"
     )
     
-    # Load specs based on selected process
-    available_specs = load_specs_for_process(selected_process)
+    # Load specs based on selected process (guard against None/empty)
+    if selected_process:
+        available_specs = load_specs_for_process(selected_process)
+    else:
+        available_specs = []
     spec = st.selectbox(
         "Spec (optional)", 
         options=available_specs, 
@@ -94,7 +97,7 @@ def display_add_to_queue_form(user):
             help="Enter any additional notes or instructions"
         )
         
-        submitted = st.form_submit_button("Add to Queue", use_container_width=True)
+        submitted = st.form_submit_button("Add to Queue", width="stretch")
         
         if submitted:
             if not part_number or not selected_process:
@@ -268,7 +271,7 @@ def display_queue_data(user, role):
         # Display the dataframe
         st.dataframe(
             display_df[columns_to_display],
-            use_container_width=True,
+            width="stretch",
             hide_index=True
         )
         
@@ -322,7 +325,7 @@ def display_queue_data(user, role):
                             refreshed_df = store.load_df()
                             refreshed_df = _standardize_df(refreshed_df)
                             st.success(f"Loaded {len(refreshed_df)} row(s) from Box and refreshed the queue in the UI.")
-                            st.dataframe(refreshed_df, use_container_width=True, hide_index=True)
+                            st.dataframe(refreshed_df, width="stretch", hide_index=True)
 
                             if st.button("Save cleaned queue back to Box (drop legacy columns)", key="save_cleaned_queue_box_page1"):
                                 try:
