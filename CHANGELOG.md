@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streamlit Vendors page: avoid calling load_specs_for_process with a None/empty
   process selection; added UI guard and improved empty-state messaging in
   06_vendors.py to prevent AttributeError and guide the user.
+- Box Familiar Specs save now uses a BytesIO stream with size when calling
+  `update_contents_with_stream`, preventing silent fallback to local path.
+  Added exception logging in Box load/save paths to surface underlying issues.
 
 ## [0.2.1] - 2025-08-25
 

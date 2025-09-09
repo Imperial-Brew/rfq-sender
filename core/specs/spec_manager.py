@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 
@@ -63,7 +64,11 @@ class SpecManager:
             df = pd.read_csv(BytesIO(content))
             df.columns = df.columns.str.strip().str.lower()
             return df
-        except Exception:
+        except Exception as e:
+            try:
+                logging.getLogger(__name__).exception("Failed to load familiar specs from Box")
+            except Exception:
+                pass
             return None
     
     def _save_to_box(self, df: pd.DataFrame) -> bool:
@@ -82,11 +87,16 @@ class SpecManager:
             if not client:
                 return False
             # Serialize DataFrame to CSV bytes
+            from io import BytesIO
             csv_bytes = df.to_csv(index=False).encode("utf-8")
             file_obj = client.file(self.box_file_id)
-            file_obj.update_contents_with_stream(csv_bytes)
+            file_obj.update_contents_with_stream(BytesIO(csv_bytes), file_size=len(csv_bytes))
             return True
-        except Exception:
+        except Exception as e:
+            try:
+                logging.getLogger(__name__).exception("Failed to save familiar specs to Box")
+            except Exception:
+                pass
             return False
     
     def load_familiar_specs(self) -> pd.DataFrame:
