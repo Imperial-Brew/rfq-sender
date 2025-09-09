@@ -51,12 +51,12 @@ class SpecManager:
         df = self.load_familiar_specs()
         return df["process"].dropna().unique().tolist()
     
-    def load_specs_for_process(self, process: str) -> List[str]:
+    def load_specs_for_process(self, process: Optional[str]) -> List[str]:
         """
         Get a list of specs for a specific process.
         
         Args:
-            process: Process name to filter by
+            process: Process name to filter by. If None or empty, returns [].
             
         Returns:
             List of spec names for the process
@@ -69,7 +69,14 @@ class SpecManager:
         df["process"] = df["process"].astype(str).str.strip().str.lower()
         df["spec"] = df["spec"].astype(str).str.strip()
 
-        filtered = df[df["process"] == process.strip().lower()]
+        # Safely handle None or empty process input
+        if process is None:
+            return []
+        safe_process = str(process).strip().lower()
+        if not safe_process:
+            return []
+
+        filtered = df[df["process"] == safe_process]
         return sorted(filtered["spec"].dropna().unique().tolist())
     
     def load_issuers(self) -> List[str]:
