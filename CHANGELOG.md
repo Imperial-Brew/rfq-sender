@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   core/specs/spec_manager.py. Added Optional[str] typing and docstrings in
   utils/specs.py. Introduced regression tests in tests/specs/ to guard this
   behavior.
+- Streamlit Vendors page: avoid calling load_specs_for_process with a None/empty
+  process selection; added UI guard and improved empty-state messaging in
+  06_vendors.py to prevent AttributeError and guide the user.
 
 ## [0.2.1] - 2025-08-25
 
