@@ -143,6 +143,7 @@ vendors:
   - name: Magnetic Inspection
     specs:
     - number: BPS 4075
+    - number: ASTM E1444
   - name: Nickel Plating
     specs:
     - number: MIL-C-26074
@@ -198,6 +199,7 @@ vendors:
   - name: Magnetic Inspection
     specs:
     - number: BPS 4075
+    - number: ASTM E1444
   - name: Passivation
     specs:
     - number: AMS-QQ-P-35
@@ -554,6 +556,7 @@ vendors:
   - name: Magnetic Inspection
     specs:
     - number: BPS 4075
+    - number: ASTM E1444
   - name: Passivation
     specs:
     - number: BPS 4007
