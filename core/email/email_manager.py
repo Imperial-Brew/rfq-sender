@@ -22,12 +22,12 @@ logger = logging.getLogger(__name__)
 class EmailManager:
     """
     Manages email operations for RFQ emails.
-    
+
     This class provides functionality to:
     1. Creates draft emails via Microsoft Graph.
     2. Render email templates using Jinja2.
     """
-    
+
     def __init__(
         self,
         template_path: str = None,
@@ -36,7 +36,7 @@ class EmailManager:
     ):
         """
         Initialize the email manager.
-        
+
         Args:
             template_path: Path to the email template file
             exchange_settings: Dictionary with Exchange settings (username, from_email, cc)
@@ -51,24 +51,24 @@ class EmailManager:
     def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
         """
         Render a Jinja2 template with the given context.
-        
+
         Args:
             template_path: Path to the template file
             context: Dictionary of variables to pass to the template
-            
+
         Returns:
             Rendered template as a string
         """
         try:
             template_dir = os.path.dirname(template_path)
             template_file = os.path.basename(template_path)
-            
+
             # Create Jinja2 environment
             env = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(template_dir),
-                autoescape=jinja2.select_autoescape(['html', 'xml'])
+                autoescape=jinja2.select_autoescape(["html", "xml"]),
             )
-            
+
             # Load and render template
             template = env.get_template(template_file)
             return template.render(**context)
@@ -83,11 +83,7 @@ class EmailManager:
             return ""
 
     def create_rfq_email(
-            self,
-            queue_item,
-            vendor,
-            contact,
-            template_path: Optional[str] = None
+        self, queue_item, vendor, contact, template_path: Optional[str] = None
     ) -> Tuple[str, str, str]:
         # Use provided template path or instance template path
         template_path = template_path or self.template_path
@@ -106,24 +102,24 @@ class EmailManager:
 
         # Build the template context (what the Jinja file renders with)
         context = {
-            'contact_name': contact.get('name', ''),
-            'part_number': fields['part_number'],
-            'process': fields['process'],
-            'spec': fields['spec'],
-            'quantities': fields['quantities'],
-            'material': fields['material'],
-            'company_name': company.get('name', 'Your Company'),
-            'company_logo_url': company.get('logo_url', ''),
-            'sender_name': company.get('sender_name', ''),
-            'sender_title': company.get('sender_title', ''),
-            'sender_email': company.get('sender_email', ''),
-            'sender_phone': company.get('sender_phone', ''),
-            'company_address': company.get('address', ''),
+            "contact_name": contact.get("name", ""),
+            "part_number": fields["part_number"],
+            "process": fields["process"],
+            "spec": fields["spec"],
+            "quantities": fields["quantities"],
+            "material": fields["material"],
+            "company_name": company.get("name", "Your Company"),
+            "company_logo_url": company.get("logo_url", ""),
+            "sender_name": company.get("sender_name", ""),
+            "sender_title": company.get("sender_title", ""),
+            "sender_email": company.get("sender_email", ""),
+            "sender_phone": company.get("sender_phone", ""),
+            "company_address": company.get("address", ""),
         }
 
         # Render and return
         body = self.render_template(template_path, context)
-        return contact.get('email', ''), subject, body
+        return contact.get("email", ""), subject, body
 
     def create_draft_email(
         self,
@@ -161,13 +157,15 @@ class EmailManager:
 
             # Attachments are deprecated and ignored — all files must be shared via Box links in the email body.
             if attachments:
-                logger.info("Attachments provided to create_draft_email are ignored by policy; use Box upload + shared link instead.")
+                logger.info(
+                    "Attachments provided to create_draft_email are ignored by policy; use Box upload + shared link instead."
+                )
 
             return True
         except Exception as e:
             logger.error(f"Graph draft creation failed for {recipient}: {e}")
             return False
-    
+
     def send_email(
         self,
         recipient: str,
@@ -176,7 +174,7 @@ class EmailManager:
         attachments: List[str] = None,
     ) -> bool:
         try:
-            cc_email = self.exchange_settings.get('cc', None)
+            cc_email = self.exchange_settings.get("cc", None)
             success = self.create_draft_email(
                 recipient=recipient,
                 subject=subject,
@@ -193,74 +191,75 @@ class EmailManager:
         except Exception as e:
             logger.error(f"Error creating draft email for {recipient}: {str(e)}")
             return False
-    
+
     def process_queue_and_send_emails(
-        self,
-        queue_file: str,
-        vendor_file: str,
-        vendor_options_file: str = None
+        self, queue_file: str, vendor_file: str, vendor_options_file: str = None
     ) -> Tuple[int, int]:
         """
         Process the queue and send emails to vendors.
-        
+
         Args:
             queue_file: Path to the queue CSV file
             vendor_file: Path to the vendor JSON file
             vendor_options_file: Path to the vendor options YAML file
-            
+
         Returns:
             Tuple containing number of successful emails and total emails
         """
         try:
             # Load queue data
             queue = pd.read_csv(queue_file)
-            
+
             # Create vendor manager
             vendor_manager = VendorManager(
                 vendor_file=vendor_file,
-                vendor_options_file=vendor_options_file if vendor_options_file and os.path.exists(vendor_options_file) else None
+                vendor_options_file=(
+                    vendor_options_file
+                    if vendor_options_file and os.path.exists(vendor_options_file)
+                    else None
+                ),
             )
-            
+
             # Process each item in the queue
             successful = 0
             total = 0
-            
+
             for _, row in queue.iterrows():
-                process = row.get('process', '')
-                spec = row.get('spec', '')
-                
+                process = row.get("process", "")
+                spec = row.get("spec", "")
+
                 # Find vendors for this process and spec
                 matching_vendors = vendor_manager.find_vendors_for_process_and_spec(process, spec)
-                
+
                 if not matching_vendors:
                     logger.warning(f"No vendors found for process '{process}' and spec '{spec}'")
                     continue
-                
+
                 total += len(matching_vendors)
-                
+
                 # Create and send email to each vendor
                 for vendor in matching_vendors:
                     # Get primary contact
                     contact = vendor_manager.get_primary_contact(vendor)
                     if not contact:
-                        logger.warning(f"No primary contact found for vendor '{vendor.get('name', '')}'")
+                        logger.warning(
+                            f"No primary contact found for vendor '{vendor.get('name', '')}'"
+                        )
                         continue
-                    
+
                     # Create email
-                    recipient_email, subject, body = self.create_rfq_email(
-                        row,
-                        vendor,
-                        contact
-                    )
-                    
+                    recipient_email, subject, body = self.create_rfq_email(row, vendor, contact)
+
                     if not recipient_email or not subject or not body:
-                        logger.warning(f"Failed to create email for vendor '{vendor.get('name', '')}'")
+                        logger.warning(
+                            f"Failed to create email for vendor '{vendor.get('name', '')}'"
+                        )
                         continue
-                    
+
                     # Send email
                     if self.send_email(recipient_email, subject, body, attachments=None):
                         successful += 1
-            
+
             return successful, total
         except FileNotFoundError as e:
             logger.error(f"File not found: {str(e)}")

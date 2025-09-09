@@ -25,9 +25,9 @@ def extract_rfq_fields(item: Union[pd.Series, Mapping[str, Any]]) -> Dict[str, s
     """
     d = item.to_dict() if isinstance(item, pd.Series) else dict(item)
     return {
-        "process":     (d.get("process", "") or "").strip(),
+        "process": (d.get("process", "") or "").strip(),
         "part_number": (d.get("part_number", "") or "").strip(),
-        "quantities":  (d.get("quantities", "") or "").strip(),
-        "spec":        (d.get("spec", "") or "").strip(),
-        "material":    (d.get("material", "") or "").strip(),
+        "quantities": (d.get("quantities", "") or "").strip(),
+        "spec": (d.get("spec", "") or "").strip(),
+        "material": (d.get("material", "") or "").strip(),
     }
