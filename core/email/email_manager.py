@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import jinja2
 import logging
-from typing import Dict, Optional, Tuple, Any
+from typing import Dict, Optional, Tuple, Any, List
 from dotenv import load_dotenv
 from core.secrets import get_section  # to grab [company] and [app]
 from core.email.utils import extract_rfq_fields
@@ -130,6 +130,7 @@ class EmailManager:
         recipient: str,
         subject: str,
         body: str,
+        attachments: Optional[List[str]] = None,
         html_format: bool = True,
         cc_email: str = None,
     ) -> bool:
@@ -138,8 +139,13 @@ class EmailManager:
 
         Attachments are not supported. Files should be uploaded to Box and
         shared via link in the email body.
+        If any attachments are provided, a ValueError is raised.
         """
         try:
+            if attachments:
+                raise ValueError(
+                    "Attachments are not supported; upload files to Box and include links instead."
+                )
             # Pull mailbox + default CC from secrets
             ex_cfg = get_section("exchange")
             user_upn = ex_cfg.get("username", "")

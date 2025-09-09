@@ -2,7 +2,7 @@
 Test Email with Box Integration Script
 
 This script tests the email functionality with Box integration by creating a draft email
-with attachments, which will be uploaded to Box instead of being attached directly.
+that assumes large files are shared via Box links instead of being attached directly.
 
 Usage:
     python scripts\test_email_with_box.py
@@ -62,30 +62,8 @@ def main() -> None:
         <p>Large attachments should be uploaded to Box and a share link should be included in this email.</p>
         """
         
-        # Find some test files to attach
-        test_files = []
-        docs_dir = os.path.join(project_root, "docs")
-        
-        # Look for files larger than 1MB
-        for root, _, files in os.walk(docs_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                if os.path.isfile(file_path):
-                    file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
-                    if file_size_mb > 1.0:
-                        test_files.append(file_path)
-                        logger.info(f"Found test file: {file_path} ({file_size_mb:.2f} MB)")
-                        if len(test_files) >= 3:  # Limit to 3 files
-                            break
-            if len(test_files) >= 3:
-                break
-                
-        if not test_files:
-            logger.error("No test files found")
-            sys.exit(1)
-        
-        # Create draft email with attachments
-        logger.info(f"Creating draft email with {len(test_files)} attachments")
+        # Create draft email (no attachments; files should be shared via Box links)
+        logger.info("Creating draft email without attachments")
         
         # Generate a unique quote_id and process for the test
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -97,7 +75,6 @@ def main() -> None:
             recipient=to_email,
             subject=subject,
             body=body,
-            attachments=test_files,
             logger=logger,
             html_format=True,
             use_outlook_signature=False,
