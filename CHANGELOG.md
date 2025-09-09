@@ -33,9 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streamlit Vendors page: avoid calling load_specs_for_process with a None/empty
   process selection; added UI guard and improved empty-state messaging in
   06_vendors.py to prevent AttributeError and guide the user.
-- Box Familiar Specs save now uses a BytesIO stream with size when calling
-  `update_contents_with_stream`, preventing silent fallback to local path.
-  Added exception logging in Box load/save paths to surface underlying issues.
+- Box Familiar Specs save now uses a BytesIO stream when calling
+  `update_contents_with_stream` (removed unsupported `file_size` kwarg for
+  boxsdk==3.14.0), preventing silent fallback to local path. Added exception
+  logging in Box load/save paths to surface underlying issues.
 - BoxIntegration authentication now falls back to reading `.streamlit/secrets.toml`
   when running outside Streamlit (e.g., local scripts/tests). This resolves
   `AttributeError: 'NoneType' object has no attribute 'file'` in test.py by

@@ -109,7 +109,9 @@ class SpecManager:
             from io import BytesIO
             csv_bytes = df.to_csv(index=False).encode("utf-8")
             file_obj = client.file(self.box_file_id)
-            file_obj.update_contents_with_stream(BytesIO(csv_bytes), file_size=len(csv_bytes))
+            # boxsdk 3.14.0: update_contents_with_stream does not accept file_size kwarg
+            # Passing file_size raises TypeError before any network request; remove for compatibility.
+            file_obj.update_contents_with_stream(BytesIO(csv_bytes))
             return True
         except Exception as e:
             try:

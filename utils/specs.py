@@ -41,8 +41,14 @@ def load_familiar_specs():
 
 
 def get_last_load_reason() -> Optional[str]:
-    """Return the last reason why loading familiar specs failed, if any."""
-    return spec_manager.last_load_reason
+    """Return the last reason why loading familiar specs failed, if any.
+
+    Uses a fresh SpecManager to avoid relying on a module-level singleton.
+    """
+    try:
+        return get_spec_manager().last_load_reason
+    except Exception:
+        return None
 
 
 def load_process_list() -> List[str]:
