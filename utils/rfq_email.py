@@ -226,7 +226,7 @@ def create_draft_email(
         recipient: Email address of the recipient
         subject: Email subject
         body: Email body (HTML or plain text)
-        attachments: List of file paths to attach
+        attachments: List of file paths to attach (unsupported)
         html_format: Whether the body is HTML (True) or plain text (False)
         use_outlook_signature: Ignored in Exchange implementation
         cc_email: Optional CC email address
@@ -235,6 +235,11 @@ def create_draft_email(
         True if successful, False otherwise
     """
     try:
+        if attachments:
+            raise ValueError(
+                "Attachments are not supported; upload files to Box and include links instead."
+            )
+
         # Create message
         m = Message(
             account=account,
@@ -244,26 +249,11 @@ def create_draft_email(
             body_type='HTML' if html_format else 'Text',
             to_recipients=[Mailbox(email_address=recipient)]
         )
-        
+
         # Add CC if specified
         if cc_email:
             m.cc_recipients = [Mailbox(email_address=cc_email)]
-        
-        # Add attachments
-        if attachments:
-            for file_path in attachments:
-                if os.path.exists(file_path):
-                    with open(file_path, 'rb') as f:
-                        content = f.read()
-                    
-                    file_attachment = FileAttachment(
-                        name=os.path.basename(file_path),
-                        content=content
-                    )
-                    m.attach(file_attachment)
-                else:
-                    logger.warning(f"Missing attachment: {file_path}")
-        
+
         # Save the draft
         m.save()
         
@@ -288,7 +278,7 @@ def send_email(
         subject: Email subject
         body: Email body (HTML)
         exchange_settings: Dictionary with Exchange settings (uses config if None)
-        attachments: List of file paths to attach
+        attachments: List of file paths to attach (unsupported)
         
     Returns:
         True if draft created successfully, False otherwise
@@ -304,13 +294,17 @@ def send_email(
         # Get CC email if specified
         cc_email = exchange_settings.get('cc', get_section("exchange").get('cc'))
         
+        if attachments:
+            raise ValueError(
+                "Attachments are not supported; upload files to Box and include links instead."
+            )
+
         # Create draft email
         success = create_draft_email(
             account=account,
             recipient=recipient,
             subject=subject,
             body=body,
-            attachments=attachments,
             cc_email=cc_email,
             html_format=True
         )
@@ -405,7 +399,7 @@ def process_queue_and_send_emails(
             )
 
             # Send email
-            if send_email(recipient_email, subject, body, exchange_settings, attachments=None):
+            if send_email(recipient_email, subject, body, exchange_settings):
                 successful += 1
 
     return successful, total

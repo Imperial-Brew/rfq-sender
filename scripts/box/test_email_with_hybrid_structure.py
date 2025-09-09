@@ -2,7 +2,7 @@
 Test Email with Hybrid Box Structure Script
 
 This script tests the email functionality with the new hybrid Box folder structure by creating
-a draft email with attachments, which will be organized in the hybrid folder structure.
+a draft email that assumes files are shared via Box links rather than being attached directly.
 
 Usage:
     python scripts\box\test_email_with_hybrid_structure.py
@@ -109,22 +109,14 @@ def main() -> None:
         logger.info(f"  Part numbers: {part_numbers}")
         
         # Create test files
-        logger.info("Creating test files")
-        test_files = create_test_files(test_dir, part_numbers)
-        
-        logger.info(f"Created {len(test_files)} test files")
-        for file_path in test_files:
-            logger.info(f"  {file_path}")
-        
-        # Create draft email with attachments
-        logger.info(f"Creating draft email with {len(test_files)} attachments")
+        # Create draft email (no attachments; files should be shared via Box links)
+        logger.info("Creating draft email without attachments")
         
         success = create_draft_email(
             outlook=outlook,
             recipient=to_email,
             subject=subject,
             body=body,
-            attachments=test_files,
             logger=logger,
             html_format=True,
             use_outlook_signature=False,
