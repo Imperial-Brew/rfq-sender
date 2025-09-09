@@ -11,12 +11,13 @@ if str(parent_dir) not in sys.path:
 
 # Import utility functions
 from utils.specs import (
-    load_process_list, 
-    load_issuers, 
-    add_spec_entry, 
+    load_process_list,
+    load_issuers,
+    add_spec_entry,
     spec_exists,
     load_familiar_specs,
-    SPECS_PATH
+    SPECS_PATH,
+    get_last_load_reason,
 )
 from streamlit_app.utils.auth_shim import get_user_role
 from streamlit_app.utils.auth_middleware import require_authentication
@@ -46,7 +47,8 @@ def display_add_spec_form(user, role):
     # Get existing processes and issuers for dropdowns
     processes = load_process_list()
     if not processes:
-        st.error("FamiliarSpecs.csv not found in Box or local path.")
+        reason = get_last_load_reason()
+        st.error(reason or "FamiliarSpecs.csv not found in Box or local path.")
         return
     issuers = load_issuers()
     
@@ -138,19 +140,23 @@ def display_current_specs():
     try:
         # Load the specs dataframe (Box-aware)
         df = load_familiar_specs()
-        
-        if not df.empty:
-            st.subheader("Recently Added Specifications")
-            
-            # Sort by most recently added (assuming the CSV is appended to)
-            df = df.tail(5).sort_index(ascending=False)
-            
-            # Display the dataframe
-            st.dataframe(
-                df,
-                width="stretch",
-                hide_index=True
-            )
+
+        if df.empty:
+            reason = get_last_load_reason()
+            st.warning(reason or "No familiar specifications available.")
+            return
+
+        st.subheader("Recently Added Specifications")
+
+        # Sort by most recently added (assuming the CSV is appended to)
+        df = df.tail(5).sort_index(ascending=False)
+
+        # Display the dataframe
+        st.dataframe(
+            df,
+            width="stretch",
+            hide_index=True
+        )
         
     except Exception as e:
         st.error(f"Error loading specifications: {str(e)}")
@@ -161,9 +167,12 @@ def display_specs_data(user, role):
     try:
         # Load specs data
         df = load_familiar_specs()
-        
+
         if df.empty:
-            st.info("No specifications found in the database. Add specs using the 'Add Specification' tab.")
+            reason = get_last_load_reason()
+            st.info(
+                reason or "No specifications found in the database. Add specs using the 'Add Specification' tab."
+            )
             return
         
         # Add filter options
@@ -174,7 +183,8 @@ def display_specs_data(user, role):
             # Filter by process
             process_list = load_process_list()
             if not process_list:
-                st.error("FamiliarSpecs.csv not found in Box or local path.")
+                reason = get_last_load_reason()
+                st.error(reason or "FamiliarSpecs.csv not found in Box or local path.")
                 return
             processes = ["All"] + sorted(process_list)
             process_filter = st.selectbox("Filter by Process", processes)
