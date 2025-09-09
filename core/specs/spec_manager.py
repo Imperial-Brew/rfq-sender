@@ -42,33 +42,52 @@ class SpecManager:
             self.box_file_id = box_file_id or None
         else:
             self.box_file_id = (env_id if specs_path is None else None)
+
+        # Store the most recent reason for failing to load specs
+        self.last_load_reason: Optional[str] = None
     
     def _load_from_box(self) -> Optional[pd.DataFrame]:
         """Attempt to load familiar specs CSV from Box if configured.
-        
+
         Returns:
             DataFrame if successful, else None.
         """
+        logger = logging.getLogger(__name__)
+        if not self.box_file_id:
+            msg = "Box file ID not configured; skipping Box load."
+            logger.warning(msg)
+            self.last_load_reason = msg
+            return None
         try:
-            if not self.box_file_id:
-                return None
             # Lazy import to avoid hard dependency
             from scripts.box.box_integration import BoxIntegration
             box = BoxIntegration()
             client = getattr(box, "client", None)
             if not client:
+                msg = "Box client not available; cannot load familiar specs."
+                logger.warning(msg)
+                self.last_load_reason = msg
                 return None
             file_obj = client.file(self.box_file_id)
-            content: bytes = file_obj.content()
+            try:
+                content: bytes = file_obj.content()
+            except Exception as e:
+                msg = f"Failed to fetch familiar specs from Box: {e}"
+                logger.warning(msg)
+                self.last_load_reason = msg
+                return None
             from io import BytesIO
             df = pd.read_csv(BytesIO(content))
             df.columns = df.columns.str.strip().str.lower()
+            self.last_load_reason = None
             return df
         except Exception as e:
+            msg = f"Failed to load familiar specs from Box: {e}"
             try:
-                logging.getLogger(__name__).exception("Failed to load familiar specs from Box")
+                logger.exception(msg)
             except Exception:
                 pass
+            self.last_load_reason = msg
             return None
     
     def _save_to_box(self, df: pd.DataFrame) -> bool:
@@ -110,14 +129,25 @@ class SpecManager:
         box_df = self._load_from_box()
         if isinstance(box_df, pd.DataFrame):
             return box_df
-        
+
         # Fallback to local file
         if not os.path.exists(self.specs_path):
+            msg = f"Local familiar specs file not found: {self.specs_path}"
+            logging.getLogger(__name__).warning(msg)
+            if not self.last_load_reason:
+                self.last_load_reason = msg
             return pd.DataFrame(columns=["process", "spec", "issuer", "notes"])
-            
-        df = pd.read_csv(self.specs_path)
-        df.columns = df.columns.str.strip().str.lower()  # Normalize headers
-        return df
+
+        try:
+            df = pd.read_csv(self.specs_path)
+            df.columns = df.columns.str.strip().str.lower()  # Normalize headers
+            self.last_load_reason = None
+            return df
+        except Exception as e:
+            msg = f"Failed to load familiar specs from local file: {e}"
+            logging.getLogger(__name__).error(msg)
+            self.last_load_reason = msg
+            return pd.DataFrame(columns=["process", "spec", "issuer", "notes"])
     
     def load_process_list(self) -> List[str]:
         """

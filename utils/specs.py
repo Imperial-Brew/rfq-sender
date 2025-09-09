@@ -28,6 +28,11 @@ def load_familiar_specs():
     return spec_manager.load_familiar_specs()
 
 
+def get_last_load_reason() -> Optional[str]:
+    """Return the last reason why loading familiar specs failed, if any."""
+    return spec_manager.last_load_reason
+
+
 def load_process_list() -> List[str]:
     """Return a list of unique process names from familiar specs.
 
