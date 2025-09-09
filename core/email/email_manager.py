@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import jinja2
 import logging
-from typing import Dict, List, Optional, Tuple, Any, Mapping, Union
+from typing import Dict, Optional, Tuple, Any
 from dotenv import load_dotenv
 from core.secrets import get_section  # to grab [company] and [app]
 from core.email.utils import extract_rfq_fields
@@ -130,12 +130,14 @@ class EmailManager:
         recipient: str,
         subject: str,
         body: str,
-        attachments: List[str] = None,
         html_format: bool = True,
         cc_email: str = None,
     ) -> bool:
         """
         Create a draft email using Microsoft Graph only.
+
+        Attachments are not supported. Files should be uploaded to Box and
+        shared via link in the email body.
         """
         try:
             # Pull mailbox + default CC from secrets
@@ -159,10 +161,6 @@ class EmailManager:
                 cc=[cc] if cc else None,
             )
 
-            # Attachments are deprecated and ignored — all files must be shared via Box links in the email body.
-            if attachments:
-                logger.info("Attachments provided to create_draft_email are ignored by policy; use Box upload + shared link instead.")
-
             return True
         except Exception as e:
             logger.error(f"Graph draft creation failed for {recipient}: {e}")
@@ -173,15 +171,18 @@ class EmailManager:
         recipient: str,
         subject: str,
         body: str,
-        attachments: List[str] = None,
     ) -> bool:
+        """Convenience wrapper around :meth:`create_draft_email`.
+
+        Attachments are not supported; include file links in the email body
+        instead.
+        """
         try:
             cc_email = self.exchange_settings.get('cc', None)
             success = self.create_draft_email(
                 recipient=recipient,
                 subject=subject,
                 body=body,
-                attachments=attachments,
                 cc_email=cc_email,
                 html_format=True,
             )
@@ -258,7 +259,7 @@ class EmailManager:
                         continue
                     
                     # Send email
-                    if self.send_email(recipient_email, subject, body, attachments=None):
+                    if self.send_email(recipient_email, subject, body):
                         successful += 1
             
             return successful, total
