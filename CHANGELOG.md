@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Familiar Specs now load from Box when `[box].BOX_FAMILIAR_SPECS_FILE_ID` is
+  configured; falls back to local CSV if Box is unavailable. Updated
+  SpecManager and Streamlit Specifications page to be Box-aware.
 - Migrated Streamlit deprecations: replaced `use_container_width` with
   `width` API (using `width='stretch'` where applicable) across Queue and
   Specifications pages to silence warnings before 2025-12-31 removal.
@@ -15,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is selected.
 
 ### Fixed
+- Suppress config warning for missing local FamiliarSpecs.csv when
+  `BOX_FAMILIAR_SPECS_FILE_ID` is set.
 - Prevented AttributeError when no process is selected in Streamlit Queue
   Management by making load_specs_for_process handle None/empty safely in
   core/specs/spec_manager.py. Added Optional[str] typing and docstrings in

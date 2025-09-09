@@ -14,26 +14,94 @@ class SpecManager:
     4. Check if specs exist
     """
     
-    def __init__(self, specs_path: str = None):
+    def __init__(self, specs_path: str = None, box_file_id: Optional[str] = None):
         """
         Initialize the spec manager.
         
         Args:
             specs_path: Path to the specs CSV file. If None, uses default path.
+            box_file_id: Optional Box file ID for FamiliarSpecs.csv. When
+                provided and Box can be initialized, the manager will read from
+                and write to this Box file instead of the local CSV.
         """
         # Get the project root directory
         self.root_dir = Path(__file__).parent.parent.parent
         
         # Set default path if not provided
-        self.specs_path = specs_path or os.path.join(self.root_dir, "docs", "OS", "spec_lists", "FamiliarSpecs.csv")
+        self.specs_path = specs_path or os.path.join(
+            self.root_dir, "docs", "OS", "spec_lists", "FamiliarSpecs.csv"
+        )
+        
+        # Accept Box file id from param or environment/secrets.
+        # Important for tests: if a custom specs_path is provided, default to
+        # local-only unless an explicit box_file_id is passed.
+        env_id = (os.environ.get("BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
+                  or os.environ.get("BOX_BOX_FAMILIAR_SPECS_FILE_ID", "").strip())
+        if box_file_id is not None:
+            self.box_file_id = box_file_id or None
+        else:
+            self.box_file_id = (env_id if specs_path is None else None)
+    
+    def _load_from_box(self) -> Optional[pd.DataFrame]:
+        """Attempt to load familiar specs CSV from Box if configured.
+        
+        Returns:
+            DataFrame if successful, else None.
+        """
+        try:
+            if not self.box_file_id:
+                return None
+            # Lazy import to avoid hard dependency
+            from scripts.box.box_integration import BoxIntegration
+            box = BoxIntegration()
+            client = getattr(box, "client", None)
+            if not client:
+                return None
+            file_obj = client.file(self.box_file_id)
+            content: bytes = file_obj.content()
+            from io import BytesIO
+            df = pd.read_csv(BytesIO(content))
+            df.columns = df.columns.str.strip().str.lower()
+            return df
+        except Exception:
+            return None
+    
+    def _save_to_box(self, df: pd.DataFrame) -> bool:
+        """Attempt to upload the familiar specs CSV to Box if configured.
+        Overwrites the existing file by uploading a new version.
+        
+        Returns:
+            True on success, False otherwise.
+        """
+        try:
+            if not self.box_file_id:
+                return False
+            from scripts.box.box_integration import BoxIntegration
+            box = BoxIntegration()
+            client = getattr(box, "client", None)
+            if not client:
+                return False
+            # Serialize DataFrame to CSV bytes
+            csv_bytes = df.to_csv(index=False).encode("utf-8")
+            file_obj = client.file(self.box_file_id)
+            file_obj.update_contents_with_stream(csv_bytes)
+            return True
+        except Exception:
+            return False
     
     def load_familiar_specs(self) -> pd.DataFrame:
         """
-        Load familiar specs from CSV file.
+        Load familiar specs from Box (if configured) or local CSV.
         
         Returns:
             DataFrame containing familiar specs
         """
+        # Try Box first if configured
+        box_df = self._load_from_box()
+        if isinstance(box_df, pd.DataFrame):
+            return box_df
+        
+        # Fallback to local file
         if not os.path.exists(self.specs_path):
             return pd.DataFrame(columns=["process", "spec", "issuer", "notes"])
             

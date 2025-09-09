@@ -4,8 +4,13 @@ from core.config import Paths
 
 SPECS_PATH = Paths.SPECS_PATH
 
-# Create a spec manager instance using path from config
-spec_manager = SpecManager(Paths.SPECS_PATH)
+# Create a spec manager instance using path from config and Box when available
+import os
+_box_spec_id = (
+    os.environ.get("BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
+    or os.environ.get("BOX_BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
+)
+spec_manager = SpecManager(Paths.SPECS_PATH, box_file_id=_box_spec_id or None)
 
 
 def load_familiar_specs():

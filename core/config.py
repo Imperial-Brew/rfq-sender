@@ -375,8 +375,12 @@ def validate_file_paths(validation_issues: list) -> None:
     if not os.path.exists(Paths.VENDOR_OPTIONS_FILE):
         validation_issues.append(f"Vendor options file not found: {Paths.VENDOR_OPTIONS_FILE}")
     
-    # Check if specs path exists
-    if not os.path.exists(Paths.SPECS_PATH):
+    # Check if specs path exists (skip if Box Familiar Specs is configured)
+    box_spec_id = (
+        os.environ.get("BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
+        or os.environ.get("BOX_BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
+    )
+    if not box_spec_id and not os.path.exists(Paths.SPECS_PATH):
         validation_issues.append(f"Specs file not found: {Paths.SPECS_PATH}")
     
     # Check if email template exists

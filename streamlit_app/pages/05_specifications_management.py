@@ -133,8 +133,8 @@ def display_add_spec_form(user, role):
 def display_current_specs():
     """Display a preview of recently added specs."""
     try:
-        # Load the specs dataframe
-        df = pd.read_csv(SPECS_PATH)
+        # Load the specs dataframe (Box-aware)
+        df = load_familiar_specs()
         
         if not df.empty:
             st.subheader("Recently Added Specifications")
