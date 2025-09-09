@@ -10,6 +10,12 @@ _box_spec_id = (
     os.environ.get("BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
     or os.environ.get("BOX_BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
 )
+if not _box_spec_id:
+    from core.secrets import get_section
+
+    _box_spec_id = (
+        str(get_section("box").get("BOX_FAMILIAR_SPECS_FILE_ID", "")).strip()
+    )
 spec_manager = SpecManager(Paths.SPECS_PATH, box_file_id=_box_spec_id or None)
 
 
