@@ -562,14 +562,16 @@ def create_email_body(queue_items: pd.DataFrame,
         return f"<p>{greeting}</p><p>Please see the RFQ details below.</p>"
 
 
-def create_draft_email(recipient: str, 
-                      subject: str, 
-                      body: str, 
-                      attachments: List[str] = None,
+def create_draft_email(recipient: str,
+                      subject: str,
+                      body: str,
                       cc: List[str] = None,
                       exchange_settings: Dict[str, Any] = None) -> bool:
     """
     Create a draft email using Microsoft Graph (no EWS).
+
+    Attachments are not supported; upload files to Box and include a
+    share link in the message body instead.
     """
     try:
         # Graph-only: pull user UPN/CC from secrets
@@ -579,7 +581,6 @@ def create_draft_email(recipient: str,
             recipient=recipient,
             subject=subject,
             body=body,
-            attachments=attachments,
             cc_email=(cc[0] if isinstance(cc, list) and cc else ex_cfg.get("cc")),
             html_format=True,
         )
@@ -1134,12 +1135,11 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                         # Inject Box link into the email body
                                         body_with_link = inject_box_link_into_body(body, share_link, is_cui)
 
-                                        # Create the main draft (no attachments; link in body)
+                                        # Create the main draft with the Box link in the body
                                         if create_draft_email(
                                             recipient=vendor_email,
                                             subject=subject,
                                             body=body_with_link,
-                                            attachments=None,
                                             cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
                                             exchange_settings=exchange_settings
                                         ):
@@ -1158,7 +1158,6 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                                     recipient=vendor_email,
                                                     subject=pwd_subject,
                                                     body=pwd_body,
-                                                    attachments=None,
                                                     cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
                                                     exchange_settings=exchange_settings
                                                 ):
@@ -1490,12 +1489,11 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                         # Inject Box link into the email body
                                         body_with_link = inject_box_link_into_body(body, share_link, is_cui)
 
-                                        # Create the main draft (no attachments; link in body)
+                                        # Create the main draft with the Box link in the body
                                         if create_draft_email(
                                             recipient=vendor_email,
                                             subject=subject,
                                             body=body_with_link,
-                                            attachments=None,
                                             cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
                                             exchange_settings=exchange_settings
                                         ):
@@ -1514,7 +1512,6 @@ def display_queue_for_emails(user: Dict[str, Any], role: str):
                                                     recipient=vendor_email,
                                                     subject=pwd_subject,
                                                     body=pwd_body,
-                                                    attachments=None,
                                                     cc=[exchange_settings.get('cc')] if exchange_settings.get('cc') else None,
                                                     exchange_settings=exchange_settings
                                                 ):
