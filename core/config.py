@@ -204,17 +204,25 @@ def load_environment(env_file: Optional[str] = None) -> None:
         else:
             logger.warning("Streamlit secrets not available")
 
-        # Regardless of Streamlit availability, attempt to map [box].BOX_JWT_JSON from secrets file to env
+        # Regardless of Streamlit availability, attempt to map [box] secrets to env vars
         try:
-            from core.secrets import get_section as _get_secret_section
-            box_section = _get_secret_section("box") or {}
+            if STREAMLIT_AVAILABLE and hasattr(st, "secrets") and st.secrets:
+                box_section = st.secrets.get("box", {}) or {}
+            else:
+                from core.secrets import get_section as _get_secret_section
+                box_section = _get_secret_section("box") or {}
             if isinstance(box_section, dict):
+                for key, value in box_section.items():
+                    env_key = key.upper()
+                    if env_key.endswith("_ID"):
+                        os.environ[env_key] = str(value)
+                        logger.debug(f"Mapped [box].{key} -> {env_key}")
                 jwt_json = str(box_section.get("BOX_JWT_JSON", "") or "").strip()
                 if jwt_json:
                     os.environ["BOX_JWT_JSON"] = jwt_json
                     logger.info("Set BOX_JWT_JSON from secrets [box].BOX_JWT_JSON")
         except Exception as map_e:
-            logger.warning(f"Could not map secrets [box].BOX_JWT_JSON to env: {map_e}")
+            logger.warning(f"Could not map secrets [box] to env: {map_e}")
     except Exception as e:
         logger.warning(f"Failed to load environment variables: {str(e)}")
 
