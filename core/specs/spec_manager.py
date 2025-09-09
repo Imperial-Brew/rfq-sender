@@ -34,14 +34,19 @@ class SpecManager:
         )
         
         # Accept Box file id from param or environment/secrets.
-        # Important for tests: if a custom specs_path is provided, default to
-        # local-only unless an explicit box_file_id is passed.
-        env_id = (os.environ.get("BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
-                  or os.environ.get("BOX_BOX_FAMILIAR_SPECS_FILE_ID", "").strip())
+        # Prefer explicit parameter; otherwise, honor environment/secrets ID
+        # regardless of whether a local specs_path is provided. This avoids
+        # accidental fallback to local when the Box ID is configured.
+        env_id = (
+            os.environ.get("BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
+            or os.environ.get("BOX_BOX_FAMILIAR_SPECS_FILE_ID", "").strip()
+        )
         if box_file_id is not None:
+            # Caller explicitly decided the ID (may be empty/None to force local)
             self.box_file_id = box_file_id or None
         else:
-            self.box_file_id = (env_id if specs_path is None else None)
+            # Use env/secrets-discovered ID whenever present
+            self.box_file_id = env_id or None
 
         # Store the most recent reason for failing to load specs
         self.last_load_reason: Optional[str] = None
