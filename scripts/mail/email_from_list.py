@@ -695,7 +695,7 @@ def create_draft_email(
         recipient: str,
         subject: str,
         body: str,
-        attachments: List[str],
+        attachments: List[str] = None,
         logger: logging.Logger = None,
         html_format: bool = True,
         use_outlook_signature: bool = True,
@@ -711,7 +711,7 @@ def create_draft_email(
         recipient: Email address of the recipient
         subject: Email subject
         body: Email body (HTML or plain text)
-        attachments: List of file paths to attach
+        attachments: List of file paths to attach (unsupported)
         logger: Optional logger for logging messages
         html_format: Whether the body is HTML (True) or plain text (False)
         use_outlook_signature: Whether to use Outlook's general signature
@@ -749,28 +749,13 @@ def create_draft_email(
             mail.BodyFormat = 1  # 1 = olFormatPlain
             mail.Body = body
 
-        # Track missing attachments and files for Box
+        if attachments:
+            raise ValueError(
+                "Attachments are not supported; upload files to Box and include links instead."
+            )
         missing_attachments = []
         files_for_box = []
         box_files_info = []  # To store information about files uploaded to Box
-
-        # Collect valid files for Box upload
-        for path in attachments:
-            if not os.path.isfile(path):
-                if logger:
-                    logger.warning(f"Missing attachment: {path}")
-                else:
-                    print(f"Missing attachment: {path}")
-                missing_attachments.append(path)
-                continue
-
-            # Add file to Box upload list
-            files_for_box.append(path)
-            file_size_mb = os.path.getsize(path) / (1024 * 1024)
-            if logger:
-                logger.info(f"File will be uploaded to Box: {path} ({file_size_mb:.2f} MB)")
-            else:
-                print(f"File will be uploaded to Box: {path} ({file_size_mb:.2f} MB)")
 
         # Upload files to Box
         box_share_link = None
@@ -1529,38 +1514,30 @@ def process_queue(
                             else:
                                 print(f"Path not found: {file_path}")
 
-                if not attachments:
-                    if logger:
-                        logger.warning(f"No valid attachments found for quote {quote_id}, process {process}")
-                    else:
-                        print(f"No valid attachments found for quote {quote_id}, process {process}")
-
-                # Build email with actual attachment count
+                # Build email body
                 subject, body = create_email_body(
-                    info, 
-                    process_items, 
+                    info,
+                    process_items,
                     process=process,
                     use_template=use_template,
                     template_path=template_path,
                     sample_table_path=sample_table_path,
                     signature=signature,
                     html_format=True,
-                    actual_attachments=attachments
                 )
 
                 # Create draft
                 success = create_draft_email(
-                    outlook,
-                    recipient,
-                    subject,
-                    body,
-                    attachments,
-                    logger,
+                    outlook=outlook,
+                    recipient=recipient,
+                    subject=subject,
+                    body=body,
+                    logger=logger,
                     html_format=True,
                     use_outlook_signature=False,
                     quote_id=quote_id,
                     process=process,
-                    signature=signature
+                    signature=signature,
                 )
 
                 if success:
