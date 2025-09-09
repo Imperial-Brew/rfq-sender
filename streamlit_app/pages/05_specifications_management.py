@@ -37,95 +37,142 @@ def setup_page():
     """)
 
 def display_add_spec_form(user, role):
-    """Display the form for adding a new spec/process."""
+    """Display the form for adding a new spec/process with live reload.
+
+    Selection widgets are placed outside the form so Streamlit reruns
+    immediately on interaction (Option 2 behavior). The form only contains
+    free-text fields and the submit button.
+    """
     # Check if user has admin privileges
     if role != "admin":
         st.warning("You need admin privileges to add new specs and processes.")
         return
-    
-    # Get existing processes and issuers for dropdowns
+
+    # Get existing processes and issuers for dropdowns (fresh each run)
     processes = load_process_list()
     issuers = load_issuers()
-    
+
+    # --- Live selection controls (outside the form for immediate rerun) ---
+    st.subheader("Select or Define Process and Issuer")
+
+    # Maintain selection mode in session_state
+    if "specs_add_proc_option" not in st.session_state:
+        st.session_state.specs_add_proc_option = ""
+    if "specs_add_issuer_option" not in st.session_state:
+        st.session_state.specs_add_issuer_option = ""
+
+    process_options = [""] + sorted(processes) + ["+ Add New Process"]
+    issuer_options = [""] + sorted(issuers) + ["+ Add New Issuer"]
+
+    st.selectbox(
+        "Process",
+        options=process_options,
+        key="specs_add_proc_option",
+        help="Select an existing process or choose '+ Add New Process'",
+    )
+
+    st.selectbox(
+        "Issuer",
+        options=issuer_options,
+        key="specs_add_issuer_option",
+        help="Select an existing issuer or choose '+ Add New Issuer'",
+    )
+
+    # Resolve current process and issuer based on selection
+    add_proc_mode = st.session_state.specs_add_proc_option == "+ Add New Process"
+    add_issuer_mode = st.session_state.specs_add_issuer_option == "+ Add New Issuer"
+
+    # --- Form with free-text fields and submit ---
     with st.form("add_spec_form"):
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            # Process field with option to add new
-            process_options = [""] + sorted(processes) + ["+ Add New Process"]
-            selected_process_option = st.selectbox(
-                "Process", 
-                options=process_options,
-                help="Select an existing process or add a new one"
-            )
-            
-            # Show text input if "Add New Process" is selected
-            if selected_process_option == "+ Add New Process":
+            # If adding a new process, show input; otherwise, show read-only selection
+            if add_proc_mode:
                 new_process = st.text_input(
                     "New Process Name",
                     help="Enter the name of the new process"
                 )
                 process = new_process.strip() if new_process else ""
             else:
-                process = selected_process_option
-        
-        with col2:
-            # Spec field
+                process = st.session_state.specs_add_proc_option or ""
+
+            # Spec field (required)
             spec = st.text_input(
-                "Specification", 
+                "Specification",
                 help="Enter the specification identifier (e.g., AMS2759)"
             )
-            
-            # Issuer field with option to add new
-            issuer_options = [""] + sorted(issuers) + ["+ Add New Issuer"]
-            selected_issuer_option = st.selectbox(
-                "Issuer", 
-                options=issuer_options,
-                help="Select an existing issuer or add a new one"
-            )
-            
-            # Show text input if "Add New Issuer" is selected
-            if selected_issuer_option == "+ Add New Issuer":
+
+        with col2:
+            # If adding a new issuer, show input; else use selected
+            if add_issuer_mode:
                 new_issuer = st.text_input(
                     "New Issuer Name",
                     help="Enter the name of the new issuer (e.g., SAE, ASTM)"
                 )
                 issuer = new_issuer.strip() if new_issuer else ""
             else:
-                issuer = selected_issuer_option
-        
-        # Notes field
-        notes = st.text_area(
-            "Notes", 
-            help="Enter any additional information about this specification"
-        )
-        
+                issuer = st.session_state.specs_add_issuer_option or ""
+
+            # Notes field
+            notes = st.text_area(
+                "Notes",
+                help="Enter any additional information about this specification"
+            )
+
         # Submit button
         submitted = st.form_submit_button("Add Specification", width="stretch")
-        
+
         if submitted:
-            # Validate inputs
+            # Validate inputs (do not allow process without spec)
             if not process or not spec:
                 st.warning("Process and Specification are required fields.")
-                logger.warning(f"Submission failed: missing required fields")
+                logger.warning("Submission failed: missing required fields")
                 return
-            
+
             # Check if spec already exists for this process
             if spec_exists(process, spec):
                 st.warning(f"Specification '{spec}' already exists for process '{process}'.")
                 logger.warning(f"Duplicate spec submission: {process} - {spec}")
                 return
-            
+
             try:
                 # Add the new spec entry
-                add_spec_entry(process, spec, issuer, notes)
-                
-                # Show success message
-                st.success(f"✅ Added {spec} for {process} successfully!")
-                logger.info(f"New spec added: {process} - {spec} by {user['name']}")
-                
-                # Clear form (requires rerun)
-                st.rerun()
+                ok = add_spec_entry(process, spec, issuer, notes)
+                if not ok:
+                    st.error("Error adding specification: write to Box/local store failed. See logs.")
+                    logger.error("Add spec entry returned False (write failed)")
+                    return
+
+                # Immediate readback verification from the active source
+                df = load_familiar_specs()
+                found = False
+                if not df.empty:
+                    try:
+                        norm_proc = str(process).strip().lower()
+                        norm_spec = str(spec).strip()
+                        df_cols = [c.strip().lower() for c in df.columns]
+                        if "process" in df_cols and "spec" in df_cols:
+                            # Align columns and compare
+                            dfx = df.copy()
+                            dfx.columns = df_cols
+                            found = (
+                                (dfx["process"].astype(str).str.strip().str.lower() == norm_proc)
+                                & (dfx["spec"].astype(str).str.strip() == norm_spec)
+                            ).any()
+                    except Exception as _e:
+                        logger.warning(f"Readback verification failed: {_e}")
+
+                if found:
+                    st.success(f"✅ Added {spec} for {process} successfully!")
+                    logger.info(f"New spec added: {process} - {spec} by {user['name']}")
+                    st.rerun()
+                else:
+                    st.error(
+                        "Specification add did not appear in FamiliarSpecs. "
+                        "Please check logs for Box save errors and try Refresh."
+                    )
+                    logger.error("Spec not present after write (readback verification failed)")
             except Exception as e:
                 st.error(f"Error adding specification: {str(e)}")
                 logger.error(f"Error adding specification: {str(e)}")

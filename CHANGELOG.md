@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Specifications pages to silence warnings before 2025-12-31 removal.
 - Added UI guard in Queue Management to avoid loading specs when no process
   is selected.
+- Specifications Management: selection widgets (Process/Issuer) moved outside
+  the form for live reload on interaction (Option 2). The form contains only
+  free-text inputs and submit, providing immediate feedback while typing.
+- utils.specs now rebuilds SpecManager on each call (no module-level singleton)
+  so the current Box file ID and credentials are always respected across reruns.
 
 ### Fixed
 - Suppress config warning for missing local FamiliarSpecs.csv when
@@ -35,6 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when running outside Streamlit (e.g., local scripts/tests). This resolves
   `AttributeError: 'NoneType' object has no attribute 'file'` in test.py by
   sourcing `[box].BOX_JWT_JSON` without requiring Streamlit or pre-set env.
+- Add Specification writes are verified by an immediate readback; the UI only
+  shows success when the new row is observed in FamiliarSpecs. Otherwise, a
+  clear error is shown and logs contain the underlying cause.
 
 ## [0.2.1] - 2025-08-25
 
