@@ -2,7 +2,6 @@ import questionary
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from typing import List
 
 from core.validation.validator import SpecValidator
 
