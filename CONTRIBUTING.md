@@ -34,7 +34,7 @@ Follow the setup instructions in the README.md file to set up your development e
 
 ## Coding Standards
 
-This project follows the style guidelines outlined in the [Project Style Guidelines](docs/guidelines.md), which include:
+This project follows the style guidelines outlined in the [Project Style Guidelines](.junie/mds/guidelines.md), which include:
 
 - Using type hints for all function parameters and return values
 - Following PEP 8 style guidelines

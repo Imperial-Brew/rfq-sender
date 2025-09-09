@@ -5,16 +5,16 @@ This document serves as an index to the documentation available for the RFQ Send
 
 ## Core Documentation
 
-### [README.md](../README.md)
+### [README.md](../../README.md)
 The main project documentation that provides an overview of the system, its purpose, setup instructions, and basic usage examples.
 
-### [CHANGELOG.md](../CHANGELOG.md)
+### [CHANGELOG.md](../../CHANGELOG.md)
 A chronological record of all notable changes made to the project, including new features, changes, and fixes.
 
-### [CONTRIBUTING.md](../CONTRIBUTING.md)
+### [CONTRIBUTING.md](../../CONTRIBUTING.md)
 Guidelines for contributing to the project, including coding standards, pull request process, and development workflow.
 
-### [LICENSE](../LICENSE)
+### [LICENSE](../../LICENSE)
 The license under which the project is distributed.
 
 ## Project Status and Planning

@@ -219,7 +219,7 @@ This structure:
 - Shares only relevant parts with each vendor via Box links
 - Minimizes file duplication while maintaining security
 
-For more details on the hybrid folder structure, see [Box Hybrid Structure](docs/box_hybrid_structure.md).
+For more details on the hybrid folder structure, see [Box Hybrid Structure](.junie/mds/box_hybrid_structure.md).
 
 ## Usage
 
@@ -253,7 +253,7 @@ Or use the provided batch script:
 Start_streamlit_app.bat
 ```
 
-The bug tracker will appear as a page in the sidebar navigation. For more information, see [Bug Tracker Documentation](docs/bug_tracker.md).
+The bug tracker will appear as a page in the sidebar navigation. For more information, see [Bug Tracker Documentation](.junie/mds/bug_tracker.md).
 
 ### Command Line Scripts
 
@@ -289,7 +289,7 @@ This will create a draft email in Outlook with a test subject and body, allowing
 
 ## Development
 
-This project follows the style guidelines outlined in the [Project Style Guidelines](docs/guidelines.md). For a comprehensive index of all documentation files, see the [Documentation Index](docs/DOCUMENTATION_INDEX.md).
+This project follows the style guidelines outlined in the [Project Style Guidelines](.junie/mds/guidelines.md). For a comprehensive index of all documentation files, see the [Documentation Index](.junie/mds/DOCUMENTATION_INDEX.md).
 
 ### Style Guidelines Overview
 - **Python Code Style**: Use type hints for all function parameters and return values, follow PEP 8 with exceptions noted in .flake8, use docstrings with Args/Returns sections
@@ -312,7 +312,7 @@ The RFQ Sender system is designed to handle a moderate volume of RFQs, vendors, 
 - **File Handling**: Large attachments should be handled with care, potentially implementing streaming or compression.
 - **Asynchronous Processing**: Consider refactoring to use async/await for improved performance with I/O-bound operations.
 
-For detailed recommendations on scaling the RFQ Sender system, see [Scaling Guide](docs/SCALING.md).
+For detailed recommendations on scaling the RFQ Sender system, see [Scaling Guide](.junie/mds/SCALING.md).
 
 ## Contributing
 
@@ -545,7 +545,7 @@ This structure:
 - Shares only relevant parts with each vendor via Box links
 - Minimizes file duplication while maintaining security
 
-For more details on the hybrid folder structure, see [Box Hybrid Structure](docs/box_hybrid_structure.md).
+For more details on the hybrid folder structure, see [Box Hybrid Structure](.junie/mds/box_hybrid_structure.md).
 
 ## Usage
 
@@ -579,7 +579,7 @@ Or use the provided batch script:
 Start_streamlit_app.bat
 ```
 
-The bug tracker will appear as a page in the sidebar navigation. For more information, see [Bug Tracker Documentation](docs/bug_tracker.md).
+The bug tracker will appear as a page in the sidebar navigation. For more information, see [Bug Tracker Documentation](.junie/mds/bug_tracker.md).
 
 ### Command Line Scripts
 
@@ -615,7 +615,7 @@ This will create a draft email in Outlook with a test subject and body, allowing
 
 ## Development
 
-This project follows the style guidelines outlined in the [Project Style Guidelines](docs/guidelines.md). For a comprehensive index of all documentation files, see the [Documentation Index](docs/DOCUMENTATION_INDEX.md).
+This project follows the style guidelines outlined in the [Project Style Guidelines](.junie/mds/guidelines.md). For a comprehensive index of all documentation files, see the [Documentation Index](.junie/mds/DOCUMENTATION_INDEX.md).
 
 ### Style Guidelines Overview
 - **Python Code Style**: Use type hints for all function parameters and return values, follow PEP 8 with exceptions noted in .flake8, use docstrings with Args/Returns sections
@@ -638,7 +638,7 @@ The RFQ Sender system is designed to handle a moderate volume of RFQs, vendors, 
 - **File Handling**: Large attachments should be handled with care, potentially implementing streaming or compression.
 - **Asynchronous Processing**: Consider refactoring to use async/await for improved performance with I/O-bound operations.
 
-For detailed recommendations on scaling the RFQ Sender system, see [Scaling Guide](docs/SCALING.md).
+For detailed recommendations on scaling the RFQ Sender system, see [Scaling Guide](.junie/mds/SCALING.md).
 
 ## Testing
 
