@@ -574,8 +574,12 @@ def create_draft_email(recipient: str,
     share link in the message body instead.
     """
     try:
-        # Graph-only: pull user UPN/CC from secrets
+        # Determine target mailbox from session user (Option A)
         ex_cfg = get_section("exchange")
+        user_dict = st.session_state.get("user", {}) if hasattr(st, "session_state") else {}
+        target_upn = (user_dict.get("mailbox")
+                      or user_dict.get("email")
+                      or ex_cfg.get("username", "")).strip()
         mgr = EmailManager(exchange_settings={"cc": ex_cfg.get("cc")})
         return mgr.create_draft_email(
             recipient=recipient,
@@ -583,6 +587,7 @@ def create_draft_email(recipient: str,
             body=body,
             cc_email=(cc[0] if isinstance(cc, list) and cc else ex_cfg.get("cc")),
             html_format=True,
+            user_upn=target_upn,
         )
     except Exception as e:
         logger.error(f"Error creating draft email (Graph): {str(e)}")

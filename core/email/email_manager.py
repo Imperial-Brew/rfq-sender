@@ -133,6 +133,7 @@ class EmailManager:
         attachments: Optional[List[str]] = None,
         html_format: bool = True,
         cc_email: str = None,
+        user_upn: Optional[str] = None,
     ) -> bool:
         """
         Create a draft email using Microsoft Graph only.
@@ -140,18 +141,28 @@ class EmailManager:
         Attachments are not supported. Files should be uploaded to Box and
         shared via link in the email body.
         If any attachments are provided, a ValueError is raised.
+
+        Args:
+            recipient: The primary recipient email address.
+            subject: Email subject.
+            body: HTML or plain text body content.
+            attachments: Not supported (use Box links instead).
+            html_format: If False, the body is wrapped in <pre> tags.
+            cc_email: Optional CC email address.
+            user_upn: Target mailbox UPN/email for the draft. If omitted,
+                falls back to [exchange].username from secrets.
         """
         try:
             if attachments:
                 raise ValueError(
                     "Attachments are not supported; upload files to Box and include links instead."
                 )
-            # Pull mailbox + default CC from secrets
+            # Resolve target mailbox (Option A: app-only targeting per user)
             ex_cfg = get_section("exchange")
-            user_upn = ex_cfg.get("username", "")
+            target_upn = (user_upn or ex_cfg.get("username", "")).strip()
             cc = cc_email or ex_cfg.get("cc")
-            if not user_upn:
-                logger.error("Missing [exchange].username (UPN) — cannot create draft")
+            if not target_upn:
+                logger.error("Missing target mailbox (user_upn) and [exchange].username — cannot create draft")
                 return False
             if not recipient or "@" not in recipient:
                 logger.warning(f"Skipping draft: invalid recipient '{recipient}'")
@@ -159,8 +170,8 @@ class EmailManager:
 
             html_body = body if html_format else f"<pre>{body}</pre>"
 
-            msg_id = graph_create(
-                user_upn=user_upn,
+            graph_create(
+                user_upn=target_upn,
                 subject=subject,
                 html_body=html_body,
                 to=[recipient],
