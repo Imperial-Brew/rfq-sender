@@ -26,3 +26,10 @@ users:
     password_hash: $2b$12$LdJSrWfRA7A6gg.s9s7jv.ZzJINBmS7kiUpQGLLMTH8sGUtaVhaQS
     last_login: null
     session_token: null
+
+  - name: Gary Phillips
+    email: phillips.gary@athenamfg.com
+    role: Buyer
+    password_hash: $2b$12$UmnZ/JGdLErxvNlhyZulGer./akFdflX91s7H/xrMxs5H8E1w.I0u
+    last_login: null
+    session_token: null
