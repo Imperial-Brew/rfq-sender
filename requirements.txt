@@ -8,7 +8,7 @@ streamlit>=1.24.1  # For web app interface
 certifi>=2023.5.7  # SSL certificates
 requests>=2.31.0  # HTTP requests
 pandas>=2.0.0  # Data processing
-boxsdk[jwt]>=10.0.0 # Box SDK with JWTAuth support
+boxsdk[jwt]>=3.14 # Box SDK with JWTAuth support
 
 # Optional but recommended
 black>=23.3.0  # Code formatting
