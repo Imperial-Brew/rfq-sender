@@ -4,6 +4,10 @@ import sys
 import logging
 import yaml
 import datetime
+import sys
+import streamlit as st
+st.write("Python executable:", sys.executable)
+st.write("sys.path:", sys.path)
 
 # Add the parent directory to the path so we can import from other modules
 parent_dir = Path(__file__).parent.parent
