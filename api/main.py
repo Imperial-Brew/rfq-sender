@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from api.routers import auth, queue, specs, vendors, rfq_master
+from api.routers import auth, queue, specs, vendors, rfq_master, send_rfq
 
 app = FastAPI(title="RFQ Sender API", version="1.0.0")
 
@@ -40,6 +40,7 @@ app.include_router(queue.router, prefix="/api/queue", tags=["queue"])
 app.include_router(specs.router, prefix="/api/specs", tags=["specs"])
 app.include_router(vendors.router, prefix="/api/vendors", tags=["vendors"])
 app.include_router(rfq_master.router, prefix="/api/rfq-master", tags=["rfq-master"])
+app.include_router(send_rfq.router, prefix="/api/send-rfq", tags=["send-rfq"])
 
 
 @app.get("/health")
