@@ -42,6 +42,7 @@ data/*.db
 scripts/0__config.json
 scripts/box/0__config.json
 .streamlit/secrets.toml
+frontend/node_modules/
 
 # Windows
 Thumbs.db
