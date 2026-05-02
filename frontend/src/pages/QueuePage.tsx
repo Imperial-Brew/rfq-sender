@@ -18,9 +18,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchQueue, removeQueueItem, type QueueItem } from '../api/queue'
 import { useAuth } from '../context/AuthContext'
 import AddToQueueForm from '../components/AddToQueueForm'
+import Nav from '../components/Nav'
 
 export default function QueuePage() {
-  const { user, clearAuth } = useAuth()
+  const { user } = useAuth()
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
 
@@ -43,17 +44,10 @@ export default function QueuePage() {
   }
 
   return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Nav />
     <div style={{ padding: 24 }}>
-      {/* Header bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h1 style={{ margin: 0, fontSize: 20 }}>📋 RFQ Queue</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ color: '#666' }}>
-            {user?.name} &mdash; <code style={{ fontSize: 12 }}>{user?.role}</code>
-          </span>
-          <button onClick={clearAuth}>Log Out</button>
-        </div>
-      </div>
+      <h1 style={{ margin: '0 0 20px', fontSize: 20 }}>📋 RFQ Queue</h1>
 
       {/* Add button — only visible to estimators and admins */}
       {(user?.role === 'estimator' || user?.role === 'admin') && (
@@ -144,6 +138,7 @@ export default function QueuePage() {
           </table>
         </>
       )}
+    </div>
     </div>
   )
 }
