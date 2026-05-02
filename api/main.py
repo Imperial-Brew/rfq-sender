@@ -35,10 +35,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(queue.router, prefix="/queue", tags=["queue"])
-app.include_router(specs.router, prefix="/specs", tags=["specs"])
-app.include_router(vendors.router, prefix="/vendors", tags=["vendors"])
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(queue.router, prefix="/api/queue", tags=["queue"])
+app.include_router(specs.router, prefix="/api/specs", tags=["specs"])
+app.include_router(vendors.router, prefix="/api/vendors", tags=["vendors"])
 
 
 @app.get("/health")
