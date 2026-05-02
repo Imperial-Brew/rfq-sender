@@ -52,6 +52,9 @@ def _load_df() -> pd.DataFrame:
             return pd.read_csv(p, encoding="utf-8")
         except UnicodeDecodeError:
             return pd.read_csv(p, encoding="cp1252")
+        except Exception:
+            # Empty file, zero-byte file, or parse error — return empty frame
+            return pd.DataFrame()
     return pd.DataFrame()
 
 

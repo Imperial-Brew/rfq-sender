@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
 }
 
 function StatusBadge({ value }: { value: string }) {
-  const s = STATUS_COLORS[value.toLowerCase()] ?? { bg: '#f1f3f4', color: '#444' }
+  const s = STATUS_COLORS[(value ?? '').toLowerCase()] ?? { bg: '#f1f3f4', color: '#444' }
   return (
     <span style={{ background: s.bg, color: s.color, padding: '2px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600 }}>
       {value || '—'}
@@ -61,7 +61,7 @@ export default function RfqMasterPage() {
     queryFn: () => fetchMaster({}),
   })
   const statCounts = STATUSES.reduce((acc, s) => {
-    acc[s] = allEntries.filter((e) => e.status.toLowerCase() === s).length
+    acc[s] = allEntries.filter((e) => (e.status ?? '').toLowerCase() === s).length
     return acc
   }, {} as Record<string, number>)
 
