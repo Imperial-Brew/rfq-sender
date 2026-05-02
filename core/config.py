@@ -24,10 +24,18 @@ try:
     STREAMLIT_AVAILABLE = True
 except ImportError:
     STREAMLIT_AVAILABLE = False
-    # Create a dummy st object to avoid errors
     class DummyStreamlit:
         secrets = {}
     st = DummyStreamlit()
+
+# Downgrade the flag if secrets.toml is missing (e.g. on Render/Railway).
+# Accessing st.secrets raises StreamlitSecretNotFoundError in that case,
+# which would crash every CompanyInfo/ExchangeConfig getter.
+if STREAMLIT_AVAILABLE:
+    try:
+        list(st.secrets)
+    except Exception:
+        STREAMLIT_AVAILABLE = False
 
 # Set up a basic logger first
 logging.basicConfig(level=logging.INFO)
