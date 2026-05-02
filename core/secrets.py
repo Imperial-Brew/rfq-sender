@@ -7,29 +7,38 @@ from pathlib import Path
 # or when running outside a Streamlit app context.
 
 def _load_file_secrets() -> Dict[str, Any]:
-    """Load secrets from .streamlit/secrets.toml if present.
-    Uses tomllib (Py>=3.11) or falls back to toml if installed.
-    Returns an empty dict on any error.
+    """Load secrets from .streamlit/secrets.toml if present, or from the
+    STREAMLIT_SECRETS_TOML environment variable (used in cloud deployments
+    where the file cannot be committed to the repo).
     """
-    try:
-        # Determine project root relative to this file (core/ -> project root)
-        root = Path(__file__).parent.parent
-        secrets_path = root / ".streamlit" / "secrets.toml"
-        if not secrets_path.exists():
-            return {}
-        # Try tomllib first (Python 3.11+)
+    def _parse_toml(content: str | bytes) -> Dict[str, Any]:
         try:
             import tomllib  # type: ignore
-            with open(secrets_path, "rb") as f:
-                return dict(tomllib.load(f) or {})
+            raw = content if isinstance(content, bytes) else content.encode()
+            return dict(tomllib.loads(raw.decode()) or {})
         except Exception:
-            # Fallback to external toml package if available
             try:
                 import toml  # type: ignore
-                with open(secrets_path, "r", encoding="utf-8") as f:
-                    return dict(toml.load(f) or {})
+                text = content if isinstance(content, str) else content.decode()
+                return dict(toml.loads(text) or {})
             except Exception:
                 return {}
+
+    try:
+        # 1. Try reading from the file (local dev)
+        root = Path(__file__).parent.parent
+        secrets_path = root / ".streamlit" / "secrets.toml"
+        if secrets_path.exists():
+            with open(secrets_path, "rb") as f:
+                return _parse_toml(f.read())
+
+        # 2. Fall back to env var (Render / Railway / any cloud host).
+        #    Set STREAMLIT_SECRETS_TOML to the full contents of secrets.toml.
+        env_toml = os.environ.get("STREAMLIT_SECRETS_TOML", "").strip()
+        if env_toml:
+            return _parse_toml(env_toml)
+
+        return {}
     except Exception:
         return {}
 

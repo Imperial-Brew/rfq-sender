@@ -26,6 +26,7 @@ export default function Nav() {
 
       <NavLink to="/queue" style={navLinkStyle}>Queue</NavLink>
       <NavLink to="/vendors" style={navLinkStyle}>Vendors</NavLink>
+      <NavLink to="/specs" style={navLinkStyle}>Specs</NavLink>
 
       {/* push user info to the right */}
       <span style={{ flex: 1 }} />

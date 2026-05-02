@@ -25,6 +25,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import QueuePage from './pages/QueuePage'
 import VendorsPage from './pages/VendorsPage'
+import SpecsPage from './pages/SpecsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/queue" element={<PrivateRoute><QueuePage /></PrivateRoute>} />
             <Route path="/vendors" element={<PrivateRoute><VendorsPage /></PrivateRoute>} />
+            <Route path="/specs" element={<PrivateRoute><SpecsPage /></PrivateRoute>} />
             <Route path="/" element={<Navigate to="/queue" replace />} />
           </Routes>
         </BrowserRouter>
