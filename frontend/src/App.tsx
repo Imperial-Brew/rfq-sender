@@ -26,6 +26,7 @@ import LoginPage from './pages/LoginPage'
 import QueuePage from './pages/QueuePage'
 import VendorsPage from './pages/VendorsPage'
 import SpecsPage from './pages/SpecsPage'
+import RfqMasterPage from './pages/RfqMasterPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="/queue" element={<PrivateRoute><QueuePage /></PrivateRoute>} />
             <Route path="/vendors" element={<PrivateRoute><VendorsPage /></PrivateRoute>} />
             <Route path="/specs" element={<PrivateRoute><SpecsPage /></PrivateRoute>} />
+            <Route path="/rfq-master" element={<PrivateRoute><RfqMasterPage /></PrivateRoute>} />
             <Route path="/" element={<Navigate to="/queue" replace />} />
           </Routes>
         </BrowserRouter>

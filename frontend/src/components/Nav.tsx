@@ -27,6 +27,7 @@ export default function Nav() {
       <NavLink to="/queue" style={navLinkStyle}>Queue</NavLink>
       <NavLink to="/vendors" style={navLinkStyle}>Vendors</NavLink>
       <NavLink to="/specs" style={navLinkStyle}>Specs</NavLink>
+      <NavLink to="/rfq-master" style={navLinkStyle}>RFQ Master</NavLink>
 
       {/* push user info to the right */}
       <span style={{ flex: 1 }} />
