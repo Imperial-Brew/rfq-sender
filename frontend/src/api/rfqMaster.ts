@@ -26,7 +26,7 @@ export async function fetchMaster(params: { status?: string; search?: string } =
   if (params.status) p.set('status', params.status)
   if (params.search) p.set('search', params.search)
   const { data } = await client.get<MasterEntry[]>(`/api/rfq-master/?${p.toString()}`)
-  return data
+  return Array.isArray(data) ? data : []
 }
 
 export async function updateEntry(rfqId: string, body: MasterUpdate): Promise<MasterEntry> {

@@ -57,4 +57,8 @@ if _dist.exists():
 
     @app.get("/{full_path:path}")
     def serve_spa(full_path: str):
+        # Never intercept API calls — return 404 so the real error surfaces
+        if full_path.startswith("api/"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(str(_dist / "index.html"))
