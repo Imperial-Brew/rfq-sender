@@ -24,6 +24,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import QueuePage from './pages/QueuePage'
+import VendorsPage from './pages/VendorsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,15 +49,8 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/queue"
-              element={
-                <PrivateRoute>
-                  <QueuePage />
-                </PrivateRoute>
-              }
-            />
-            {/* Redirect root to queue; login page handles unauthenticated users */}
+            <Route path="/queue" element={<PrivateRoute><QueuePage /></PrivateRoute>} />
+            <Route path="/vendors" element={<PrivateRoute><VendorsPage /></PrivateRoute>} />
             <Route path="/" element={<Navigate to="/queue" replace />} />
           </Routes>
         </BrowserRouter>

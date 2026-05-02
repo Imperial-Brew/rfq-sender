@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import auth, queue, specs
+from api.routers import auth, queue, specs, vendors
 
 app = FastAPI(title="RFQ Sender API", version="1.0.0")
 
@@ -40,6 +40,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(queue.router, prefix="/queue", tags=["queue"])
 app.include_router(specs.router, prefix="/specs", tags=["specs"])
+app.include_router(vendors.router, prefix="/vendors", tags=["vendors"])
 
 
 @app.get("/health")
