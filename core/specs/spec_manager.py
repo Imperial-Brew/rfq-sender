@@ -245,9 +245,11 @@ class SpecManager:
                 "notes": notes.strip()
             }
             df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            if self.box_file_id:
+                return self._save_to_box(df)
+            os.makedirs(os.path.dirname(self.specs_path), exist_ok=True)
             df.to_csv(self.specs_path, index=False)
             return True
         except Exception as e:
-            # Log the error
             print(f"Error adding spec entry: {str(e)}")
             return False
