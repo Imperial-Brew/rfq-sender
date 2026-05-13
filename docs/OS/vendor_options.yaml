@@ -360,6 +360,9 @@ vendors:
   location: .nan
   website: .nan
   processes:
+  - name: Electroless Nickel
+    specs:
+    - number: 0250-07726
   - name: Cleaning
     specs:
     - number: 0250-70351
@@ -388,6 +391,7 @@ vendors:
     specs:
     - number: MIL-C-26074
     - number: AMS 2404
+    - number: 0250-07726
   - name: Gold Plating
     specs:
     - number: ASTM B488
@@ -551,6 +555,13 @@ vendors:
   - number: MIL-H-6875
   - number: BAC 5613
   - number: BPS 4139
+- name: Hammon Plating
+  location: Palo Alto, California
+  website: https://hammonplating.com/
+  processes:
+  - name: Electroless Nickel
+    specs:
+    - number: 0250-07726
 
 
 

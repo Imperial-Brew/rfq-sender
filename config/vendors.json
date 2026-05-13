@@ -160,6 +160,7 @@
       "id": "v006",
       "name": "AI Industries",
       "processes": [
+        "electroless nickel",
         "cleaning"
       ],
       "contacts": [
@@ -481,6 +482,46 @@
         "state": "Texas",
         "zip": ""
       },
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "id": "v017",
+      "name": "Hammon Plating",
+      "processes": [
+        "electroless nickel"
+      ],
+      "contacts": [
+        {
+          "name": "Sales",
+          "email": "sales@hammonplating.com",
+          "phone": "(650) 494-2691",
+          "primary": true
+        },
+        {
+          "name": "Paul Gollnick",
+          "email": "pgollnick@hammonplating.com",
+          "phone": "",
+          "primary": false,
+          "title": "Estimator"
+        },
+        {
+          "name": "Frank Ruano",
+          "email": "fruano@hammonplating.com",
+          "phone": "",
+          "primary": false,
+          "title": "Operations"
+        }
+      ],
+      "address": {
+        "street": "",
+        "city": "Palo Alto",
+        "state": "California",
+        "zip": ""
+      },
+      "website": "https://hammonplating.com/",
+      "m2m_vendor_no": "000072",
       "notes": "",
       "rating": 0,
       "active": true
