@@ -13,6 +13,7 @@ class Contact:
     state: str = ""
     primary: bool = False
     website: str = ""
+    title: str = ""
 
     def get(self, key: str, default: Any = None) -> Any:
         return getattr(self, key, default)
