@@ -56,6 +56,9 @@ $RECYCLE.BIN/
 .LSOverride
 ._*
 
+# Claude Code worktrees
+.claude/worktrees/
+
 # Caches and tooling
 .pytest_cache/
 .mypy_cache/
