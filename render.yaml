@@ -9,3 +9,5 @@ services:
         generateValue: true
       - key: STREAMLIT_SECRETS_TOML
         sync: false
+      - key: PYTHONUNBUFFERED
+        value: "1"

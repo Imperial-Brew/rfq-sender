@@ -202,6 +202,12 @@ class EmailManager:
             user_upn: Target mailbox UPN/email for the draft. If omitted,
                 falls back to [exchange].username from secrets.
         """
+        # This print is OUTSIDE the try block so it appears even if get_section raises.
+        print(
+            f"[EMAIL] create_draft_email entered: recipient={recipient!r}"
+            f" user_upn={user_upn!r} body_len={len(body)}",
+            flush=True,
+        )
         try:
             if attachments:
                 raise ValueError(
@@ -211,7 +217,7 @@ class EmailManager:
             ex_cfg = get_section("exchange")
             target_upn = (user_upn or ex_cfg.get("username", "")).strip()
             cc = cc_email or ex_cfg.get("cc")
-            print(f"[EMAIL] create_draft_email: upn={target_upn!r} to={recipient!r} body_len={len(body)}", flush=True)
+            print(f"[EMAIL] target_upn={target_upn!r}", flush=True)
             if not target_upn:
                 print(f"[EMAIL] ERROR: no target_upn", flush=True)
                 logger.error("Missing target mailbox (user_upn) and [exchange].username — cannot create draft")

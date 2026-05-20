@@ -311,6 +311,12 @@ def create_email_drafts(
     results: List[EmailResult] = []
     any_success = False
 
+    print(
+        f"[ROUTE] create_email_drafts: part={part_number!r} vendors={len(vendors)}"
+        f" upn={user.get('sub')!r} share_link={share_link!r}",
+        flush=True,
+    )
+
     for vendor in vendors:
         contact = vm.get_primary_contact(vendor)
         if not contact or not contact.email:
@@ -322,6 +328,7 @@ def create_email_drafts(
             ))
             continue
 
+        print(f"[ROUTE] building email for vendor={vendor.name!r} contact={contact.email!r}", flush=True)
         try:
             recipient, subject, html_body = em.create_rfq_email(
                 queue_item=row_series,
@@ -332,6 +339,7 @@ def create_email_drafts(
                 is_cui=is_cui_val,
             )
         except Exception as e:
+            print(f"[ROUTE] create_rfq_email FAILED for {vendor.name!r}: {type(e).__name__}: {e}", flush=True)
             results.append(EmailResult(
                 vendor=vendor.name,
                 contact_email=contact.email,
@@ -340,6 +348,7 @@ def create_email_drafts(
             ))
             continue
 
+        print(f"[ROUTE] rfq_email built ok, calling create_draft_email to={recipient!r}", flush=True)
         success = em.create_draft_email(
             recipient=recipient,
             subject=subject,
