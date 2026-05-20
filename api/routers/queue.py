@@ -30,13 +30,16 @@ def get_queue(user: dict = Depends(get_current_user)):
     if df.empty:
         return []
 
-    # pandas DataFrame.to_dict("records") converts each row into a plain dict.
-    # fillna("") replaces NaN (pandas "no value") with empty string,
-    # because JSON doesn't have a NaN concept and it would cause a serialization error.
+    # Convert any datetime columns to plain strings before fillna — pandas
+    # reads date-like columns as datetime64, and fillna("") cannot coerce
+    # NaT/Timestamp objects to str, causing ResponseValidationError downstream.
+    import pandas as pd
+    for col in df.select_dtypes(include=["datetime64[ns]", "datetimetz"]).columns:
+        df[col] = df[col].apply(lambda x: x.strftime("%Y-%m-%d") if pd.notna(x) else "")
+
     records = df.fillna("").to_dict("records")
 
     # Rename the CSV column "qt/so #" to our model's field name.
-    # The slash and space in "qt/so #" aren't valid Python identifiers.
     for r in records:
         r["qt_so_number"] = r.pop("qt/so #", r.get("qt_so_number", ""))
 
