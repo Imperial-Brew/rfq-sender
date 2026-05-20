@@ -211,10 +211,13 @@ class EmailManager:
             ex_cfg = get_section("exchange")
             target_upn = (user_upn or ex_cfg.get("username", "")).strip()
             cc = cc_email or ex_cfg.get("cc")
+            print(f"[EMAIL] create_draft_email: upn={target_upn!r} to={recipient!r} body_len={len(body)}", flush=True)
             if not target_upn:
+                print(f"[EMAIL] ERROR: no target_upn", flush=True)
                 logger.error("Missing target mailbox (user_upn) and [exchange].username — cannot create draft")
                 return False
             if not recipient or "@" not in recipient:
+                print(f"[EMAIL] ERROR: invalid recipient {recipient!r}", flush=True)
                 logger.warning(f"Skipping draft: invalid recipient '{recipient}'")
                 return False
 
@@ -224,6 +227,7 @@ class EmailManager:
                 "Graph draft → upn=%s to=%s subject=%r body_len=%d",
                 target_upn, recipient, subject, len(html_body),
             )
+            print(f"[EMAIL] calling graph_create upn={target_upn!r} to={recipient!r}", flush=True)
             graph_create(
                 user_upn=target_upn,
                 subject=subject,
@@ -231,9 +235,11 @@ class EmailManager:
                 to=[recipient],
                 cc=[cc] if cc else None,
             )
+            print(f"[EMAIL] graph_create OK for {recipient}", flush=True)
             logger.info("Graph draft created OK for %s", recipient)
             return True
         except Exception as e:
+            print(f"[EMAIL] EXCEPTION in create_draft_email for {recipient}: {type(e).__name__}: {e}", flush=True)
             logger.error(f"Graph draft creation failed for {recipient}: {e}")
             return False
     
