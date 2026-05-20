@@ -102,23 +102,34 @@ class EmailManager:
         prefix = app_cfg.get("subject_prefix", "")
         subject = f"{prefix}RFQ: {fields['part_number']} - {fields['process']}"
 
-        company = {**self.company_info, **get_section("company")}
+        # Normalize company section: lowercase all keys and resolve aliases so
+        # secrets can use either convention (COMPANY_NAME or name, etc.)
+        raw_company = {**self.company_info, **get_section("company")}
+        company = {k.lower(): v for k, v in raw_company.items()}
+
+        def _co(key: str, *aliases: str) -> str:
+            """Look up a company config value by key or any alias."""
+            for k in (key, *aliases):
+                val = company.get(k.lower(), "")
+                if val:
+                    return str(val)
+            return ""
 
         # Build the template context (what the Jinja file renders with)
         context = {
-            'contact_name': contact.get('name', ''),
-            'part_number': fields['part_number'],
-            'process': fields['process'],
-            'spec': fields['spec'],
-            'quantities': fields['quantities'],
-            'material': fields['material'],
-            'company_name': company.get('name', 'Your Company'),
-            'company_logo_url': company.get('logo_url', ''),
-            'sender_name': company.get('sender_name', ''),
-            'sender_title': company.get('sender_title', ''),
-            'sender_email': company.get('sender_email', ''),
-            'sender_phone': company.get('sender_phone', ''),
-            'company_address': company.get('address', ''),
+            'contact_name':    contact.get('name', ''),
+            'part_number':     fields['part_number'],
+            'process':         fields['process'],
+            'spec':            fields['spec'],
+            'quantities':      fields['quantities'],
+            'material':        fields['material'],
+            'company_name':    _co('name', 'company_name')   or 'Your Company',
+            'company_logo_url':_co('logo_url', 'company_logo_url'),
+            'sender_name':     _co('sender_name'),
+            'sender_title':    _co('sender_title'),
+            'sender_email':    _co('sender_email'),
+            'sender_phone':    _co('sender_phone'),
+            'company_address': _co('address', 'company_address'),
         }
 
         # Render and return
