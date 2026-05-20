@@ -149,6 +149,11 @@ def get_unsent_queue(user: dict = Depends(get_current_user)):
     if sent_col:
         df = df[df[sent_col].astype(str).str.strip().isin(["", "nan"])]
 
+    # Convert datetime columns to strings before fillna (same fix as queue router)
+    import pandas as _pd
+    for col in df.select_dtypes(include=["datetime64[ns]", "datetimetz"]).columns:
+        df[col] = df[col].apply(lambda x: x.strftime("%Y-%m-%d") if _pd.notna(x) else "")
+
     records = df.fillna("").to_dict("records")
     result = []
     for r in records:
