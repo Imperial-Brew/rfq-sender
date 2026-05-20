@@ -37,8 +37,9 @@ export interface EmailResult {
   error?: string
 }
 
-export async function fetchUnsentQueue(): Promise<SendQueueItem[]> {
-  const { data } = await client.get<SendQueueItem[]>('/send-rfq/queue')
+export async function fetchUnsentQueue(includeSent = false): Promise<SendQueueItem[]> {
+  const url = includeSent ? '/send-rfq/queue?include_sent=true' : '/send-rfq/queue'
+  const { data } = await client.get<SendQueueItem[]>(url)
   return Array.isArray(data) ? data : []
 }
 

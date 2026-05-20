@@ -1,7 +1,7 @@
 """
 Send RFQ routes.
 
-GET  /send-rfq/queue                 — unsent queue items (sent == "")
+GET  /send-rfq/queue                 — queue items; ?include_sent=true returns all, default unsent only
 GET  /send-rfq/vendors               — preview vendor matching (process + spec query params)
 POST /send-rfq/box/{part_number}     — create Box folder and share link
 POST /send-rfq/email/{part_number}   — create Outlook draft emails; marks item as sent
@@ -140,13 +140,16 @@ def _get_box():
 # ---------------------------------------------------------------------------
 
 @router.get("/queue", response_model=List[SendQueueItem])
-def get_unsent_queue(user: dict = Depends(get_current_user)):
+def get_unsent_queue(
+    include_sent: bool = Query(False, description="If true, return all items including already-sent ones."),
+    user: dict = Depends(get_current_user),
+):
     df = load_queue()
     if df.empty:
         return []
 
     sent_col = next((c for c in df.columns if c.lower() == "sent"), None)
-    if sent_col:
+    if sent_col and not include_sent:
         df = df[df[sent_col].astype(str).str.strip().isin(["", "nan"])]
 
     # Convert datetime columns to strings before fillna (same fix as queue router)

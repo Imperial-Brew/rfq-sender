@@ -70,10 +70,11 @@ function ResultPill({ success, label }: { success: boolean; label: string }) {
 
 export default function SendRfqsPage() {
   const queryClient = useQueryClient()
+  const [showSent, setShowSent] = useState(false)
 
   const { data: items = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ['send-rfq-queue'],
-    queryFn: fetchUnsentQueue,
+    queryKey: ['send-rfq-queue', showSent],
+    queryFn: () => fetchUnsentQueue(showSent),
   })
 
   // Per-row state keyed by part_number
@@ -124,7 +125,7 @@ export default function SendRfqsPage() {
     try {
       const results = await createEmailDrafts(item.part_number, row.boxLink, row.boxPassword)
       setRow(item.part_number, { emailLoading: false, emailResults: results })
-      // If at least one succeeded, refresh the queue (item will disappear)
+      // Refresh the queue — item will disappear from unsent view, or update sent date in "show sent" view
       if (results.some(r => r.success)) {
         queryClient.invalidateQueries({ queryKey: ['send-rfq-queue'] })
       }
@@ -141,8 +142,16 @@ export default function SendRfqsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
           <h1 style={{ margin: 0 }}>Send RFQs</h1>
           <span style={{ background: '#fff8e1', color: '#e37400', padding: '3px 12px', borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
-            {items.length} unsent
+            {items.length} {showSent ? 'total' : 'unsent'}
           </span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', userSelect: 'none' }}>
+            <input
+              type="checkbox"
+              checked={showSent}
+              onChange={(e) => setShowSent(e.target.checked)}
+            />
+            Show sent
+          </label>
           <button onClick={() => refetch()} style={{ marginLeft: 'auto' }}>Refresh</button>
         </div>
 
@@ -216,6 +225,11 @@ function ItemRow({ item, row, onPreviewVendors, onCreateBox, onCreateEmails, onB
         <td style={{ fontSize: 12, color: '#666' }}>{item.quantities}</td>
         <td>
           <CuiBadge value={item.cui_itar} />
+          {item.sent && (
+            <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>
+              drafted {item.sent}
+            </div>
+          )}
         </td>
         <td>
           <input
@@ -256,7 +270,7 @@ function ItemRow({ item, row, onPreviewVendors, onCreateBox, onCreateEmails, onB
             onClick={onCreateEmails}
             disabled={row.emailLoading}
           >
-            {row.emailLoading ? 'Sending…' : 'Draft Emails'}
+            {row.emailLoading ? 'Sending…' : item.sent ? 'Re-draft' : 'Draft Emails'}
           </button>
         </td>
       </tr>
