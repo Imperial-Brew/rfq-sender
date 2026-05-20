@@ -95,11 +95,43 @@ class BoxQueueStore:
                 raise
 
     def _merge(self, latest: pd.DataFrame, ours: pd.DataFrame) -> pd.DataFrame:
-        # Implement a domain-appropriate merge (e.g., by part_number + process)
-        # For a first cut, prefer latest then append new rows from ours that aren’t in latest
-        key_cols = [c for c in ["part_number", "process", "spec"] if c in latest.columns]
+        """Merge strategy on ETag conflict.
+
+        Strategy: OUR version wins for existing rows (we just wrote those updates),
+        but rows that exist ONLY in the Box-latest version are preserved (concurrent
+        additions from another session).
+
+        Step-by-step:
+        1. Rows in `ours` — keep as-is (includes our updates to sent, box_share_link, etc.)
+        2. Rows in `latest` that don’t exist in `ours` — append (concurrent additions)
+        3. Result preserves our updates AND concurrent new rows.
+        """
+        key_cols = [c for c in ["part_number", "process", "spec"] if c in latest.columns and c in ours.columns]
         if not key_cols:
-            return ours  # fallback
-        keys_latest = set(tuple(latest[k] for k in key_cols) for _, latest in latest[key_cols].drop_duplicates().iterrows())
-        new_rows = ours[~ours[key_cols].apply(tuple, axis=1).isin(keys_latest)]
-        return pd.concat([latest, new_rows], ignore_index=True)
+            return ours  # no common key — just trust ours
+
+        # Build a frozenset key for each row in ours
+        ours_keys = set(
+            tuple(str(v) for v in row)
+            for row in ours[key_cols].itertuples(index=False)
+        )
+        # Rows in latest that are NOT already in ours (true concurrent additions)
+        latest_only = latest[
+            ~latest[key_cols].apply(
+                lambda r: tuple(str(v) for v in r), axis=1
+            ).isin(ours_keys)
+        ]
+
+        # Align columns: add any columns in latest_only that ours lacks, and vice versa
+        for col in latest_only.columns:
+            if col not in ours.columns:
+                ours = ours.copy()
+                ours[col] = ""
+        for col in ours.columns:
+            if col not in latest_only.columns:
+                latest_only = latest_only.copy()
+                latest_only[col] = ""
+
+        # Our rows first (preserves our update order), then concurrent additions
+        merged = pd.concat([ours, latest_only[ours.columns]], ignore_index=True)
+        return merged

@@ -355,12 +355,18 @@ def create_email_drafts(
         if success:
             any_success = True
 
-    # Mark item as sent today if at least one draft was created
+    # Mark item as sent today if at least one draft was created.
+    # Reload from the store immediately before saving to minimise the window
+    # for ETag conflicts (another request could have written in the meantime).
     if any_success:
         try:
-            sent_col = next((c for c in df.columns if c.lower() == "sent"), "sent")
-            df.loc[row_idx, sent_col] = date.today().isoformat()
-            save_queue(df)
+            fresh_df = load_queue()
+            part_col = next((c for c in fresh_df.columns if c.lower().strip() == "part_number"), None)
+            sent_col = next((c for c in fresh_df.columns if c.lower() == "sent"), "sent")
+            if part_col is not None:
+                mask = fresh_df[part_col].astype(str).str.strip() == part_number.strip()
+                fresh_df.loc[mask, sent_col] = date.today().isoformat()
+            save_queue(fresh_df)
         except Exception as e:
             logger.warning(f"Could not mark item as sent: {e}")
 
