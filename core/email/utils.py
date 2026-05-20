@@ -10,7 +10,8 @@ def extract_rfq_fields(item: Union[pd.Series, Mapping[str, Any]]) -> Dict[str, s
     ----------
     item : Union[pd.Series, Mapping[str, Any]]
         RFQ data containing possible ``process``, ``part_number``,
-        ``quantities``, ``spec``, and ``material`` keys.
+        ``quantities``, ``spec``, ``material``, ``due_date``, and
+        ``notes`` keys.
 
     Normalization
     -------------
@@ -20,8 +21,7 @@ def extract_rfq_fields(item: Union[pd.Series, Mapping[str, Any]]) -> Dict[str, s
     Returns
     -------
     Dict[str, str]
-    A mapping with normalized ``process``, ``part_number``, ``quantities``,
-    ``spec``, and ``material`` values.
+    A mapping with normalized field values.
     """
     d = item.to_dict() if isinstance(item, pd.Series) else dict(item)
     return {
@@ -30,4 +30,6 @@ def extract_rfq_fields(item: Union[pd.Series, Mapping[str, Any]]) -> Dict[str, s
         "quantities":  (d.get("quantities", "") or "").strip(),
         "spec":        (d.get("spec", "") or "").strip(),
         "material":    (d.get("material", "") or "").strip(),
+        "due_date":    (d.get("due_date", "") or "").strip(),
+        "notes":       (d.get("notes", "") or "").strip(),
     }

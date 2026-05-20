@@ -1,4 +1,5 @@
 import os
+import re
 import pandas as pd
 import jinja2
 import logging
@@ -82,25 +83,39 @@ class EmailManager:
             logger.error(f"Error rendering template {template_path}: {str(e)}")
             return ""
 
+    # Legal-entity suffixes to strip when building a greeting from the vendor name.
+    # Keeps "Harrison Electropolishing" instead of "Harrison Electropolishing L.P."
+    _LEGAL_SUFFIXES = re.compile(
+        r',?\s+('
+        r'L\.?P\.?|LLP|LLC|L\.L\.C\.|Inc\.?|Corp\.?|Ltd\.?|Co\.|P\.C\.'
+        r')$',
+        re.IGNORECASE,
+    )
+
     def create_rfq_email(
             self,
             queue_item,
             vendor,
             contact,
-            template_path: Optional[str] = None
+            template_path: Optional[str] = None,
+            box_link: str = "",
+            box_password: str = "",
+            is_cui: bool = False,
     ) -> Tuple[str, str, str]:
         # Use provided template path or instance template path
         template_path = template_path or self.template_path
         if not template_path:
             raise ValueError("No template path provided")
 
-        # NEW: pull normalized fields from the shared helper
+        # Pull normalized fields from the shared helper
         fields = extract_rfq_fields(queue_item)
 
-        # Subject line using those fields
+        # Subject line: "{prefix} {part_number} – {process}"
+        # The prefix (e.g. "[RFQ]") is stored in [app] subject_prefix.
+        # We no longer hard-code "RFQ:" to avoid doubling up with the prefix.
         app_cfg = get_section("app")
-        prefix = app_cfg.get("subject_prefix", "")
-        subject = f"{prefix}RFQ: {fields['part_number']} - {fields['process']}"
+        prefix = app_cfg.get("subject_prefix", "RFQ:").strip()
+        subject = f"{prefix} {fields['part_number']} – {fields['process']}"
 
         # Normalize company section: lowercase all keys and resolve aliases so
         # secrets can use either convention (COMPANY_NAME or name, etc.)
@@ -115,28 +130,45 @@ class EmailManager:
                     return str(val)
             return ""
 
-        # Build the template context (what the Jinja file renders with)
+        # Build greeting name from contact or vendor fallback.
+        # Strip generic inbox aliases and legal-entity suffixes.
         contact_name = contact.get('name', '').strip()
-        # Treat generic aliases as unnamed so the template can fall back gracefully
         _generic = {'quotes', 'sales', 'rfq', 'estimating', 'info', 'purchasing'}
         if contact_name.lower() in _generic:
             contact_name = ''
 
+        vendor_name = vendor.get('name', '')
+        vendor_name_short = self._LEGAL_SUFFIXES.sub('', vendor_name).strip()
+
+        # Sanitize box_link: reject empty string, whitespace, or the literal
+        # string "nan" that pandas produces when a NaN cell is str()-converted.
+        _bad = {'', 'nan', 'none', 'null'}
+        clean_box_link = box_link.strip() if box_link else ''
+        if clean_box_link.lower() in _bad:
+            clean_box_link = ''
+
         context = {
-            'contact_name':    contact_name,
-            'vendor_name':     vendor.get('name', ''),
-            'part_number':     fields['part_number'],
-            'process':         fields['process'],
-            'spec':            fields['spec'],
-            'quantities':      fields['quantities'],
-            'material':        fields['material'],
-            'company_name':    _co('name', 'company_name')   or 'Your Company',
-            'company_logo_url':_co('logo_url', 'company_logo_url'),
-            'sender_name':     _co('sender_name'),
-            'sender_title':    _co('sender_title'),
-            'sender_email':    _co('sender_email'),
-            'sender_phone':    _co('sender_phone'),
-            'company_address': _co('address', 'company_address'),
+            'contact_name':     contact_name,
+            'vendor_name':      vendor_name,
+            'vendor_name_short': vendor_name_short,
+            'part_number':      fields['part_number'],
+            'process':          fields['process'],
+            'spec':             fields['spec'],
+            'quantities':       fields['quantities'],
+            'material':         fields['material'],
+            'due_date':         fields.get('due_date', ''),
+            'notes':            fields.get('notes', ''),
+            'box_link':         clean_box_link,
+            'box_password':     box_password.strip() if box_password else '',
+            'is_cui':           is_cui,
+            'company_name':     _co('name', 'company_name') or 'Your Company',
+            'company_logo_url': _co('logo_url', 'company_logo_url'),
+            'sender_name':      _co('sender_name'),
+            'sender_title':     _co('sender_title'),
+            'sender_email':     _co('sender_email'),
+            'sender_phone':     _co('sender_phone'),
+            'company_address':  _co('address', 'company_address'),
+            'cui_warning':      _co('cui_warning'),
         }
 
         # Render and return

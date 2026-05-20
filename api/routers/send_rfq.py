@@ -295,10 +295,18 @@ def create_email_drafts(
     if em is None:
         raise HTTPException(status_code=503, detail="Email manager could not be initialized.")
 
+    # Resolve share link: prefer what was passed in the request body,
+    # fall back to whatever is stored in the queue row.
+    # Reject the literal string "nan" that pandas produces from NaN cells.
+    _bad_links = {'', 'nan', 'none', 'null'}
     share_link = body.share_link.strip()
-    # Fall back to stored share link in queue
-    if not share_link:
+    if share_link.lower() in _bad_links:
         share_link = str(row_dict.get("box_share_link", "")).strip()
+    if share_link.lower() in _bad_links:
+        share_link = ''
+
+    box_password = body.password.strip() if body.password else ''
+    is_cui_val = str(row_dict.get("cui_itar", "")).upper() in ("TRUE", "YES", "Y", "1")
 
     results: List[EmailResult] = []
     any_success = False
@@ -319,6 +327,9 @@ def create_email_drafts(
                 queue_item=row_series,
                 vendor={"name": vendor.name},
                 contact={"name": contact.name, "email": contact.email},
+                box_link=share_link,
+                box_password=box_password,
+                is_cui=is_cui_val,
             )
         except Exception as e:
             results.append(EmailResult(
@@ -328,15 +339,6 @@ def create_email_drafts(
                 error=f"Template render failed: {e}",
             ))
             continue
-
-        # Inject Box link if provided
-        if share_link:
-            try:
-                from streamlit_app.utils.box_helpers import inject_box_link_into_body
-                is_cui_val = str(row_dict.get("cui_itar", "")).upper() in ("TRUE", "YES", "Y", "1")
-                html_body = inject_box_link_into_body(html_body, share_link, is_cui_val)
-            except Exception as e:
-                logger.warning(f"Could not inject Box link: {e}")
 
         success = em.create_draft_email(
             recipient=recipient,

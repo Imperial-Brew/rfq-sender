@@ -141,10 +141,16 @@ def upload_and_share_for_part(
 
 
 def inject_box_link_into_body(html_body: str, share_link: str, is_cui: bool) -> str:
-    """Append a styled Box link section to the existing HTML email body and then append signature."""
-    # Note: function kept here to group Box-related email injection with other Box helpers.
-    if not share_link:
+    """Append a styled Box link section to the existing HTML email body.
+
+    Note: the FastAPI stack passes box_link to the Jinja template instead of
+    calling this function.  This helper is kept for the legacy Streamlit path.
+    """
+    # Reject empty strings and the literal "nan" that pandas produces for NaN cells.
+    _bad = {'', 'nan', 'none', 'null'}
+    if not share_link or share_link.strip().lower() in _bad:
         return html_body
+    share_link = share_link.strip()
 
     banner = f"""
     <div style=\"margin-top:16px;padding:14px;border:1px solid #d0d7de;border-radius:8px;background:#f6f8fa;\">
