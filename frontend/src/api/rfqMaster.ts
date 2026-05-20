@@ -25,15 +25,15 @@ export async function fetchMaster(params: { status?: string; search?: string } =
   const p = new URLSearchParams()
   if (params.status) p.set('status', params.status)
   if (params.search) p.set('search', params.search)
-  const { data } = await client.get<MasterEntry[]>(`/api/rfq-master/?${p.toString()}`)
+  const { data } = await client.get<MasterEntry[]>(`/rfq-master/?${p.toString()}`)
   return Array.isArray(data) ? data : []
 }
 
 export async function updateEntry(rfqId: string, body: MasterUpdate): Promise<MasterEntry> {
-  const { data } = await client.put<MasterEntry>(`/api/rfq-master/${encodeURIComponent(rfqId)}`, body)
+  const { data } = await client.put<MasterEntry>(`/rfq-master/${encodeURIComponent(rfqId)}`, body)
   return data
 }
 
 export async function deleteEntry(rfqId: string): Promise<void> {
-  await client.delete(`/api/rfq-master/${encodeURIComponent(rfqId)}`)
+  await client.delete(`/rfq-master/${encodeURIComponent(rfqId)}`)
 }

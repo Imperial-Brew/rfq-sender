@@ -38,14 +38,14 @@ export interface EmailResult {
 }
 
 export async function fetchUnsentQueue(): Promise<SendQueueItem[]> {
-  const { data } = await client.get<SendQueueItem[]>('/api/send-rfq/queue')
+  const { data } = await client.get<SendQueueItem[]>('/send-rfq/queue')
   return Array.isArray(data) ? data : []
 }
 
 export async function fetchVendors(process: string, spec: string): Promise<VendorMatch[]> {
   const p = new URLSearchParams({ process })
   if (spec) p.set('spec', spec)
-  const { data } = await client.get<VendorMatch[]>(`/api/send-rfq/vendors?${p.toString()}`)
+  const { data } = await client.get<VendorMatch[]>(`/send-rfq/vendors?${p.toString()}`)
   return Array.isArray(data) ? data : []
 }
 
@@ -54,7 +54,7 @@ export async function createBoxFolder(
   access = 'open',
 ): Promise<BoxResult> {
   const { data } = await client.post<BoxResult>(
-    `/api/send-rfq/box/${encodeURIComponent(partNumber)}`,
+    `/send-rfq/box/${encodeURIComponent(partNumber)}`,
     { access },
   )
   return data
@@ -66,7 +66,7 @@ export async function createEmailDrafts(
   password: string,
 ): Promise<EmailResult[]> {
   const { data } = await client.post<EmailResult[]>(
-    `/api/send-rfq/email/${encodeURIComponent(partNumber)}`,
+    `/send-rfq/email/${encodeURIComponent(partNumber)}`,
     { share_link: shareLink, password },
   )
   return Array.isArray(data) ? data : []
