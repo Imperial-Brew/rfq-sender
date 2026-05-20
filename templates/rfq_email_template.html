@@ -206,7 +206,9 @@
 
     <!-- ── Header ──────────────────────────────────────── -->
     <div class="header">
-        {% if company_logo_url %}
+        {% if company_logo_b64 %}
+        <img src="{{ company_logo_b64 }}" alt="{{ company_name }}" class="logo">
+        {% elif company_logo_url %}
         <img src="{{ company_logo_url }}" alt="{{ company_name }}" class="logo">
         {% else %}
         <p class="header-wordmark">{{ company_name }}</p>
@@ -300,7 +302,9 @@
                     </td>
                     <!-- right: logo -->
                     <td class="sig-right">
-                        {% if company_logo_url %}
+                        {% if company_logo_b64 %}
+                        <img src="{{ company_logo_b64 }}" alt="{{ company_name }}">
+                        {% elif company_logo_url %}
                         <img src="{{ company_logo_url }}" alt="{{ company_name }}">
                         {% else %}
                         <span class="sig-company-text">{{ company_name }}</span>

@@ -1,14 +1,47 @@
+import base64
 import os
 import re
 import pandas as pd
 import jinja2
 import logging
+from pathlib import Path
 from typing import Dict, Optional, Tuple, Any, List
 from dotenv import load_dotenv
 from core.secrets import get_section  # to grab [company] and [app]
 from core.email.utils import extract_rfq_fields
 from core.vendors.vendor_manager import VendorManager
 from core.email.graph_client import create_draft as graph_create
+
+# Project root: two levels up from core/email/email_manager.py
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+
+def _logo_data_uri(logo_path: Optional[str] = None) -> str:
+    """Return a data-URI for the logo file so it renders in email clients
+    without needing a public URL.
+
+    Resolution order:
+      1. Explicit ``logo_path`` argument
+      2. ``assets/logo.png``  in the project root
+      3. ``assets/logo.jpg``  in the project root
+      4. Empty string (template falls back to company_logo_url or text)
+    """
+    candidates = []
+    if logo_path:
+        candidates.append(Path(logo_path))
+    candidates += [
+        _PROJECT_ROOT / "assets" / "logo.png",
+        _PROJECT_ROOT / "assets" / "logo.jpg",
+        _PROJECT_ROOT / "assets" / "logo.svg",
+    ]
+    for path in candidates:
+        if path.exists():
+            ext = path.suffix.lower().lstrip(".")
+            mime = {"png": "image/png", "jpg": "image/jpeg",
+                    "jpeg": "image/jpeg", "svg": "image/svg+xml"}.get(ext, "image/png")
+            data = base64.b64encode(path.read_bytes()).decode("ascii")
+            return f"data:{mime};base64,{data}"
+    return ""
 
 # Disable insecure request warnings if needed
 # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) - commented out for debug
@@ -162,6 +195,9 @@ class EmailManager:
             'box_password':     box_password.strip() if box_password else '',
             'is_cui':           is_cui,
             'company_name':     _co('name', 'company_name') or 'Your Company',
+            # Prefer an embedded base64 logo (works offline, no hosting needed).
+            # Falls back to a hosted URL if no local file is found.
+            'company_logo_b64': _logo_data_uri(_co('logo_path', 'company_logo_path')),
             'company_logo_url': _co('logo_url', 'company_logo_url'),
             'sender_name':      _co('sender_name'),
             'sender_title':     _co('sender_title'),
