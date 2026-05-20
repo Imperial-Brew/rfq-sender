@@ -5,187 +5,286 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Request for Quote</title>
     <style>
+        /* ── Reset ──────────────────────────────────────────────── */
         body {
+            margin: 0; padding: 0;
             font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 0;
-            padding: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #222;
+            background: #fff;
         }
         .container {
-            max-width: 600px;
+            max-width: 580px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0;
         }
+
+        /* ── Header bar ─────────────────────────────────────────── */
         .header {
-            background-color: #f8f8f8;
-            padding: 20px;
-            border-bottom: 3px solid #007bff;
-        }
-        .logo {
-            max-height: 60px;
-            margin-bottom: 8px;
+            background: #1C2B3A;          /* ← primary brand color */
+            padding: 16px 24px;
             display: block;
         }
+        .header img.logo {
+            display: block;
+            max-height: 48px;
+            max-width: 200px;
+        }
+        .header-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin: 0;
+        }
+        .accent-bar {
+            height: 4px;
+            background: #C8A142;          /* ← accent / gold */
+        }
+
+        /* ── Body content ───────────────────────────────────────── */
         .content {
-            padding: 20px 0;
+            padding: 20px 24px 8px;
         }
-        .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            font-size: 12px;
-            color: #777;
-        }
-        table {
+        p { margin: 0 0 10px; }
+
+        /* ── Compact spec table ─────────────────────────────────── */
+        .spec-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 12px 0 16px;
+            font-size: 13px;
         }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 12px;
+        .spec-table th,
+        .spec-table td {
+            padding: 5px 10px;
+            border: 1px solid #dde2e8;
             text-align: left;
+            vertical-align: top;
         }
-        th {
-            background-color: #f2f2f2;
-            width: 35%;
+        .spec-table th {
+            background: #f0f3f6;
+            color: #444;
+            font-weight: 600;
+            width: 38%;
+            white-space: nowrap;
         }
+        .spec-table tr:nth-child(even) td {
+            background: #fafbfc;
+        }
+
+        /* ── Box / files block ──────────────────────────────────── */
         .box-block {
-            margin: 20px 0;
-            padding: 14px 16px;
+            margin: 14px 0;
+            padding: 12px 14px;
             border: 1px solid #d0d7de;
-            border-radius: 8px;
+            border-radius: 6px;
             background: #f6f8fa;
+            font-size: 13px;
         }
         .box-block-title {
-            font-size: 15px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 8px;
+            font-size: 13px;
         }
         .box-button {
             display: inline-block;
-            padding: 9px 16px;
-            background: #2d7ff9;
+            padding: 7px 14px;
+            background: #1C2B3A;
             color: #fff !important;
-            border-radius: 6px;
+            border-radius: 5px;
             text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .box-url {
-            margin-top: 8px;
-            color: #57606a;
-            font-size: 12px;
-        }
-        .box-url code {
-            font-size: 11px;
-            word-break: break-all;
-        }
-        .box-password {
-            margin-top: 6px;
+            font-weight: 700;
             font-size: 13px;
         }
+        .box-url {
+            margin-top: 7px;
+            color: #57606a;
+            font-size: 11px;
+        }
+        .box-url code { word-break: break-all; }
+        .box-password { margin-top: 5px; font-size: 12px; }
+
+        /* ── Signature block ────────────────────────────────────── */
+        .sig-wrapper {
+            margin-top: 20px;
+            padding-top: 14px;
+            border-top: 2px solid #C8A142;  /* accent rule */
+        }
+        .sig-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .sig-logo-cell {
+            width: 130px;
+            padding: 0 16px 0 0;
+            vertical-align: middle;
+        }
+        .sig-logo-cell img {
+            display: block;
+            max-width: 120px;
+            max-height: 60px;
+        }
+        .sig-divider {
+            width: 2px;
+            background: #dde2e8;
+            padding: 0;
+        }
+        .sig-info-cell {
+            padding: 0 0 0 16px;
+            vertical-align: middle;
+        }
+        .sig-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1C2B3A;
+            margin: 0 0 1px;
+        }
+        .sig-title {
+            font-size: 12px;
+            color: #555;
+            margin: 0 0 4px;
+        }
+        .sig-contact {
+            font-size: 12px;
+            color: #444;
+            line-height: 1.6;
+        }
+        .sig-contact a {
+            color: #1C2B3A;
+            text-decoration: none;
+        }
+
+        /* ── Footer ─────────────────────────────────────────────── */
+        .footer {
+            margin-top: 20px;
+            padding: 10px 24px;
+            background: #f4f5f6;
+            font-size: 11px;
+            color: #888;
+            border-top: 1px solid #e0e0e0;
+        }
         .warning {
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 10px;
-            margin: 20px 0;
+            background: #fff3cd;
+            color: #7a5c00;
+            padding: 8px 10px;
+            margin-top: 8px;
             border-radius: 4px;
+            font-size: 11px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            {% if company_logo_url %}
-            <img src="{{ company_logo_url }}" alt="{{ company_name }} Logo" class="logo">
+<div class="container">
+
+    <!-- ── Header ─────────────────────────────────────────── -->
+    <div class="header">
+        {% if company_logo_url %}
+        <img src="{{ company_logo_url }}" alt="{{ company_name }}" class="logo">
+        {% else %}
+        <p class="header-title">{{ company_name }}</p>
+        {% endif %}
+    </div>
+    <div class="accent-bar"></div>
+
+    <!-- ── Body ───────────────────────────────────────────── -->
+    <div class="content">
+        <p>Hello {% if contact_name %}{{ contact_name }}{% elif vendor_name_short %}{{ vendor_name_short }}{% else %}there{% endif %},</p>
+
+        <p>We would like to request a quote for the following item:</p>
+
+        <table class="spec-table">
+            <tr>
+                <th>Part Number</th>
+                <td>{{ part_number }}</td>
+            </tr>
+            <tr>
+                <th>Process</th>
+                <td>{{ process }}</td>
+            </tr>
+            {% if spec %}
+            <tr>
+                <th>Specification</th>
+                <td>{{ spec }}</td>
+            </tr>
             {% endif %}
-            <h2 style="margin: 0;">Request for Quote</h2>
-        </div>
-
-        <div class="content">
-            <p>Hello {% if contact_name %}{{ contact_name }}{% elif vendor_name_short %}{{ vendor_name_short }}{% else %}there{% endif %},</p>
-
-            <p>We would like to request a quote for the following item:</p>
-
-            <table>
-                <tr>
-                    <th>Part Number</th>
-                    <td>{{ part_number }}</td>
-                </tr>
-                <tr>
-                    <th>Process</th>
-                    <td>{{ process }}</td>
-                </tr>
-                {% if spec %}
-                <tr>
-                    <th>Specification</th>
-                    <td>{{ spec }}</td>
-                </tr>
-                {% endif %}
-                <tr>
-                    <th>Quantities</th>
-                    <td>{{ quantities }}</td>
-                </tr>
-                {% if material %}
-                <tr>
-                    <th>Material</th>
-                    <td>{{ material }}</td>
-                </tr>
-                {% endif %}
-                {% if due_date %}
-                <tr>
-                    <th>Quote Due Date</th>
-                    <td>{{ due_date }}</td>
-                </tr>
-                {% endif %}
-            </table>
-
-            {% if notes %}
-            <p><strong>Additional Notes:</strong> {{ notes }}</p>
+            <tr>
+                <th>Quantities</th>
+                <td>{{ quantities }}</td>
+            </tr>
+            {% if material %}
+            <tr>
+                <th>Material</th>
+                <td>{{ material }}</td>
+            </tr>
             {% endif %}
+            {% if due_date %}
+            <tr>
+                <th>Quote Due Date</th>
+                <td>{{ due_date }}</td>
+            </tr>
+            {% endif %}
+        </table>
 
-            {% if box_link %}
-            <div class="box-block">
-                <div class="box-block-title">
-                    RFQ Files{% if is_cui %} &mdash; <span style="color:#c0392b;">Password Protected (CUI)</span>{% endif %}
-                </div>
-                <a href="{{ box_link }}" class="box-button">Open RFQ Folder</a>
-                {% if is_cui and box_password %}
-                <p class="box-password">
-                    <strong>Folder password:</strong> <code>{{ box_password }}</code>
-                </p>
-                {% endif %}
-                <p class="box-url">
-                    If you have trouble with the link, copy this URL into your browser:<br>
-                    <code>{{ box_link }}</code>
-                </p>
+        {% if notes %}
+        <p><strong>Additional Notes:</strong> {{ notes }}</p>
+        {% endif %}
+
+        {% if box_link %}
+        <div class="box-block">
+            <div class="box-block-title">
+                RFQ Files{% if is_cui %} &mdash; <span style="color:#c0392b;">Password Protected (CUI)</span>{% endif %}
             </div>
+            <a href="{{ box_link }}" class="box-button">Open RFQ Folder</a>
+            {% if is_cui and box_password %}
+            <p class="box-password">
+                <strong>Folder password:</strong> <code>{{ box_password }}</code>
+            </p>
             {% endif %}
-
-            <p>Please provide unit pricing and lead time for each quantity listed above.</p>
-
-            <p>Thank you for your time &mdash; we look forward to your response.</p>
-
-            <p style="margin-top: 24px;">
-                Best regards,<br>
-                <strong>{{ sender_name }}</strong><br>
-                {{ sender_title }}<br>
-                {{ company_name }}<br>
-                <a href="mailto:{{ sender_email }}">{{ sender_email }}</a><br>
-                {{ sender_phone }}
+            <p class="box-url">
+                If you have trouble with the link, copy this URL into your browser:<br>
+                <code>{{ box_link }}</code>
             </p>
         </div>
+        {% endif %}
 
-        <div class="footer">
-            <p>{{ company_name }}{% if company_address %} &nbsp;|&nbsp; {{ company_address }}{% endif %}</p>
-            {% if cui_warning %}
-            <p class="warning">{{ cui_warning }}</p>
-            {% endif %}
+        <p>Please provide unit pricing and lead time for each quantity listed above.</p>
+
+        <p>Thank you for your time &mdash; we look forward to your response.</p>
+
+        <!-- ── Signature ──────────────────────────────────── -->
+        <div class="sig-wrapper">
+            <table class="sig-table">
+                <tr>
+                    {% if company_logo_url %}
+                    <td class="sig-logo-cell">
+                        <img src="{{ company_logo_url }}" alt="{{ company_name }}">
+                    </td>
+                    <td class="sig-divider">&nbsp;</td>
+                    {% endif %}
+                    <td class="sig-info-cell">
+                        <p class="sig-name">{{ sender_name }}</p>
+                        {% if sender_title %}<p class="sig-title">{{ sender_title }}</p>{% endif %}
+                        <div class="sig-contact">
+                            {{ company_name }}<br>
+                            {% if sender_phone %}{{ sender_phone }}<br>{% endif %}
+                            <a href="mailto:{{ sender_email }}">{{ sender_email }}</a>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
+
+    <!-- ── Footer ─────────────────────────────────────────── -->
+    <div class="footer">
+        {{ company_name }}{% if company_address %}&nbsp;&nbsp;|&nbsp;&nbsp;{{ company_address }}{% endif %}
+        {% if cui_warning %}
+        <div class="warning">{{ cui_warning }}</div>
+        {% endif %}
+    </div>
+
+</div>
 </body>
 </html>
