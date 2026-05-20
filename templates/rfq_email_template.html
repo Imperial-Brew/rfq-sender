@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Request for Quote</title>
     <style>
-        /* ── Reset ──────────────────────────────────────────────── */
+        /* ── Reset ─────────────────────────────────────────── */
         body {
             margin: 0; padding: 0;
             font-family: Arial, sans-serif;
@@ -15,41 +15,40 @@
             background: #fff;
         }
         .container {
-            max-width: 580px;
+            max-width: 600px;
             margin: 0 auto;
             padding: 0;
         }
 
-        /* ── Header bar ─────────────────────────────────────────── */
+        /* ── Header bar ─────────────────────────────────────── */
         .header {
-            background: #1C2B3A;          /* ← primary brand color */
-            padding: 16px 24px;
-            display: block;
+            background: #0B0458;
+            padding: 14px 24px;
         }
         .header img.logo {
             display: block;
-            max-height: 48px;
-            max-width: 200px;
+            max-height: 52px;
+            max-width: 220px;
         }
-        .header-title {
+        .header-wordmark {
             color: #fff;
             font-size: 18px;
             font-weight: 700;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             margin: 0;
         }
         .accent-bar {
-            height: 4px;
-            background: #C8A142;          /* ← accent / gold */
+            height: 3px;
+            background: #C82022;
         }
 
-        /* ── Body content ───────────────────────────────────────── */
+        /* ── Body content ───────────────────────────────────── */
         .content {
-            padding: 20px 24px 8px;
+            padding: 20px 24px 12px;
         }
         p { margin: 0 0 10px; }
 
-        /* ── Compact spec table ─────────────────────────────────── */
+        /* ── Compact spec table ─────────────────────────────── */
         .spec-table {
             width: 100%;
             border-collapse: collapse;
@@ -64,36 +63,35 @@
             vertical-align: top;
         }
         .spec-table th {
-            background: #f0f3f6;
-            color: #444;
+            background: #f0f2f6;
+            color: #333;
             font-weight: 600;
-            width: 38%;
+            width: 36%;
             white-space: nowrap;
         }
         .spec-table tr:nth-child(even) td {
             background: #fafbfc;
         }
 
-        /* ── Box / files block ──────────────────────────────────── */
+        /* ── Box / files block ──────────────────────────────── */
         .box-block {
             margin: 14px 0;
-            padding: 12px 14px;
+            padding: 11px 14px;
             border: 1px solid #d0d7de;
-            border-radius: 6px;
+            border-radius: 5px;
             background: #f6f8fa;
             font-size: 13px;
         }
         .box-block-title {
             font-weight: 700;
             margin-bottom: 8px;
-            font-size: 13px;
         }
         .box-button {
             display: inline-block;
             padding: 7px 14px;
-            background: #1C2B3A;
+            background: #0B0458;
             color: #fff !important;
-            border-radius: 5px;
+            border-radius: 4px;
             text-decoration: none;
             font-weight: 700;
             font-size: 13px;
@@ -106,69 +104,97 @@
         .box-url code { word-break: break-all; }
         .box-password { margin-top: 5px; font-size: 12px; }
 
-        /* ── Signature block ────────────────────────────────────── */
+        /* ── Signature ──────────────────────────────────────── */
         .sig-wrapper {
             margin-top: 20px;
             padding-top: 14px;
-            border-top: 2px solid #C8A142;  /* accent rule */
+            border-top: 2px solid #0B0458;
         }
-        .sig-table {
-            border-collapse: collapse;
+        .sig-outer {
             width: 100%;
+            border-collapse: collapse;
         }
-        .sig-logo-cell {
-            width: 130px;
+        /* left: name / title / contact */
+        .sig-left {
+            vertical-align: top;
             padding: 0 16px 0 0;
-            vertical-align: middle;
         }
-        .sig-logo-cell img {
-            display: block;
-            max-width: 120px;
-            max-height: 60px;
-        }
-        .sig-divider {
-            width: 2px;
-            background: #dde2e8;
-            padding: 0;
-        }
-        .sig-info-cell {
-            padding: 0 0 0 16px;
-            vertical-align: middle;
+        .sig-regards {
+            font-size: 13px;
+            color: #555;
+            margin: 0 0 2px;
         }
         .sig-name {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 700;
-            color: #1C2B3A;
+            color: #0B0458;
             margin: 0 0 1px;
         }
         .sig-title {
             font-size: 12px;
             color: #555;
-            margin: 0 0 4px;
+            margin: 0 0 8px;
         }
-        .sig-contact {
+        .sig-rule {
+            border: none;
+            border-top: 1px solid #0B0458;
+            margin: 0 0 8px;
+            width: 200px;
+        }
+        .sig-contact-row {
             font-size: 12px;
-            color: #444;
-            line-height: 1.6;
+            color: #333;
+            line-height: 1.8;
         }
-        .sig-contact a {
-            color: #1C2B3A;
+        .sig-icon {
+            color: #C82022;
+            font-weight: 700;
+            margin-right: 5px;
+        }
+        .sig-contact-row a {
+            color: #0B0458;
             text-decoration: none;
         }
+        /* right: logo */
+        .sig-right {
+            vertical-align: middle;
+            text-align: right;
+            padding: 0;
+            white-space: nowrap;
+        }
+        .sig-right img {
+            max-height: 64px;
+            max-width: 160px;
+            display: inline-block;
+        }
+        .sig-right .sig-company-text {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0B0458;
+            letter-spacing: 0.5px;
+            text-align: right;
+        }
 
-        /* ── Footer ─────────────────────────────────────────────── */
+        /* ── Footer / disclaimer ────────────────────────────── */
         .footer {
             margin-top: 20px;
-            padding: 10px 24px;
-            background: #f4f5f6;
-            font-size: 11px;
-            color: #888;
-            border-top: 1px solid #e0e0e0;
+            padding: 10px 24px 14px;
+            border-top: 1px solid #dde2e8;
+            font-size: 10.5px;
+            color: #777;
+            line-height: 1.55;
         }
-        .warning {
+        .footer .addr-line {
+            margin-bottom: 8px;
+        }
+        .footer .legal {
+            font-style: italic;
+            color: #888;
+        }
+        .warning-cui {
             background: #fff3cd;
             color: #7a5c00;
-            padding: 8px 10px;
+            padding: 7px 10px;
             margin-top: 8px;
             border-radius: 4px;
             font-size: 11px;
@@ -178,17 +204,17 @@
 <body>
 <div class="container">
 
-    <!-- ── Header ─────────────────────────────────────────── -->
+    <!-- ── Header ──────────────────────────────────────── -->
     <div class="header">
         {% if company_logo_url %}
         <img src="{{ company_logo_url }}" alt="{{ company_name }}" class="logo">
         {% else %}
-        <p class="header-title">{{ company_name }}</p>
+        <p class="header-wordmark">{{ company_name }}</p>
         {% endif %}
     </div>
     <div class="accent-bar"></div>
 
-    <!-- ── Body ───────────────────────────────────────────── -->
+    <!-- ── Body ────────────────────────────────────────── -->
     <div class="content">
         <p>Hello {% if contact_name %}{{ contact_name }}{% elif vendor_name_short %}{{ vendor_name_short }}{% else %}there{% endif %},</p>
 
@@ -234,7 +260,7 @@
         {% if box_link %}
         <div class="box-block">
             <div class="box-block-title">
-                RFQ Files{% if is_cui %} &mdash; <span style="color:#c0392b;">Password Protected (CUI)</span>{% endif %}
+                RFQ Files{% if is_cui %} &mdash; <span style="color:#C82022;">Password Protected (CUI)</span>{% endif %}
             </div>
             <a href="{{ box_link }}" class="box-button">Open RFQ Folder</a>
             {% if is_cui and box_password %}
@@ -253,35 +279,48 @@
 
         <p>Thank you for your time &mdash; we look forward to your response.</p>
 
-        <!-- ── Signature ──────────────────────────────────── -->
+        <!-- ── Signature ──────────────────────────────── -->
         <div class="sig-wrapper">
-            <table class="sig-table">
+            <table class="sig-outer">
                 <tr>
-                    {% if company_logo_url %}
-                    <td class="sig-logo-cell">
-                        <img src="{{ company_logo_url }}" alt="{{ company_name }}">
-                    </td>
-                    <td class="sig-divider">&nbsp;</td>
-                    {% endif %}
-                    <td class="sig-info-cell">
+                    <!-- left: name / title / contact -->
+                    <td class="sig-left">
+                        <p class="sig-regards">Regards,</p>
                         <p class="sig-name">{{ sender_name }}</p>
-                        {% if sender_title %}<p class="sig-title">{{ sender_title }}</p>{% endif %}
-                        <div class="sig-contact">
-                            {{ company_name }}<br>
-                            {% if sender_phone %}{{ sender_phone }}<br>{% endif %}
-                            <a href="mailto:{{ sender_email }}">{{ sender_email }}</a>
+                        {% if sender_title %}
+                        <p class="sig-title">{{ sender_title }}</p>
+                        {% endif %}
+                        <hr class="sig-rule">
+                        <div class="sig-contact-row">
+                            {% if sender_phone %}
+                            <span class="sig-icon">&#9990;</span><a href="tel:{{ sender_phone }}">{{ sender_phone }}</a><br>
+                            {% endif %}
+                            <span class="sig-icon">&#9993;</span><a href="mailto:{{ sender_email }}">{{ sender_email }}</a>
                         </div>
+                    </td>
+                    <!-- right: logo -->
+                    <td class="sig-right">
+                        {% if company_logo_url %}
+                        <img src="{{ company_logo_url }}" alt="{{ company_name }}">
+                        {% else %}
+                        <span class="sig-company-text">{{ company_name }}</span>
+                        {% endif %}
                     </td>
                 </tr>
             </table>
         </div>
     </div>
 
-    <!-- ── Footer ─────────────────────────────────────────── -->
+    <!-- ── Footer / disclaimer ─────────────────────────── -->
     <div class="footer">
-        {{ company_name }}{% if company_address %}&nbsp;&nbsp;|&nbsp;&nbsp;{{ company_address }}{% endif %}
+        <div class="addr-line">
+            {{ company_name }}{% if company_address %}&nbsp;&nbsp;|&nbsp;&nbsp;{{ company_address }}{% endif %}
+        </div>
+        {% if legal_footer %}
+        <div class="legal">{{ legal_footer }}</div>
+        {% endif %}
         {% if cui_warning %}
-        <div class="warning">{{ cui_warning }}</div>
+        <div class="warning-cui">{{ cui_warning }}</div>
         {% endif %}
     </div>
 

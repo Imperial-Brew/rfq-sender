@@ -169,6 +169,7 @@ class EmailManager:
             'sender_phone':     _co('sender_phone'),
             'company_address':  _co('address', 'company_address'),
             'cui_warning':      _co('cui_warning'),
+            'legal_footer':     _co('legal_footer', 'email_disclaimer'),
         }
 
         # Render and return
