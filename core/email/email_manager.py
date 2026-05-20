@@ -116,8 +116,15 @@ class EmailManager:
             return ""
 
         # Build the template context (what the Jinja file renders with)
+        contact_name = contact.get('name', '').strip()
+        # Treat generic aliases as unnamed so the template can fall back gracefully
+        _generic = {'quotes', 'sales', 'rfq', 'estimating', 'info', 'purchasing'}
+        if contact_name.lower() in _generic:
+            contact_name = ''
+
         context = {
-            'contact_name':    contact.get('name', ''),
+            'contact_name':    contact_name,
+            'vendor_name':     vendor.get('name', ''),
             'part_number':     fields['part_number'],
             'process':         fields['process'],
             'spec':            fields['spec'],

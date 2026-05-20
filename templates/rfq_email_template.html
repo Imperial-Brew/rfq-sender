@@ -82,7 +82,7 @@
         </div>
         
         <div class="content">
-            <p>Hello {{contact_name}},</p>
+            <p>Hello {% if contact_name %}{{contact_name}}{% elif vendor_name %}{{vendor_name}} Team{% else %}there{% endif %},</p>
             
             <p>We would like to request a quote for the following part:</p>
             
