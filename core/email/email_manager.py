@@ -220,6 +220,10 @@ class EmailManager:
 
             html_body = body if html_format else f"<pre>{body}</pre>"
 
+            logger.info(
+                "Graph draft → upn=%s to=%s subject=%r body_len=%d",
+                target_upn, recipient, subject, len(html_body),
+            )
             graph_create(
                 user_upn=target_upn,
                 subject=subject,
@@ -227,7 +231,7 @@ class EmailManager:
                 to=[recipient],
                 cc=[cc] if cc else None,
             )
-
+            logger.info("Graph draft created OK for %s", recipient)
             return True
         except Exception as e:
             logger.error(f"Graph draft creation failed for {recipient}: {e}")

@@ -27,9 +27,12 @@ def _get_token() -> str:
     global _TOKEN, _TOKEN_EXP
     now = time.time()
     if _TOKEN and now < _TOKEN_EXP - 60:
+        log.debug("Graph token cache hit (expires in %.0fs)", _TOKEN_EXP - now)
         return _TOKEN
 
     az = _azure_cfg()
+    log.info("Acquiring new Graph token for tenant=%s client=%s",
+             az.get("tenant_id", "?")[:8] + "…", az.get("client_id", "?")[:8] + "…")
     data = {
         "client_id": az["client_id"],
         "client_secret": az["client_secret"],
@@ -39,10 +42,13 @@ def _get_token() -> str:
     url = f"https://login.microsoftonline.com/{az['tenant_id']}/oauth2/v2.0/token"
     # hard timeout; fail fast
     r = requests.post(url, data=data, timeout=20)
+    if not r.ok:
+        log.error("Graph token request failed: %s %s", r.status_code, r.text[:300])
     r.raise_for_status()
     payload = r.json()
     _TOKEN = payload["access_token"]
     _TOKEN_EXP = now + int(payload.get("expires_in", 3600))
+    log.info("Graph token acquired OK (expires_in=%s)", payload.get("expires_in"))
     return _TOKEN
 
 def _auth_headers() -> Dict[str, str]:
@@ -60,9 +66,15 @@ def create_draft(user_upn: str, subject: str, html_body: str, to: List[str], cc:
     }
     if cc:
         payload["ccRecipients"] = [_addr(x) for x in cc]
-    r = requests.post(f"{GRAPH}/users/{user_upn}/messages", headers=headers, json=payload, timeout=25)
+    url = f"{GRAPH}/users/{user_upn}/messages"
+    log.info("POST %s  to=%s  subject=%r", url, to, subject)
+    r = requests.post(url, headers=headers, json=payload, timeout=25)
+    if not r.ok:
+        log.error("Graph create_draft failed: %s %s", r.status_code, r.text[:500])
     r.raise_for_status()
-    return r.json()["id"]
+    msg_id = r.json().get("id", "<no id>")
+    log.info("Draft created: %s", msg_id)
+    return msg_id
 
 def add_file_attachment(user_upn: str, message_id: str, path: str) -> None:
     # Graph small fileAttachment limit ~3MB; use upload session above that
