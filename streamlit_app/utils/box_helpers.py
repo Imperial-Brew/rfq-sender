@@ -140,6 +140,59 @@ def upload_and_share_for_part(
     }
 
 
+def get_rfq_files(file_location: str, part_number: str) -> List[str]:
+    """Scan *file_location* for files that belong to *part_number*.
+
+    Tries progressively looser glob patterns so typos and mixed-case
+    filenames are still found:
+      1. ``*{part_number}*``  (exact part number anywhere in filename)
+      2. All files if the directory has ≤ 20 items and pattern 1 matched nothing
+
+    Returns a deduplicated, sorted list of absolute file paths.
+    Skips hidden files (``.*``) and Office temp files (``~$*``).
+    """
+    import logging
+    from pathlib import Path as _Path
+
+    _log = logging.getLogger(__name__)
+
+    _bad = {'', 'nan', 'none', 'null'}
+    if not file_location or str(file_location).strip().lower() in _bad:
+        return []
+
+    loc = _Path(str(file_location).strip())
+    if not loc.exists():
+        _log.warning("file_location does not exist: %s", loc)
+        return []
+
+    # Single file — return it directly.
+    if loc.is_file():
+        return [str(loc)]
+
+    def _skip(p: _Path) -> bool:
+        return p.name.startswith('.') or p.name.startswith('~$')
+
+    # Recursive glob for part number pattern
+    pn = str(part_number).strip()
+    found: List[str] = []
+    for p in loc.rglob(f"*{pn}*"):
+        if p.is_file() and not _skip(p):
+            found.append(str(p))
+
+    # Fallback: if nothing matched and the folder is small, take everything
+    if not found:
+        all_files = [str(p) for p in loc.rglob("*") if p.is_file() and not _skip(p)]
+        if len(all_files) <= 20:
+            found = all_files
+        else:
+            _log.warning(
+                "No files matched part_number=%r in %s and folder has >20 files — skipping",
+                pn, loc,
+            )
+
+    return sorted(set(found))
+
+
 def inject_box_link_into_body(html_body: str, share_link: str, is_cui: bool) -> str:
     """Append a styled Box link section to the existing HTML email body.
 

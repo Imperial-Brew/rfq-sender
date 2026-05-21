@@ -5,6 +5,7 @@ import {
   fetchUnsentQueue,
   fetchVendors,
   createBoxFolder,
+  saveBoxLink,
   createEmailDrafts,
   type SendQueueItem,
   type VendorMatch,
@@ -19,6 +20,8 @@ interface RowState {
   boxResult: BoxResult | null
   boxLink: string        // editable override
   boxPassword: string
+  saveLinkLoading: boolean
+  saveLinkStatus: 'idle' | 'saved' | 'error'
 
   // Vendor preview
   vendorsLoading: boolean
@@ -35,6 +38,8 @@ function defaultRowState(item: SendQueueItem): RowState {
     boxResult: null,
     boxLink: item.box_share_link || '',
     boxPassword: item.box_password || '',
+    saveLinkLoading: false,
+    saveLinkStatus: 'idle',
     vendorsLoading: false,
     vendors: null,
     emailLoading: false,
@@ -100,6 +105,21 @@ export default function SendRfqsPage() {
       const msg = e instanceof Error ? e.message : String(e)
       setRow(item.part_number, { vendorsLoading: false, vendors: [] })
       alert(`Vendor lookup failed: ${msg}`)
+    }
+  }
+
+  async function handleSaveLink(item: SendQueueItem) {
+    const row = getRow(item)
+    setRow(item.part_number, { saveLinkLoading: true, saveLinkStatus: 'idle' })
+    try {
+      await saveBoxLink(item.part_number, row.boxLink, row.boxPassword)
+      setRow(item.part_number, { saveLinkLoading: false, saveLinkStatus: 'saved' })
+      // Reset the "Saved ✓" badge after 3 seconds
+      setTimeout(() => setRow(item.part_number, { saveLinkStatus: 'idle' }), 3000)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setRow(item.part_number, { saveLinkLoading: false, saveLinkStatus: 'error' })
+      alert(`Save failed: ${msg}`)
     }
   }
 
@@ -184,9 +204,10 @@ export default function SendRfqsPage() {
                     item={item}
                     row={row}
                     onPreviewVendors={() => handlePreviewVendors(item)}
+                    onSaveLink={() => handleSaveLink(item)}
                     onCreateBox={() => handleCreateBox(item)}
                     onCreateEmails={() => handleCreateEmails(item)}
-                    onBoxLinkChange={(v) => setRow(item.part_number, { boxLink: v })}
+                    onBoxLinkChange={(v) => setRow(item.part_number, { boxLink: v, saveLinkStatus: 'idle' })}
                   />
                 )
               })}
@@ -203,12 +224,13 @@ interface ItemRowProps {
   item: SendQueueItem
   row: RowState
   onPreviewVendors: () => void
+  onSaveLink: () => void
   onCreateBox: () => void
   onCreateEmails: () => void
   onBoxLinkChange: (v: string) => void
 }
 
-function ItemRow({ item, row, onPreviewVendors, onCreateBox, onCreateEmails, onBoxLinkChange }: ItemRowProps) {
+function ItemRow({ item, row, onPreviewVendors, onSaveLink, onCreateBox, onCreateEmails, onBoxLinkChange }: ItemRowProps) {
   const boxError = row.boxResult?.error
   const emailSuccessCount = row.emailResults?.filter(r => r.success).length ?? 0
   const emailFailCount = row.emailResults?.filter(r => !r.success).length ?? 0
@@ -232,12 +254,28 @@ function ItemRow({ item, row, onPreviewVendors, onCreateBox, onCreateEmails, onB
           )}
         </td>
         <td>
-          <input
-            value={row.boxLink}
-            onChange={(e) => onBoxLinkChange(e.target.value)}
-            placeholder="Paste or create Box link…"
-            style={{ fontSize: 12, width: '100%', minWidth: 200 }}
-          />
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            <input
+              value={row.boxLink}
+              onChange={(e) => onBoxLinkChange(e.target.value)}
+              placeholder="Paste or create Box link…"
+              style={{ fontSize: 12, flex: 1, minWidth: 160 }}
+            />
+            <button
+              onClick={onSaveLink}
+              disabled={row.saveLinkLoading || !row.boxLink}
+              title="Save link to queue"
+              style={{ fontSize: 11, padding: '3px 8px', whiteSpace: 'nowrap' }}
+            >
+              {row.saveLinkLoading ? '…' : 'Save'}
+            </button>
+            {row.saveLinkStatus === 'saved' && (
+              <span style={{ fontSize: 11, color: '#137333' }}>✓</span>
+            )}
+            {row.saveLinkStatus === 'error' && (
+              <span style={{ fontSize: 11, color: '#d93025' }}>✗</span>
+            )}
+          </div>
           {row.boxResult?.is_cui && row.boxResult.password && (
             <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>
               Password: <code style={{ userSelect: 'all' }}>{row.boxResult.password}</code>

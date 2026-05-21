@@ -61,6 +61,18 @@ export async function createBoxFolder(
   return data
 }
 
+export async function saveBoxLink(
+  partNumber: string,
+  shareLink: string,
+  password: string,
+): Promise<BoxResult> {
+  const { data } = await client.patch<BoxResult>(
+    `/send-rfq/box-link/${encodeURIComponent(partNumber)}`,
+    { share_link: shareLink, password },
+  )
+  return data
+}
+
 export async function createEmailDrafts(
   partNumber: string,
   shareLink: string,

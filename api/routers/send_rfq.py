@@ -62,6 +62,11 @@ class BoxResult(BaseModel):
     error: Optional[str] = None
 
 
+class SaveLinkRequest(BaseModel):
+    share_link: str = ""
+    password: str = ""
+
+
 class EmailRequest(BaseModel):
     share_link: str = ""
     password: str = ""
@@ -217,11 +222,18 @@ def create_box_folder(
         return BoxResult(error="Box is not configured or could not connect.")
 
     try:
-        from streamlit_app.utils.box_helpers import upload_and_share_for_part, persist_box_update
+        from streamlit_app.utils.box_helpers import (
+            upload_and_share_for_part, persist_box_update, get_rfq_files,
+        )
+        # Scan file_location for files matching this part number (if configured)
+        file_location = str(row_series.get("file_location", "") or "").strip()
+        attachments = get_rfq_files(file_location, part_number) if file_location else []
+        if attachments:
+            logger.info("Box upload: found %d file(s) in %s", len(attachments), file_location)
         result = upload_and_share_for_part(
             box=box,
             row=row_series,
-            attachments=[],
+            attachments=attachments,
             access=body.access,
         )
     except Exception as e:
@@ -262,6 +274,38 @@ def create_box_folder(
         is_cui=bool(result.get("is_cui", False)),
         files_uploaded=int(result.get("files_uploaded", 0)),
     )
+
+
+@router.patch("/box-link/{part_number}", response_model=BoxResult)
+def save_box_link(
+    part_number: str,
+    body: SaveLinkRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Save a manually entered Box share link (and optional password) to the queue."""
+    _bad = {'', 'nan', 'none', 'null'}
+    share_link = body.share_link.strip() if body.share_link else ''
+    if share_link.lower() in _bad:
+        raise HTTPException(status_code=422, detail="share_link is required.")
+
+    df = load_queue()
+    if df.empty:
+        raise HTTPException(status_code=404, detail="Queue is empty.")
+
+    _, row_idx = _find_part_row(df, part_number)
+
+    password = body.password.strip() if body.password else ''
+
+    # Write directly — no Box API call needed
+    df.loc[row_idx, 'box_share_link'] = share_link
+    df.loc[row_idx, 'box_password'] = password
+    try:
+        save_queue(df)
+    except Exception as e:
+        logger.error(f"Could not save box link for {part_number}: {e}")
+        raise HTTPException(status_code=500, detail=f"Queue save failed: {e}")
+
+    return BoxResult(share_link=share_link, password=password)
 
 
 @router.post("/email/{part_number}", response_model=List[EmailResult])
