@@ -52,11 +52,17 @@ export async function fetchVendors(process: string, spec: string): Promise<Vendo
 
 export async function createBoxFolder(
   partNumber: string,
+  files: File[] = [],
   access = 'open',
 ): Promise<BoxResult> {
+  const form = new FormData()
+  form.append('access', access)
+  for (const f of files) form.append('files', f)
   const { data } = await client.post<BoxResult>(
     `/send-rfq/box/${encodeURIComponent(partNumber)}`,
-    { access },
+    form,
+    // Let axios set Content-Type with the correct boundary automatically
+    { headers: { 'Content-Type': undefined } },
   )
   return data
 }

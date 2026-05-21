@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Nav from '../components/Nav'
+import BoxUploadModal from '../components/BoxUploadModal'
 import {
   fetchUnsentQueue,
   fetchVendors,
@@ -76,6 +77,7 @@ function ResultPill({ success, label }: { success: boolean; label: string }) {
 export default function SendRfqsPage() {
   const queryClient = useQueryClient()
   const [showSent, setShowSent] = useState(false)
+  const [boxModalItem, setBoxModalItem] = useState<SendQueueItem | null>(null)
 
   const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['send-rfq-queue', showSent],
@@ -123,10 +125,18 @@ export default function SendRfqsPage() {
     }
   }
 
-  async function handleCreateBox(item: SendQueueItem) {
+  function handleCreateBox(item: SendQueueItem) {
+    // Open the file picker modal — actual upload happens in handleBoxConfirm
+    setBoxModalItem(item)
+  }
+
+  async function handleBoxConfirm(files: File[]) {
+    const item = boxModalItem
+    setBoxModalItem(null)
+    if (!item) return
     setRow(item.part_number, { boxLoading: true, boxResult: null })
     try {
-      const result = await createBoxFolder(item.part_number)
+      const result = await createBoxFolder(item.part_number, files)
       setRow(item.part_number, {
         boxLoading: false,
         boxResult: result,
@@ -157,6 +167,13 @@ export default function SendRfqsPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {boxModalItem && (
+        <BoxUploadModal
+          partNumber={boxModalItem.part_number}
+          onConfirm={handleBoxConfirm}
+          onCancel={() => setBoxModalItem(null)}
+        />
+      )}
       <Nav />
       <div style={{ padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>

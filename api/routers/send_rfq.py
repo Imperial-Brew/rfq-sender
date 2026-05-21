@@ -1,20 +1,22 @@
 """
 Send RFQ routes.
 
-GET  /send-rfq/queue                 — queue items; ?include_sent=true returns all, default unsent only
-GET  /send-rfq/vendors               — preview vendor matching (process + spec query params)
-POST /send-rfq/box/{part_number}     — create Box folder and share link
-POST /send-rfq/email/{part_number}   — create Outlook draft emails; marks item as sent
+GET   /send-rfq/queue                  — queue items; ?include_sent=true returns all
+GET   /send-rfq/vendors                — preview vendor matching (process + spec query params)
+POST  /send-rfq/box/{part_number}      — create Box folder; optional multipart file uploads
+PATCH /send-rfq/box-link/{part_number} — save a manually entered Box link to the queue
+POST  /send-rfq/email/{part_number}    — create Outlook draft emails; marks item as sent
 """
 
 import logging
 import os
+import tempfile
 from datetime import date
 from pathlib import Path
 from typing import List, Optional
 
 import pandas as pd
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from api.deps import get_current_user
@@ -206,11 +208,21 @@ def preview_vendors(
 
 
 @router.post("/box/{part_number}", response_model=BoxResult)
-def create_box_folder(
+async def create_box_folder(
     part_number: str,
-    body: BoxRequest = BoxRequest(),
+    access: str = Form("open"),
+    files: List[UploadFile] = File(default=[]),
     user: dict = Depends(get_current_user),
 ):
+    """Create a Box folder for *part_number* and optionally upload files to it.
+
+    Accepts ``multipart/form-data``:
+    - ``access``  (string, default ``"open"``)
+    - ``files``   (zero or more file uploads)
+
+    If no files are provided the folder is still created and the queue's
+    ``file_location`` path is scanned as a fallback.
+    """
     df = load_queue()
     if df.empty:
         raise HTTPException(status_code=404, detail="Queue is empty.")
@@ -225,17 +237,37 @@ def create_box_folder(
         from streamlit_app.utils.box_helpers import (
             upload_and_share_for_part, persist_box_update, get_rfq_files,
         )
-        # Scan file_location for files matching this part number (if configured)
-        file_location = str(row_series.get("file_location", "") or "").strip()
-        attachments = get_rfq_files(file_location, part_number) if file_location else []
-        if attachments:
-            logger.info("Box upload: found %d file(s) in %s", len(attachments), file_location)
-        result = upload_and_share_for_part(
-            box=box,
-            row=row_series,
-            attachments=attachments,
-            access=body.access,
-        )
+
+        attachments: List[str] = []
+
+        # 1. Files uploaded directly from the browser
+        if files:
+            with tempfile.TemporaryDirectory() as tmp:
+                for uf in files:
+                    dest = Path(tmp) / (uf.filename or "upload")
+                    dest.write_bytes(await uf.read())
+                    attachments.append(str(dest))
+                logger.info("Box upload: %d browser file(s) for %s", len(attachments), part_number)
+                result = upload_and_share_for_part(
+                    box=box,
+                    row=row_series,
+                    attachments=attachments,
+                    access=access,
+                )
+        else:
+            # 2. Fallback: scan file_location from the queue row
+            file_location = str(row_series.get("file_location", "") or "").strip()
+            if file_location:
+                attachments = get_rfq_files(file_location, part_number)
+                if attachments:
+                    logger.info("Box upload: found %d file(s) in %s", len(attachments), file_location)
+            result = upload_and_share_for_part(
+                box=box,
+                row=row_series,
+                attachments=attachments,
+                access=access,
+            )
+
     except Exception as e:
         logger.error(f"Box folder creation failed for {part_number}: {e}")
         return BoxResult(error=str(e))
@@ -245,23 +277,14 @@ def create_box_folder(
 
     # Persist Box metadata back to queue
     try:
-        share_link = result.get("share_link", "")
-        password = result.get("password", "")
-        unshared_at = result.get("unshared_at", "")
-        files_uploaded = result.get("files_uploaded", 0)
-        part_folder = result.get("part_folder")
-        quote_folder = result.get("quote_folder")
-
-        from streamlit_app.utils.box_helpers import persist_box_update
         persist_box_update(
-            df,
-            row_idx,
-            share_link=share_link,
-            password=password,
-            unshared_at=unshared_at,
-            files_uploaded=files_uploaded,
-            part_folder=part_folder,
-            quote_folder=quote_folder,
+            df, row_idx,
+            share_link=result.get("share_link", ""),
+            password=result.get("password", ""),
+            unshared_at=result.get("unshared_at", ""),
+            files_uploaded=result.get("files_uploaded", 0),
+            part_folder=result.get("part_folder"),
+            quote_folder=result.get("quote_folder"),
             box=box,
         )
         save_queue(df)
