@@ -57,17 +57,33 @@ def _auth_headers() -> Dict[str, str]:
 def _addr(email: str) -> Dict[str, Any]:
     return {"emailAddress": {"address": email}}
 
-def create_draft(user_upn: str, subject: str, html_body: str, to: List[str], cc: Optional[List[str]] = None) -> str:
+def create_draft(
+    user_upn: str,
+    subject: str,
+    html_body: str,
+    to: List[str],
+    cc: Optional[List[str]] = None,
+    inline_images: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    """Create an Outlook draft via Graph API.
+
+    ``inline_images`` is a list of Graph fileAttachment dicts with
+    ``isInline=True`` and a ``contentId`` that matches a ``cid:`` reference
+    in ``html_body``.  Pass ``None`` (default) to skip attachments.
+    """
     headers = {**_auth_headers(), "Content-Type": "application/json"}
-    payload = {
+    payload: Dict[str, Any] = {
         "subject": subject,
         "body": {"contentType": "HTML", "content": html_body},
         "toRecipients": [_addr(x) for x in to],
     }
     if cc:
         payload["ccRecipients"] = [_addr(x) for x in cc]
+    if inline_images:
+        payload["attachments"] = inline_images
     url = f"{GRAPH}/users/{user_upn}/messages"
-    log.info("POST %s  to=%s  subject=%r", url, to, subject)
+    log.info("POST %s  to=%s  subject=%r  inline_images=%d",
+             url, to, subject, len(inline_images or []))
     r = requests.post(url, headers=headers, json=payload, timeout=25)
     if not r.ok:
         log.error("Graph create_draft failed: %s %s", r.status_code, r.text[:500])

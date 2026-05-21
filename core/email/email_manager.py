@@ -16,32 +16,56 @@ from core.email.graph_client import create_draft as graph_create
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 
-def _logo_data_uri(logo_path: Optional[str] = None) -> str:
-    """Return a data-URI for the logo file so it renders in email clients
-    without needing a public URL.
+_LOGO_CID = "company_logo"
+_LOGO_MIME = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".svg": "image/svg+xml",
+    ".gif": "image/gif",
+}
+
+
+def _find_logo_path(explicit: Optional[str] = None) -> Optional[Path]:
+    """Return the first logo file found in assets/, case-insensitively.
 
     Resolution order:
-      1. Explicit ``logo_path`` argument
-      2. ``assets/logo.png``  in the project root
-      3. ``assets/logo.jpg``  in the project root
-      4. Empty string (template falls back to company_logo_url or text)
+      1. ``explicit`` path if provided and exists
+      2. Any file in ``assets/`` whose lowercased name matches logo.*
+         (handles AthenaLOGO.png, logo.PNG, Logo.jpg, etc.)
+      3. None — no logo available
     """
-    candidates = []
-    if logo_path:
-        candidates.append(Path(logo_path))
-    candidates += [
-        _PROJECT_ROOT / "assets" / "logo.png",
-        _PROJECT_ROOT / "assets" / "logo.jpg",
-        _PROJECT_ROOT / "assets" / "logo.svg",
-    ]
-    for path in candidates:
-        if path.exists():
-            ext = path.suffix.lower().lstrip(".")
-            mime = {"png": "image/png", "jpg": "image/jpeg",
-                    "jpeg": "image/jpeg", "svg": "image/svg+xml"}.get(ext, "image/png")
-            data = base64.b64encode(path.read_bytes()).decode("ascii")
-            return f"data:{mime};base64,{data}"
-    return ""
+    if explicit:
+        p = Path(explicit)
+        if p.exists():
+            return p
+
+    assets = _PROJECT_ROOT / "assets"
+    if assets.is_dir():
+        # Prefer files whose name starts with "logo" (case-insensitive)
+        # then fall back to any image in assets/.
+        image_exts = set(_LOGO_MIME)
+        logo_files = sorted(
+            (f for f in assets.iterdir()
+             if f.is_file() and f.suffix.lower() in image_exts),
+            key=lambda f: (not f.name.lower().startswith("logo"), f.name.lower()),
+        )
+        if logo_files:
+            return logo_files[0]
+    return None
+
+
+def _logo_inline_attachment(path: Path) -> dict:
+    """Build a Graph API fileAttachment payload for an inline image."""
+    mime = _LOGO_MIME.get(path.suffix.lower(), "image/png")
+    return {
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        "name": path.name,
+        "contentType": mime,
+        "contentBytes": base64.b64encode(path.read_bytes()).decode("ascii"),
+        "isInline": True,
+        "contentId": _LOGO_CID,
+    }
 
 # Disable insecure request warnings if needed
 # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) - commented out for debug
@@ -195,10 +219,13 @@ class EmailManager:
             'box_password':     box_password.strip() if box_password else '',
             'is_cui':           is_cui,
             'company_name':     _co('name', 'company_name') or 'Your Company',
-            # Prefer an embedded base64 logo (works offline, no hosting needed).
-            # Falls back to a hosted URL if no local file is found.
-            'company_logo_b64': _logo_data_uri(_co('logo_path', 'company_logo_path')),
-            'company_logo_url': _co('logo_url', 'company_logo_url'),
+            # Prefer CID inline attachment (works in Outlook; data: URIs are blocked).
+            # Falls back to a hosted URL if no local logo file is found.
+            'company_logo_src': (
+                f"cid:{_LOGO_CID}"
+                if _find_logo_path(_co('logo_path', 'company_logo_path'))
+                else _co('logo_url', 'company_logo_url')
+            ),
             'sender_name':      _co('sender_name'),
             'sender_title':     _co('sender_title'),
             'sender_email':     _co('sender_email'),
@@ -248,9 +275,9 @@ class EmailManager:
         try:
             if attachments:
                 raise ValueError(
-                    "Attachments are not supported; upload files to Box and include links instead."
+                    "File attachments are not supported; upload files to Box and include links instead."
                 )
-            # Resolve target mailbox (Option A: app-only targeting per user)
+            # Resolve target mailbox
             ex_cfg = get_section("exchange")
             target_upn = (user_upn or ex_cfg.get("username", "")).strip()
             cc = cc_email or ex_cfg.get("cc")
@@ -261,14 +288,22 @@ class EmailManager:
                 return False
             if not recipient or "@" not in recipient:
                 print(f"[EMAIL] ERROR: invalid recipient {recipient!r}", flush=True)
-                logger.warning(f"Skipping draft: invalid recipient '{recipient}'")
+                logger.warning(f"Skipping draft: invalid recipient '%s'", recipient)
                 return False
 
             html_body = body if html_format else f"<pre>{body}</pre>"
 
+            # Build inline image attachments (logo only for now).
+            # Outlook blocks data: URIs so we pass the image as a CID attachment.
+            logo_path = _find_logo_path()
+            inline_images = (
+                [_logo_inline_attachment(logo_path)] if logo_path else []
+            )
+
             logger.info(
-                "Graph draft → upn=%s to=%s subject=%r body_len=%d",
+                "Graph draft → upn=%s to=%s subject=%r body_len=%d logo=%s",
                 target_upn, recipient, subject, len(html_body),
+                logo_path.name if logo_path else "none",
             )
             print(f"[EMAIL] calling graph_create upn={target_upn!r} to={recipient!r}", flush=True)
             graph_create(
@@ -277,6 +312,7 @@ class EmailManager:
                 html_body=html_body,
                 to=[recipient],
                 cc=[cc] if cc else None,
+                inline_images=inline_images or None,
             )
             print(f"[EMAIL] graph_create OK for {recipient}", flush=True)
             logger.info("Graph draft created OK for %s", recipient)
