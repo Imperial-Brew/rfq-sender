@@ -112,13 +112,14 @@
             border-top: 2px solid #0B0458;
         }
         .sig-outer {
-            width: 100%;
+            width: auto;
             border-collapse: collapse;
         }
         /* left: name / title / contact */
         .sig-left {
             vertical-align: top;
-            padding: 0 16px 0 0;
+            padding: 0 24px 0 0;
+            width: 240px;
         }
         .sig-regards {
             font-size: 13px;
@@ -136,12 +137,6 @@
             color: #555;
             margin: 0 0 8px;
         }
-        .sig-rule {
-            border: none;
-            border-top: 1px solid #0B0458;
-            margin: 0 0 8px;
-            width: 200px;
-        }
         .sig-contact-row {
             font-size: 12px;
             color: #333;
@@ -156,17 +151,18 @@
             color: #0B0458;
             text-decoration: none;
         }
-        /* right: logo */
+        /* right: logo — fixed width, centred, never stretches */
         .sig-right {
             vertical-align: middle;
-            text-align: right;
-            padding: 0;
-            white-space: nowrap;
+            text-align: center;
+            padding: 0 0 0 16px;
+            width: 140px;
         }
         .sig-right img {
-            max-height: 64px;
-            max-width: 160px;
-            display: inline-block;
+            height: 60px;
+            width: auto;
+            display: block;
+            margin: 0 auto;
         }
         .sig-right .sig-company-text {
             font-size: 13px;
@@ -205,12 +201,7 @@
 <body>
 <div class="container">
 
-    <!-- ── Header ──────────────────────────────────────── -->
-    {% if company_logo_src %}
-    <div class="header">
-        <img src="{{ company_logo_src }}" alt="{{ company_name }}" class="logo">
-    </div>
-    {% endif %}
+    <!-- accent bar only — no header banner -->
     <div class="accent-bar"></div>
 
     <!-- ── Body ────────────────────────────────────────── -->
@@ -289,12 +280,11 @@
                         {% if sender_title %}
                         <p class="sig-title">{{ sender_title }}</p>
                         {% endif %}
-                        <hr class="sig-rule">
                         <div class="sig-contact-row">
                             {% if sender_phone %}
-                            <span class="sig-icon">&#9990;</span><a href="tel:{{ sender_phone }}">{{ sender_phone }}</a><br>
+                            <span class="sig-icon">&#9990;</span>&nbsp;<a href="tel:{{ sender_phone }}">{{ sender_phone }}</a><br>
                             {% endif %}
-                            <span class="sig-icon">&#9993;</span><a href="mailto:{{ sender_email }}">{{ sender_email }}</a>
+                            <span class="sig-icon">&#9993;</span>&nbsp;<a href="mailto:{{ sender_email }}">{{ sender_email }}</a>
                         </div>
                     </td>
                     <!-- right: logo -->
