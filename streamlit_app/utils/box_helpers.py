@@ -13,24 +13,43 @@ import string
 
 
 def detect_cui_itar(row: pd.Series) -> bool:
-    """
-    Prefer explicit cui_itar column if present; otherwise fall back to heuristic
-    scanning of spec/process/callout/material for 'CUI' or 'ITAR'.
+    """Return True if the queue row is marked as CUI or ITAR.
+
+    Check order:
+    1. Explicit ``cui_itar`` column value:
+       - Boolean True/False → returned directly
+       - "TRUE"/"YES"/"Y"/"1"/"CUI"/"ITAR" → True
+       - "FALSE"/"NO"/"N"/"0"/"" → False
+       - Anything else → fall through to heuristic scan
+    2. Keyword scan of cui_itar + spec + process + callout + material for
+       the strings "CUI" or "ITAR".
     """
     try:
         flag = row.get('cui_itar', None)
-        if isinstance(flag, str):
-            s = flag.strip().upper()
-            if s in ("TRUE", "YES", "Y", "1"):
+        # Treat NaN / NaT as absent
+        try:
+            if pd.isna(flag):
+                flag = None
+        except (TypeError, ValueError):
+            pass
+
+        if flag is not None:
+            if isinstance(flag, bool):
+                return bool(flag)
+            s = str(flag).strip().upper()
+            # Explicit true values — including the literal strings CUI / ITAR
+            if s in ("TRUE", "YES", "Y", "1", "CUI", "ITAR", "CUI/ITAR"):
                 return True
-            if s in ("FALSE", "NO", "N", "0"):
+            # Explicit false values
+            if s in ("FALSE", "NO", "N", "0", ""):
                 return False
-        elif isinstance(flag, bool):
-            return bool(flag)
+            # Otherwise fall through to keyword scan below
     except Exception:
         pass
 
+    # Heuristic: scan cui_itar itself plus related fields for the keywords
     fields_to_scan = [
+        str(row.get('cui_itar', '')),
         str(row.get('spec', '')),
         str(row.get('process', '')),
         str(row.get('callout', '')),
