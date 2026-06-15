@@ -1,0 +1,2369 @@
+{
+  "vendors": [
+    {
+      "vendor_id": "000017",
+      "vendor_name": "AI INDUSTRIES",
+      "location": "REDWOOD CITY, CA",
+      "m2m_email": "bpham@aiindustries.com",
+      "default_contact": "bpham@aiindustries.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "bpham@aiindustries.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Cleaning",
+          "specs": [
+            "0250-70351",
+            "0250-20000"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000067",
+      "vendor_name": "CONSOLIDATED METAL TECHNOLOGIES,LLC",
+      "location": "ROUND ROCK, TX",
+      "m2m_email": "paige@cmtfinishing.com",
+      "default_contact": "paige@cmtfinishing.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "paige@cmtfinishing.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Cleaning",
+          "specs": [
+            "0250-09720",
+            "0250-20000",
+            "0250-31176",
+            "0250-70351"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "ASTM B 580"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "ASTM B 449"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "AMS-QQ-N-290",
+            "ASTM B 733",
+            "MIL-C-26074",
+            "AMS 2404",
+            "AMS 2423"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "ASTM A 380",
+            "ASTM A 967",
+            "AMS 2700"
+          ]
+        },
+        {
+          "name": "Tin Plating",
+          "specs": [
+            "ASTM B 545"
+          ]
+        },
+        {
+          "name": "Zinc Plating",
+          "specs": [
+            "QQ-Z-325",
+            "ASTM B 633"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000077",
+      "vendor_name": "PENTAGON TECHNOLOGIES, INC",
+      "location": "CHICAGO, IL",
+      "m2m_email": "accounts.receivable@pen-tec.com",
+      "default_contact": "accounts.receivable@pen-tec.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "accounts.receivable@pen-tec.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Surface",
+          "specs": [
+            "0251-02264"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "0250-70351",
+            "0250-20000"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000080",
+      "vendor_name": "BROOKS INDUSTRIAL COATINGS, INC.",
+      "location": "AUSTIN, TX",
+      "m2m_email": "jbbrooks@bic-texas.com",
+      "default_contact": "jbbrooks@bic-texas.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "jbbrooks@bic-texas.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-C-5541"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "ASTM A 967",
+            "ASTM A 380",
+            "AMS-QQ-P-35"
+          ]
+        },
+        {
+          "name": "Zinc Plating",
+          "specs": [
+            "QQ-Z-325",
+            "ASTM B 633"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000091",
+      "vendor_name": "AUSTIN TOOL & GRINDING, INC.",
+      "location": "ROUND ROCK, TX",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "000128",
+      "vendor_name": "TEXAS HEAT TREATING, INC",
+      "location": "ROUND ROCK, TX",
+      "m2m_email": "Ttompkins@texasheattreating.com",
+      "default_contact": "Ttompkins@texasheattreating.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "Ttompkins@texasheattreating.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Heat Treat",
+          "specs": [
+            "AMS 2759",
+            "AMS 2769"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000129",
+      "vendor_name": "BINSWANGER GLASS CO.",
+      "location": "DALLAS, TX",
+      "m2m_email": "mshort@binswangerglass.com",
+      "default_contact": "mshort@binswangerglass.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "mshort@binswangerglass.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "000172",
+      "vendor_name": "DEL'S PLATING WORKS",
+      "location": "HOUSTON, TX",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "000199",
+      "vendor_name": "MICRON INDUSTRIES",
+      "location": "GARLAND, TEXAS",
+      "m2m_email": "ar@micronindustries.net",
+      "default_contact": "ar@micronindustries.net",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "ar@micronindustries.net",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "000268",
+      "vendor_name": "NXEDGE CSL, INC.",
+      "location": "SANTA CLARA, CA",
+      "m2m_email": "madison.macomb@nxedgeinc.com",
+      "default_contact": "madison.macomb@nxedgeinc.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "madison.macomb@nxedgeinc.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "0250-70351",
+            "0250-20000",
+            "0250-30100"
+          ]
+        },
+        {
+          "name": "Surface",
+          "specs": [
+            "0251-02264"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "ASTM B 580"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "MIL-C-26074",
+            "AMS 2404"
+          ]
+        },
+        {
+          "name": "Gold Plating",
+          "specs": [
+            "ASTM B488",
+            "MIL-DTL-45204"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "QQ-S-365",
+            "ASTM B 700"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000339",
+      "vendor_name": "HARRISON ELECTROPOLISH, LP",
+      "location": "HOUSTON, TEXAS",
+      "m2m_email": "javierc@harrisonep.com",
+      "default_contact": "javierc@harrisonep.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "javierc@harrisonep.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Electropolish",
+          "specs": [
+            "ASTM B 912",
+            "SEMI F17",
+            "0250-13605"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "ASTM A 967",
+            "ASTM A 380",
+            "AMS-QQ-P-35",
+            "AMS 2700"
+          ]
+        },
+        {
+          "name": "Oxygen Cleaning",
+          "specs": [
+            "ASTM G93",
+            "CGA G-4.1"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000368",
+      "vendor_name": "TURN-KEY COATINGS, INC.",
+      "location": "HOUSTON, TEXAS",
+      "m2m_email": "acctgassist@turnkeycoatings.com",
+      "default_contact": "acctgassist@turnkeycoatings.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "acctgassist@turnkeycoatings.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Electropolish",
+          "specs": [
+            "PRC-5009"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "ASTM B 580"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "PRC-5005",
+            "ASTM B 449"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "AMS-QQ-N-290",
+            "MIL-C-26074",
+            "PRC-5007",
+            "ASTM B 733",
+            "AMS 2404"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS 2700",
+            "AMS-QQ-P-35",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Zinc Plating",
+          "specs": [
+            "QQ-Z-325",
+            "ASTM B 633"
+          ]
+        },
+        {
+          "name": "Phosphate",
+          "specs": [
+            "MIL-DTL-16232"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "QQ-S-365",
+            "ASTM B 700"
+          ]
+        },
+        {
+          "name": "Gold Plating",
+          "specs": [
+            "MIL-DTL-45204",
+            "ASTM B 488",
+            "AMS 2422"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000380",
+      "vendor_name": "BODYCOTE THERMAL PROCESSING, INC",
+      "location": "HALTOM CITY, TX",
+      "m2m_email": "Yetta.Rushing@bodycote.com",
+      "default_contact": "Yetta.Rushing@bodycote.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "Yetta.Rushing@bodycote.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Heat Treat",
+          "specs": [
+            "AMS 2759",
+            "AMS 2770",
+            "AMS 2769",
+            "AMS 6875",
+            "BPS 4140",
+            "PS15634",
+            "MIL-H-6875",
+            "BAC 5613",
+            "BPS 4139"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000508",
+      "vendor_name": "U.S. CHROME CORPORATION OF CT",
+      "location": "STRAFFORD, CT",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "000576",
+      "vendor_name": "BASTROP SCALE CO., INC.",
+      "location": "BASTROP, TX",
+      "m2m_email": "accounting@bastropscale.com",
+      "default_contact": "accounting@bastropscale.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "accounting@bastropscale.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "000601",
+      "vendor_name": "HI-TECH METAL FINISHING",
+      "location": "KANSAS CITY, MO",
+      "m2m_email": "mlooper@maydaymfg.com",
+      "default_contact": "mlooper@maydaymfg.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "mlooper@maydaymfg.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "000639",
+      "vendor_name": "COURTER - HALL COMPANY",
+      "location": "GARLAND, TX",
+      "m2m_email": "joel@courterhall.com",
+      "default_contact": "joel@courterhall.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "joel@courterhall.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "000761",
+      "vendor_name": "HAR-CONN CHROME - CONNECTICUT",
+      "location": "W. HARTFORD, CT",
+      "m2m_email": "debbie@har-conn.com",
+      "default_contact": "debbie@har-conn.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "debbie@har-conn.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "AMS 2468",
+            "AMS 2469",
+            "AMS 2470",
+            "AMS 2471",
+            "AMS 2472",
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Cadmium Plating",
+          "specs": [
+            "AMS 2400",
+            "AMS 2401",
+            "AMS-QQ-P-416"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "AMS 2473",
+            "AMS 2474",
+            "AMS 2477"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": [
+            "PS18021",
+            "MIL-L-23398",
+            "MIL-L-46010",
+            "MIL-L-81329"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "MIL-C-26074",
+            "AMS 2403",
+            "AMS 2404",
+            "AMS 2405",
+            "AMS 2424",
+            "AMS-C-26074"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "ASTM A 967",
+            "ASTM A 380",
+            "AMS-QQ-P-35",
+            "AMS 2700"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "AMS 2410",
+            "AMS 2411",
+            "AMS 2412",
+            "ASTM B 700"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "ASTM B 600"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000766",
+      "vendor_name": "HAR-CONN CHROME COMPANY OF TX INC",
+      "location": "FORT WORTH, TX",
+      "m2m_email": "debbie@har-conn.com",
+      "default_contact": "debbie@har-conn.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "debbie@har-conn.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "AMS 2469",
+            "AMS 2470",
+            "BPS 4001",
+            "BPS 4387",
+            "BAC 5019",
+            "BAC 5719",
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "AMS 2473",
+            "AMS 2474",
+            "BAC 5719",
+            "BPS 4182"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BPS 4138"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "BPS 4007",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": []
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000779",
+      "vendor_name": "GLECO",
+      "location": "ROWLETT, TEXAS",
+      "m2m_email": "brenda@glecoplating.com",
+      "default_contact": "brenda@glecoplating.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "brenda@glecoplating.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "AMS-QQ-N-290",
+            "MIL-C-26074",
+            "ASTM B 733",
+            "AMS 2404"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS 2700",
+            "ASTM A 380",
+            "ASTM A 967",
+            "AMS-QQ-P-35"
+          ]
+        },
+        {
+          "name": "Tin Plating",
+          "specs": [
+            "ASTM B 545"
+          ]
+        },
+        {
+          "name": "Zinc Plating",
+          "specs": [
+            "ASTM B 633"
+          ]
+        },
+        {
+          "name": "Zinc Nickel Plate",
+          "specs": [
+            "ASTM B 841",
+            "AMS 2417"
+          ]
+        },
+        {
+          "name": "Phosphate",
+          "specs": [
+            "MIL-DTL-16232"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "QQ-S-365",
+            "ASTM B 700"
+          ]
+        },
+        {
+          "name": "Gold Plating",
+          "specs": [
+            "ASTM B488",
+            "MIL-DTL-45204"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": []
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000795",
+      "vendor_name": "BODYCOTE THERMAL PROCESSING, INC",
+      "location": "DALLAS, TX",
+      "m2m_email": "yetta.rushing@bodycote.com",
+      "default_contact": "yetta.rushing@bodycote.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "yetta.rushing@bodycote.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Heat Treat",
+          "specs": [
+            "AMS 2759",
+            "AMS 2770",
+            "AMS 2769",
+            "AMS 6875",
+            "BPS 4140",
+            "PS15634",
+            "MIL-H-6875",
+            "BAC 5613",
+            "BPS 4139"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000902",
+      "vendor_name": "BODYCOTE THERMAL PROCESSING, INC-W",
+      "location": "DALLAS, TX",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Heat Treat",
+          "specs": [
+            "AMS 2759",
+            "AMS 2770",
+            "AMS 2769",
+            "AMS 6875",
+            "BPS 4140",
+            "PS15634",
+            "MIL-H-6875",
+            "BAC 5613",
+            "BPS 4139"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "000970",
+      "vendor_name": "TEXAS PRECISION PLATING, INC.",
+      "location": "GARLAND, TEXAS",
+      "m2m_email": "joetta@texasprecision.net",
+      "default_contact": "joetta@texasprecision.net",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "joetta@texasprecision.net",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "000995",
+      "vendor_name": "TIODIZE COMPANY, INC",
+      "location": "HUNTINGTON BEACH, CALIFORNIA",
+      "m2m_email": "lynnette.cubbin@tiodize.com",
+      "default_contact": "lynnette.cubbin@tiodize.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "lynnette.cubbin@tiodize.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001060",
+      "vendor_name": "AAXON LABS, INC.",
+      "location": "FORT WORTH, TX",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001225",
+      "vendor_name": "BODYCOTE THERMAL PROCESSING, INC",
+      "location": "DALLAS, TX",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001292",
+      "vendor_name": "METAL FINISHING COMPANY, INC.",
+      "location": "WICHITA, KANSAS",
+      "m2m_email": "mhuerta@metalfinishingco.com",
+      "default_contact": "mhuerta@metalfinishingco.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "mhuerta@metalfinishingco.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001306",
+      "vendor_name": "RED RIVER PRECISION MFG. INC.",
+      "location": "ROUND ROCK, TEXAS",
+      "m2m_email": "DAVE@REDRIVERPREC.COM",
+      "default_contact": "DAVE@REDRIVERPREC.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "DAVE@REDRIVERPREC.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001315",
+      "vendor_name": "FORE MACHINE COMPANY, INC",
+      "location": "FORT WORTH, TX",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001317",
+      "vendor_name": "AADFW, INC",
+      "location": "EULESS, TEXAS",
+      "m2m_email": "bob@aadfwinc.com",
+      "default_contact": "bob@aadfwinc.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "bob@aadfwinc.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001354",
+      "vendor_name": "HYTEK FINISHES",
+      "location": "PASADENA, CA",
+      "m2m_email": "HYTEKCS@HYTEKFINISHES.COM",
+      "default_contact": "HYTEKCS@HYTEKFINISHES.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "HYTEKCS@HYTEKFINISHES.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "AMS 2469",
+            "BAC 5019",
+            "BAC 5632",
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Cadmium Plating",
+          "specs": [
+            "BPS 4312",
+            "BPS 4006",
+            "BAC 5701"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "BAC 5719",
+            "BPS 4182"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BPS 4138",
+            "BAC 5753"
+          ]
+        },
+        {
+          "name": "Electropolish",
+          "specs": [
+            "ASTM B 912"
+          ]
+        },
+        {
+          "name": "Magnetic Inspection",
+          "specs": [
+            "BPS 4075",
+            "ASTM E1444"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "MIL-C-26074",
+            "AMS 2404"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "AMS 2700",
+            "ASTM A 380",
+            "BPS 4007"
+          ]
+        },
+        {
+          "name": "Penetrant Inspect",
+          "specs": [
+            "BAC 5423",
+            "BPS 4089",
+            "BSS 7039",
+            "MIL-STD-6866",
+            "PS21202"
+          ]
+        },
+        {
+          "name": "Shot Peen",
+          "specs": [
+            "AMS 2430"
+          ]
+        },
+        {
+          "name": "Zinc Nickel Plate",
+          "specs": [
+            "BAC 5637",
+            "BAC 5680",
+            "AMS 2417"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "001357",
+      "vendor_name": "METALS4U, INC",
+      "location": "ROUND ROCK, TEXAS",
+      "m2m_email": "RR.Admin@metals4u.com",
+      "default_contact": "RR.Admin@metals4u.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "RR.Admin@metals4u.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001410",
+      "vendor_name": "3P PROCESSING INC.",
+      "location": "CHICAGO, IL",
+      "m2m_email": "soinna.sam@3p-p.com",
+      "default_contact": "soinna.sam@3p-p.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "soinna.sam@3p-p.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "BAC 5019",
+            "AMS 2469",
+            "BAC 5632"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BAC 5753"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": [
+            "PS18021"
+          ]
+        },
+        {
+          "name": "Epoxy",
+          "specs": [
+            "MIL-PRF-22750"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS 2700",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "BAC 5719"
+          ]
+        },
+        {
+          "name": "Penetrant Inspect",
+          "specs": [
+            "BAC 5423",
+            "PS21202"
+          ]
+        },
+        {
+          "name": "Shot Peen",
+          "specs": [
+            "AMS 2430"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "001459",
+      "vendor_name": "SURFACE TECHNIQUES, INC.",
+      "location": "HOUSTON, TX",
+      "m2m_email": "accounting@surfacetechnique.com",
+      "default_contact": "accounting@surfacetechnique.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "accounting@surfacetechnique.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001609",
+      "vendor_name": "ADVANCED AERO COATINGS, LLC",
+      "location": "HURST, TEXAS",
+      "m2m_email": "floyd@aeroaac.com",
+      "default_contact": "floyd@aeroaac.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "floyd@aeroaac.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BPS 4138"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "BAC 5632",
+            "BPS 4555",
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "BAC 5719",
+            "STP58-405",
+            "MDP4-57",
+            "BPS 4182"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS 2700",
+            "AMS-QQ-P-35",
+            "BPS 4007"
+          ]
+        },
+        {
+          "name": "Sol-Epoxy",
+          "specs": []
+        },
+        {
+          "name": "Penetrant Inspect",
+          "specs": [
+            "ASTM E 1417",
+            "BAC 5423",
+            "PRS-7005",
+            "BSS 7039",
+            "BPS 4089",
+            "MIL-STD-6866"
+          ]
+        },
+        {
+          "name": "Magnetic Inspection",
+          "specs": []
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "001677",
+      "vendor_name": "CHROME PLUS INTERNATIONAL, INC",
+      "location": "DALLAS, TEXAS",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001680",
+      "vendor_name": "AERO SPACE WELDERS INC.",
+      "location": "GRAND PRAIRIE, TX",
+      "m2m_email": "PAGREEN@AEROSPACEWELDERS.COM",
+      "default_contact": "PAGREEN@AEROSPACEWELDERS.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "PAGREEN@AEROSPACEWELDERS.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001686",
+      "vendor_name": "HI-TEMP BRAZING INC.",
+      "location": "DEER PARK, NY",
+      "m2m_email": "kgentner@hitempbrazing.com",
+      "default_contact": "kgentner@hitempbrazing.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "kgentner@hitempbrazing.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001735",
+      "vendor_name": "APPLEGATE EDM, INC",
+      "location": "FARMERS BRANCH, TEXAS",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001751",
+      "vendor_name": "INDUSTRIAL METAL FINISHING",
+      "location": "HOUSTON, TEXAS",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001777",
+      "vendor_name": "CONTROL PRODUCTS CORPORATION",
+      "location": "GRAND PRAIRIE, TEXAS",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001793",
+      "vendor_name": "ANOPLATE CORPORATION",
+      "location": "ALBANY, NY",
+      "m2m_email": "ACS@Anoplate.com",
+      "default_contact": "ACS@Anoplate.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "ACS@Anoplate.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Zinc Nickel Plate",
+          "specs": [
+            "BPS 4554",
+            "AMS 2417"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "AMS 2700",
+            "ASTM A 380",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": [
+            "MIL-L-46010",
+            "MIL-L-81329",
+            "AMS 3084"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "ASTM B 580",
+            "BAC 5632"
+          ]
+        },
+        {
+          "name": "Tin Plating",
+          "specs": [
+            "AMS 2408",
+            "ASTM B 545",
+            "AMS P 81728"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "001795",
+      "vendor_name": "HELICOMB INTERNATIONAL, INC",
+      "location": "CHICAGO, IL",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001800",
+      "vendor_name": "ERICO INTERNATIONAL CORPORATION",
+      "location": "CHICAGO, IL",
+      "m2m_email": "jiren.williams@nvent.com",
+      "default_contact": "jiren.williams@nvent.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "jiren.williams@nvent.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001804",
+      "vendor_name": "DO NOT USE PLATINUM AEROSTRUCTURES",
+      "location": "NEVADA, MO",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001815",
+      "vendor_name": "PREMIER PROCESSING, LLC",
+      "location": "WICHITA, KS",
+      "m2m_email": "Elvia.DeLoera@verusaerospace.com",
+      "default_contact": "Elvia.DeLoera@verusaerospace.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "Elvia.DeLoera@verusaerospace.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001834",
+      "vendor_name": "SUPERIOR THREAD ROLLING CO., INC",
+      "location": "ARLETA, CA",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001925",
+      "vendor_name": "METAL FINISHING CO-MURDOCK, INC",
+      "location": "WICHITA, KS",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001962",
+      "vendor_name": "WH LABORATORIES, LLC",
+      "location": "HOUSTON, TX",
+      "m2m_email": "BCONLEY@WHLABS.COM",
+      "default_contact": "BCONLEY@WHLABS.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "BCONLEY@WHLABS.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "001985",
+      "vendor_name": "EMBEE PROCESSING, LLC",
+      "location": "PASADENA, CA",
+      "m2m_email": "EmbeeAR@embee.com",
+      "default_contact": "EmbeeAR@embee.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "EmbeeAR@embee.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-C-26074",
+            "BAC 5019",
+            "AMS 2469",
+            "AMS 2471",
+            "AMS 2472",
+            "ASTM B 580"
+          ]
+        },
+        {
+          "name": "Cadmium Plating",
+          "specs": [
+            "BAC 5701",
+            "BPS 4006"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "BAC 5719",
+            "AMS 2473",
+            "ASTM B 449",
+            "MIL-DTL-14072",
+            "MIL-DTL-5541",
+            "MIL-DTL-81706"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BPS 4138",
+            "ASTM B 600"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "MIL-C-26074",
+            "AMS 2404",
+            "AMS 2403",
+            "AMS 2424",
+            "AMS-C-26074",
+            "ASTM B 689",
+            "ASTM B 733"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": [
+            "PS18021"
+          ]
+        },
+        {
+          "name": "Magnetic Inspection",
+          "specs": [
+            "BPS 4075",
+            "ASTM E1444"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "BPS 4007",
+            "AMS 2700",
+            "ASTM A 380",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Penetrant Inspect",
+          "specs": [
+            "BSS 7039",
+            "PS21202",
+            "BPS 4089",
+            "ASTM E 1417"
+          ]
+        },
+        {
+          "name": "Shot Peen",
+          "specs": [
+            "AMS 2430"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "BAC 5715",
+            "AMS 2410",
+            "AMS 2411",
+            "AMS 2412",
+            "ASTM B 700"
+          ]
+        },
+        {
+          "name": "Tin Plating",
+          "specs": [
+            "ASTM B 545"
+          ]
+        }
+      ],
+      "notes": "",
+      "rating": 0,
+      "active": true
+    },
+    {
+      "vendor_id": "002027",
+      "vendor_name": "MAGNETIC INSPECTION LABORATORY INC.",
+      "location": "ELK GROVE VILLAGE, IL",
+      "m2m_email": "tmangialomini@milinc.com",
+      "default_contact": "tmangialomini@milinc.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "tmangialomini@milinc.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002047",
+      "vendor_name": "AFT-AUTOMATED FINISHING TECHNOLOGY",
+      "location": "GRAND PRAIRIE, TX",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002213",
+      "vendor_name": "GLOBAL PARTS AERO MANUFACTURING",
+      "location": "AUGUSTA, KS",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002258",
+      "vendor_name": "QUANTUM GLOBAL TECHNOLOGIES, LLC",
+      "location": "QUAKERTOWN, PA",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002264",
+      "vendor_name": "ELITE METAL FINISHING, LLC",
+      "location": "OXNARD, CA",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002267",
+      "vendor_name": "MPM, INC",
+      "location": "WICHITA, KS",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002269",
+      "vendor_name": "CROWN PRECISION MANUFACTURING, LLC",
+      "location": "CEDAR, PARK, TEXAS",
+      "m2m_email": "CHRIS@CROWN-PRECISION.COM",
+      "default_contact": "CHRIS@CROWN-PRECISION.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "CHRIS@CROWN-PRECISION.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002274",
+      "vendor_name": "COASTLINE METAL FINISHING",
+      "location": "GARDEN GROVE, CA",
+      "m2m_email": "tracee.loi@valencest.com",
+      "default_contact": "tracee.loi@valencest.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "tracee.loi@valencest.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002281",
+      "vendor_name": "JET PROCESSING / PCC",
+      "location": "PHOENIX, AZ",
+      "m2m_email": "DORIS.OLSON@PCCAIRFRAME.COM",
+      "default_contact": "DORIS.OLSON@PCCAIRFRAME.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "DORIS.OLSON@PCCAIRFRAME.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002299",
+      "vendor_name": "NXEDGE INC.",
+      "location": "SAN CARLOS, CA",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002306",
+      "vendor_name": "GRIND ALL, INC.",
+      "location": "BRUNSWICK, OH",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002314",
+      "vendor_name": "ANODICS, INC.",
+      "location": "HALTOM CITY, TEXAS",
+      "m2m_email": "ANODICSINC@YAHOO.COM",
+      "default_contact": "ANODICSINC@YAHOO.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "ANODICSINC@YAHOO.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002316",
+      "vendor_name": "BLUEWATER THERMAL SOLUTIONS",
+      "location": "CINCINNATTI, OH",
+      "m2m_email": "TPEARSON@BLUEWATERTHERMAL.COM",
+      "default_contact": "TPEARSON@BLUEWATERTHERMAL.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "TPEARSON@BLUEWATERTHERMAL.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002344",
+      "vendor_name": "THERMO FUSION, INC.",
+      "location": "HAYWARD, CA",
+      "m2m_email": "ar@thermo-fusion.com",
+      "default_contact": "ar@thermo-fusion.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "ar@thermo-fusion.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002346",
+      "vendor_name": "HI-TECH PLATING, INC & THE TINNING",
+      "location": "EVERETT, MA",
+      "m2m_email": "DCARLSON@HITECHPLATINGTINNING.COM",
+      "default_contact": "DCARLSON@HITECHPLATINGTINNING.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "DCARLSON@HITECHPLATINGTINNING.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002348",
+      "vendor_name": "PURECOAT NORTH, LLC",
+      "location": "BELMONT, MA",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002359",
+      "vendor_name": "ANODIC PROCESS TECHNOLOGIES",
+      "location": "HUTTO, 78634",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002360",
+      "vendor_name": "S&P COATINGS, LLC",
+      "location": "GAINESVILLE, TEXAS",
+      "m2m_email": "FLOYD@SP-COATINGS.COM",
+      "default_contact": "FLOYD@SP-COATINGS.COM",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "FLOYD@SP-COATINGS.COM",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002367",
+      "vendor_name": "WOLKERSTORFER COMPANY, INC.",
+      "location": "NEW BRIGHTON, MN",
+      "m2m_email": "accounting@wolkerstorfer.com",
+      "default_contact": "accounting@wolkerstorfer.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "accounting@wolkerstorfer.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002400",
+      "vendor_name": "AZZ SURFACE TECHNOLOGIES",
+      "location": "DALLAS, TEXAS",
+      "m2m_email": "mikeray@azz.com",
+      "default_contact": "mikeray@azz.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "mikeray@azz.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002433",
+      "vendor_name": "TOP J METAL WORKS LLC",
+      "location": "MANOR, TEXAS",
+      "m2m_email": "alcocer.javier@topjmetalworks.com",
+      "default_contact": "alcocer.javier@topjmetalworks.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "alcocer.javier@topjmetalworks.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002566",
+      "vendor_name": "REINHART & ASSOCIATES, INC",
+      "location": "AUSTIN, TEXAS",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002569",
+      "vendor_name": "AB PRECISION GRINDING CO., INC.",
+      "location": "EASTON, PA",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "002766",
+      "vendor_name": "AAA PLATING & INSPECTION, INC.",
+      "location": "COMPTON, CA",
+      "m2m_email": "ar@aaaplating.com",
+      "default_contact": "ar@aaaplating.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "ar@aaaplating.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "003049",
+      "vendor_name": "WRIGHT METAL FINISHING LLC",
+      "location": "ADKINS, TEXAS",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "003065",
+      "vendor_name": "MICRO FORMS, INC.",
+      "location": "GARLAND, TX",
+      "m2m_email": "",
+      "default_contact": "",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    },
+    {
+      "vendor_id": "003085",
+      "vendor_name": "RAM INC.",
+      "location": "CISCO, TEXAS",
+      "m2m_email": "accountspayable@raminc-cisco.com",
+      "default_contact": "accountspayable@raminc-cisco.com",
+      "contacts": [
+        {
+          "name": "Purchasing Contact",
+          "email": "accountspayable@raminc-cisco.com",
+          "role": "purchasing",
+          "receives_rfq": true,
+          "active": true
+        }
+      ],
+      "processes": [],
+      "notes": "",
+      "rating": null,
+      "active": true
+    }
+  ]
+}

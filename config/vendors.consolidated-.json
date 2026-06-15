@@ -1,0 +1,1220 @@
+{
+  "vendors": [
+    {
+      "vendor_number": "000761",
+      "name": "HAR-CONN CHROME - CONNECTICUT",
+      "location": "West Hartford, CT",
+      "website": "https://www.har-conn.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "AMS 2468",
+            "AMS 2469",
+            "AMS 2470",
+            "AMS 2471",
+            "AMS 2472",
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Cadmium Plating",
+          "specs": [
+            "AMS 2400",
+            "AMS 2401",
+            "AMS-QQ-P-416"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "AMS 2473",
+            "AMS 2474",
+            "AMS 2477"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": [
+            "PS18021",
+            "MIL-L-23398",
+            "MIL-L-46010",
+            "MIL-L-81329"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "MIL-C-26074",
+            "AMS 2403",
+            "AMS 2404",
+            "AMS 2405",
+            "AMS 2424",
+            "AMS-C-26074"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "ASTM A 967",
+            "ASTM A 380",
+            "AMS-QQ-P-35",
+            "AMS 2700"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "AMS 2410",
+            "AMS 2411",
+            "AMS 2412",
+            "ASTM B 700"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "ASTM B 600"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000766",
+      "name": "HAR-CONN CHROME COMPANY OF TX INC",
+      "location": "FORT Worth, TX",
+      "website": "https://www.hcaerospace.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "AMS 2469",
+            "AMS 2470",
+            "BPS 4001",
+            "BPS 4387",
+            "BAC 5019",
+            "BAC 5719",
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "AMS 2473",
+            "AMS 2474",
+            "BAC 5719",
+            "BPS 4182"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BPS 4138"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "BPS 4007",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": []
+        }
+      ]
+    },
+    {
+      "vendor_number": "001410",
+      "name": "3P PROCESSING INC.",
+      "location": "Wichita, Kansas",
+      "website": "https://www.3pprocessing.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "BAC 5019",
+            "AMS 2469",
+            "BAC 5632"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BAC 5753"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": [
+            "PS18021"
+          ]
+        },
+        {
+          "name": "Epoxy",
+          "specs": [
+            "MIL-PRF-22750"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS 2700",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "BAC 5719"
+          ]
+        },
+        {
+          "name": "Penetrant Inspect",
+          "specs": [
+            "BAC 5423",
+            "PS21202"
+          ]
+        },
+        {
+          "name": "Shot Peen",
+          "specs": [
+            "AMS 2430"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "001354",
+      "name": "HYTEK FINISHES",
+      "location": "Kent, WA",
+      "website": "http://hytekfinishes.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "AMS 2469",
+            "BAC 5019",
+            "BAC 5632",
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Cadmium Plating",
+          "specs": [
+            "BPS 4312",
+            "BPS 4006",
+            "BAC 5701"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "BAC 5719",
+            "BPS 4182"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BPS 4138",
+            "BAC 5753"
+          ]
+        },
+        {
+          "name": "Electropolish",
+          "specs": [
+            "ASTM B 912"
+          ]
+        },
+        {
+          "name": "Magnetic Inspection",
+          "specs": [
+            "BPS 4075",
+            "ASTM E1444"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "MIL-C-26074",
+            "AMS 2404"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "AMS 2700",
+            "ASTM A 380",
+            "BPS 4007"
+          ]
+        },
+        {
+          "name": "Penetrant Inspect",
+          "specs": [
+            "BAC 5423",
+            "BPS 4089",
+            "BSS 7039",
+            "MIL-STD-6866",
+            "PS21202"
+          ]
+        },
+        {
+          "name": "Shot Peen",
+          "specs": [
+            "AMS 2430"
+          ]
+        },
+        {
+          "name": "Zinc Nickel Plate",
+          "specs": [
+            "BAC 5637",
+            "BAC 5680",
+            "AMS 2417"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000878",
+      "name": "MAYDAY MANUFACTURING COMPANY, INC",
+      "location": "Denton, TX",
+      "website": "https://www.maydaymfg.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "BAC 5632",
+            "BPS 4001",
+            "BAC 5019",
+            "AMS 2470",
+            "BPS 4555",
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Cadmium Plating",
+          "specs": [
+            "BPS 4312",
+            "BPS 4006",
+            "BAC 5701"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BPS 4138",
+            "BPS 4462",
+            "BAC 5753"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "BAC 5719",
+            "BPS 4182"
+          ]
+        },
+        {
+          "name": "Magnetic Inspection",
+          "specs": [
+            "BPS 4075",
+            "ASTM E1444"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "AMS 2700",
+            "ASTM A 380",
+            "ASTM A 967",
+            "BPS 4007"
+          ]
+        },
+        {
+          "name": "Penetrant Inspect",
+          "specs": [
+            "ASTM E 1417",
+            "BAC 5423",
+            "BSS 7039",
+            "BPS 4089",
+            "MIL-STD-6866"
+          ]
+        },
+        {
+          "name": "Zinc Nickel Plate",
+          "specs": [
+            "BPS 4554",
+            "BAC 5637",
+            "AMS 2417",
+            "MIL-DTL-32648"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "001793",
+      "name": "ANOPLATE CORPORATION",
+      "location": "Kent, WA",
+      "website": "https://www.anoplate.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Zinc Nickel Plate",
+          "specs": [
+            "BPS 4554",
+            "AMS 2417"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "AMS 2700",
+            "ASTM A 380",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": [
+            "MIL-L-46010",
+            "MIL-L-81329",
+            "AMS 3084"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "ASTM B 580",
+            "BAC 5632"
+          ]
+        },
+        {
+          "name": "Tin Plating",
+          "specs": [
+            "AMS 2408",
+            "ASTM B 545",
+            "AMS P 81728"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "null",
+      "name": "Tech Metals",
+      "location": "Dayton, Ohio",
+      "website": "https://techmetals.com/",
+      "active": false,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "ASTM B 580",
+            "AMS 2469",
+            "AMS 2471",
+            "AMS 2472"
+          ]
+        },
+        {
+          "name": "Electropolish",
+          "specs": [
+            "ASTM B 912"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "BAC 5719",
+            "AMS 2473"
+          ]
+        },
+        {
+          "name": "Copper Plating",
+          "specs": [
+            "AMS 2418"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "MIL-C-26074",
+            "ASTM B 733",
+            "AMS-QQ-N-290",
+            "AMS 2403",
+            "AMS 2424"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "AMS 2700",
+            "ASTM A 380",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "AMS 2410",
+            "AMS 2411",
+            "AMS 2412",
+            "ASTM B 700",
+            "QQ-S-365"
+          ]
+        },
+        {
+          "name": "Tin Plating",
+          "specs": [
+            "ASTM B 545"
+          ]
+        },
+        {
+          "name": "Zinc Plating",
+          "specs": [
+            "ASTM B 633"
+          ]
+        },
+        {
+          "name": "Zinc Nickel Plate",
+          "specs": [
+            "AMS 2417",
+            "BAC 5680",
+            "BAC 5637"
+          ]
+        },
+        {
+          "name": "Cadmium Plating",
+          "specs": []
+        }
+      ]
+    },
+    {
+      "vendor_number": "000779",
+      "name": "GLECO",
+      "location": "Rowlett, Texas",
+      "website": "http://www.glecoplating.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "AMS-QQ-N-290",
+            "MIL-C-26074",
+            "ASTM B 733",
+            "AMS 2404"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS 2700",
+            "ASTM A 380",
+            "ASTM A 967",
+            "AMS-QQ-P-35"
+          ]
+        },
+        {
+          "name": "Tin Plating",
+          "specs": [
+            "ASTM B 545"
+          ]
+        },
+        {
+          "name": "Zinc Plating",
+          "specs": [
+            "ASTM B 633"
+          ]
+        },
+        {
+          "name": "Zinc Nickel Plate",
+          "specs": [
+            "ASTM B 841",
+            "AMS 2417"
+          ]
+        },
+        {
+          "name": "Phosphate",
+          "specs": [
+            "MIL-DTL-16232"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "QQ-S-365",
+            "ASTM B 700"
+          ]
+        },
+        {
+          "name": "Gold Plating",
+          "specs": [
+            "ASTM B488",
+            "MIL-DTL-45204"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": []
+        }
+      ]
+    },
+    {
+      "vendor_number": "000368",
+      "name": "TURN-KEY COATINGS, INC.",
+      "location": "Houston, Texas",
+      "website": "https://turnkeycoatings.com/main.htm",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Electropolish",
+          "specs": [
+            "PRC-5009"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "ASTM B 580"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "PRC-5005",
+            "ASTM B 449"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "AMS-QQ-N-290",
+            "MIL-C-26074",
+            "PRC-5007",
+            "ASTM B 733",
+            "AMS 2404"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS 2700",
+            "AMS-QQ-P-35",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Zinc Plating",
+          "specs": [
+            "QQ-Z-325",
+            "ASTM B 633"
+          ]
+        },
+        {
+          "name": "Phosphate",
+          "specs": [
+            "MIL-DTL-16232"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "QQ-S-365",
+            "ASTM B 700"
+          ]
+        },
+        {
+          "name": "Gold Plating",
+          "specs": [
+            "MIL-DTL-45204",
+            "ASTM B 488",
+            "AMS 2422"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000067",
+      "name": "CONSOLIDATED METAL TECHNOLOGIES,LLC",
+      "location": "Round Rock, Texas",
+      "website": "https://cmtfinishing.com",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Cleaning",
+          "specs": [
+            "0250-09720",
+            "0250-20000",
+            "0250-31176",
+            "0250-70351"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "ASTM B 580"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "ASTM B 449"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "AMS-QQ-N-290",
+            "ASTM B 733",
+            "MIL-C-26074",
+            "AMS 2404",
+            "AMS 2423"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS-QQ-P-35",
+            "ASTM A 380",
+            "ASTM A 967",
+            "AMS 2700"
+          ]
+        },
+        {
+          "name": "Tin Plating",
+          "specs": [
+            "ASTM B 545"
+          ]
+        },
+        {
+          "name": "Zinc Plating",
+          "specs": [
+            "QQ-Z-325",
+            "ASTM B 633"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000077",
+      "name": "PENTAGON TECHNOLOGIES, INC",
+      "location": "CA/NY/TX",
+      "website": "https://pen-tec.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Surface",
+          "specs": [
+            "0251-02264"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "0250-70351",
+            "0250-20000"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000017",
+      "name": "AI INDUSTRIES",
+      "location": null,
+      "website": null,
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Cleaning",
+          "specs": [
+            "0250-70351",
+            "0250-20000"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000268",
+      "name": "NXEDGE CSL, INC.",
+      "location": "California Boise, Idaho",
+      "website": "https://nxedge.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "0250-70351",
+            "0250-20000",
+            "0250-30100"
+          ]
+        },
+        {
+          "name": "Surface",
+          "specs": [
+            "0251-02264"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625",
+            "ASTM B 580"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "MIL-C-26074",
+            "AMS 2404"
+          ]
+        },
+        {
+          "name": "Gold Plating",
+          "specs": [
+            "ASTM B488",
+            "MIL-DTL-45204"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "QQ-S-365",
+            "ASTM B 700"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "001609",
+      "name": "ADVANCED AERO COATINGS, LLC",
+      "location": "Fort Worth, Texas",
+      "website": "https://advancedaerocoatings.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BPS 4138"
+          ]
+        },
+        {
+          "name": "Anodize",
+          "specs": [
+            "BAC 5632",
+            "BPS 4555",
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-DTL-5541",
+            "BAC 5719",
+            "STP58-405",
+            "MDP4-57",
+            "BPS 4182"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "AMS 2700",
+            "AMS-QQ-P-35",
+            "BPS 4007"
+          ]
+        },
+        {
+          "name": "Sol-Epoxy",
+          "specs": []
+        },
+        {
+          "name": "Penetrant Inspect",
+          "specs": [
+            "ASTM E 1417",
+            "BAC 5423",
+            "PRS-7005",
+            "BSS 7039",
+            "BPS 4089",
+            "MIL-STD-6866"
+          ]
+        },
+        {
+          "name": "Magnetic Inspection",
+          "specs": []
+        }
+      ]
+    },
+    {
+      "vendor_number": "001985",
+      "name": "EMBEE PROCESSING, LLC",
+      "location": "Santa Ana, CA",
+      "website": "https://www.embee.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-C-26074",
+            "BAC 5019",
+            "AMS 2469",
+            "AMS 2471",
+            "AMS 2472",
+            "ASTM B 580"
+          ]
+        },
+        {
+          "name": "Cadmium Plating",
+          "specs": [
+            "BAC 5701",
+            "BPS 4006"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "BAC 5719",
+            "AMS 2473",
+            "ASTM B 449",
+            "MIL-DTL-14072",
+            "MIL-DTL-5541",
+            "MIL-DTL-81706"
+          ]
+        },
+        {
+          "name": "Cleaning",
+          "specs": [
+            "BPS 4138",
+            "ASTM B 600"
+          ]
+        },
+        {
+          "name": "Nickel Plating",
+          "specs": [
+            "MIL-C-26074",
+            "AMS 2404",
+            "AMS 2403",
+            "AMS 2424",
+            "AMS-C-26074",
+            "ASTM B 689",
+            "ASTM B 733"
+          ]
+        },
+        {
+          "name": "Dry Film Lubricant",
+          "specs": [
+            "PS18021"
+          ]
+        },
+        {
+          "name": "Magnetic Inspection",
+          "specs": [
+            "BPS 4075",
+            "ASTM E1444"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "BPS 4007",
+            "AMS 2700",
+            "ASTM A 380",
+            "ASTM A 967"
+          ]
+        },
+        {
+          "name": "Penetrant Inspect",
+          "specs": [
+            "BSS 7039",
+            "PS21202",
+            "BPS 4089",
+            "ASTM E 1417"
+          ]
+        },
+        {
+          "name": "Shot Peen",
+          "specs": [
+            "AMS 2430"
+          ]
+        },
+        {
+          "name": "Silver Plating",
+          "specs": [
+            "BAC 5715",
+            "AMS 2410",
+            "AMS 2411",
+            "AMS 2412",
+            "ASTM B 700"
+          ]
+        },
+        {
+          "name": "Tin Plating",
+          "specs": [
+            "ASTM B 545"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000080",
+      "name": "BROOKS INDUSTRIAL COATINGS, INC.",
+      "location": "Austin, Texas",
+      "website": "http://bic-texas.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Anodize",
+          "specs": [
+            "MIL-PRF-8625/MIL-A-8625"
+          ]
+        },
+        {
+          "name": "Chromate Conversion",
+          "specs": [
+            "MIL-C-5541"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "ASTM A 967",
+            "ASTM A 380",
+            "AMS-QQ-P-35"
+          ]
+        },
+        {
+          "name": "Zinc Plating",
+          "specs": [
+            "QQ-Z-325",
+            "ASTM B 633"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000339",
+      "name": "HARRISON ELECTROPOLISH, LP",
+      "location": "Houston, Texas",
+      "website": "http://www.harrisonep.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Electropolish",
+          "specs": [
+            "ASTM B 912",
+            "SEMI F17",
+            "0250-13605"
+          ]
+        },
+        {
+          "name": "Passivation",
+          "specs": [
+            "ASTM A 967",
+            "ASTM A 380",
+            "AMS-QQ-P-35",
+            "AMS 2700"
+          ]
+        },
+        {
+          "name": "Oxygen Cleaning",
+          "specs": [
+            "ASTM G93",
+            "CGA G-4.1"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000902",
+      "name": "BODYCOTE THERMAL PROCESSING, INC-W",
+      "location": "California",
+      "website": "https://www.bodycote.com/services/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Heat Treat",
+          "specs": [
+            "AMS 2759",
+            "AMS 2770",
+            "AMS 2769",
+            "AMS 6875",
+            "BPS 4140",
+            "PS15634",
+            "MIL-H-6875",
+            "BAC 5613",
+            "BPS 4139"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000380",
+      "name": "BODYCOTE THERMAL PROCESSING, INC",
+      "location": "TX",
+      "website": "https://www.bodycote.com/services/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Heat Treat",
+          "specs": [
+            "AMS 2759",
+            "AMS 2770",
+            "AMS 2769",
+            "AMS 6875",
+            "BPS 4140",
+            "PS15634",
+            "MIL-H-6875",
+            "BAC 5613",
+            "BPS 4139"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000795",
+      "name": "BODYCOTE THERMAL PROCESSING, INC",
+      "location": "TX",
+      "website": "https://www.bodycote.com/services/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Heat Treat",
+          "specs": [
+            "AMS 2759",
+            "AMS 2770",
+            "AMS 2769",
+            "AMS 6875",
+            "BPS 4140",
+            "PS15634",
+            "MIL-H-6875",
+            "BAC 5613",
+            "BPS 4139"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "001151",
+      "name": "BODYCOTE THERMAL PROCESSING, INC",
+      "location": "TX",
+      "website": "https://www.bodycote.com/services/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Heat Treat",
+          "specs": [
+            "AMS 2759",
+            "AMS 2770",
+            "AMS 2769",
+            "AMS 6875",
+            "BPS 4140",
+            "PS15634",
+            "MIL-H-6875",
+            "BAC 5613",
+            "BPS 4139"
+          ]
+        }
+      ]
+    },
+    {
+      "vendor_number": "000128",
+      "name": "TEXAS HEAT TREATING, INC",
+      "location": "Texas",
+      "website": "https://texasheattreating.com/",
+      "active": true,
+      "rating": 0,
+      "notes": null,
+      "processes": [
+        {
+          "name": "Heat Treat",
+          "specs": [
+            "AMS 2759",
+            "AMS 2769"
+          ]
+        }
+      ]
+    }
+  ]
+}
