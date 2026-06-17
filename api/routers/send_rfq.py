@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 from api.deps import get_current_user
 from utils.rfq_queue import load_queue, save_queue
-from streamlit_app.utils.box_helpers import detect_cui_itar
+from utils.box_helpers import detect_cui_itar
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -266,7 +266,7 @@ async def create_box_folder(
         return BoxResult(error="Box is not configured or could not connect.")
 
     try:
-        from streamlit_app.utils.box_helpers import (
+        from utils.box_helpers import (
             upload_and_share_for_part, persist_box_update, get_rfq_files,
         )
 
@@ -436,7 +436,7 @@ def create_email_drafts(
     if is_cui_val and not box_password and share_link:
         logger.info(f"CUI/ITAR detected for {part_number} but no password found. Attempting to auto-generate and update Box.")
         try:
-            from streamlit_app.utils.box_helpers import generate_password
+            from utils.box_helpers import generate_password
             box = _get_box()
             folder_id = str(row_dict.get("box_part_folder_id", "")).strip()
             

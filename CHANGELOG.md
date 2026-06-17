@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streamlit Dependency: Removed `streamlit` from `requirements.txt`.
 
 ### Fixed
+- Deployment `ModuleNotFoundError`: Fixed a critical issue where the FastAPI backend failed to start because of lingering imports from the removed `streamlit_app`.
+- Box Utility Restoration: Reconstructed essential Box helper functions (`detect_cui_itar`, `generate_password`, `upload_and_share_for_part`, `persist_box_update`, `get_rfq_files`) in `utils/box_helpers.py` to support API operations without the Streamlit dependency.
 - Duplicate Part Numbers with Different Processes: Fixed an issue where drafting emails or creating Box folders for a part with multiple required finishes (e.g., Chromate and Anodize) would always select the first entry in the queue. The system now uniquely identifies queue items using both part number and process name. Added robust whitespace handling and enhanced logging for row identification.
 - ITAR/CUI RFQ password drafts: Improved reliability of password retrieval when drafting emails. Now explicitly checks and recovers passwords from the queue data if they are missing or "nan" in the request body, ensuring the second email is always drafted for ITAR/CUI requests with a password.
 - ITAR/CUI Password Auto-fix: Added logic to automatically generate a password and update the Box folder share link if a password is missing for ITAR/CUI parts when drafting emails. This ensures compliance even if the folder was initially shared without protection.
