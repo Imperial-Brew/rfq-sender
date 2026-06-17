@@ -95,20 +95,35 @@ def _find_part_row(df: pd.DataFrame, part_number: str, process: Optional[str] = 
     if col_part is None:
         raise HTTPException(status_code=500, detail="Queue has no part_number column.")
     
-    mask = df[col_part].astype(str).str.strip() == part_number.strip()
+    # Standardize types and whitespace for matching
+    df_part = df[col_part].astype(str).str.strip()
+    target_part = str(part_number).strip()
+    
+    mask = df_part == target_part
     
     if process:
         col_proc = next((c for c in df.columns if c.lower().strip() == "process"), None)
         if col_proc:
-            mask = mask & (df[col_proc].astype(str).str.strip() == process.strip())
+            df_proc = df[col_proc].astype(str).str.strip()
+            target_proc = str(process).strip()
+            mask = mask & (df_proc == target_proc)
+    
+    logger.info(f"[_find_part_row] Finding part={target_part!r} process={process!r}. Matches found: {mask.sum()}")
+    
+    if mask.sum() > 1:
+        # If we have multiple matches even WITH process, or if no process was provided
+        # and there are multiple parts with same number, log it.
+        logger.warning(f"[_find_part_row] Multiple matches ({mask.sum()}) for part={target_part!r} process={process!r}. Using first.")
 
     if not mask.any():
         detail = f"'{part_number}'" + (f" with process '{process}'" if process else "") + " not found in queue."
         raise HTTPException(status_code=404, detail=detail)
     
-    # We want the integer index in the original DataFrame
-    # df[mask].index returns the index labels for the rows that match
-    return df[mask].iloc[0], df.index[mask][0]
+    # If multiple matches exist and process was provided, we've already filtered by it.
+    # If no process was provided and multiple matches exist, it picks the first one (original behavior).
+    idx = df.index[mask][0]
+    logger.info(f"[_find_part_row] Selected row index: {idx}")
+    return df[mask].iloc[0], idx
 
 
 def _get_vendor_manager():
@@ -358,7 +373,14 @@ def create_email_drafts(
     if df.empty:
         raise HTTPException(status_code=404, detail="Queue is empty.")
 
-    row_series, row_idx = _find_part_row(df, part_number, process=body.process)
+    # We must have a process to distinguish between duplicates.
+    # If not in body, try to get it from the queue if there's only one match,
+    # but that defeats the purpose. So we prefer it being in the body.
+    process_param = body.process
+    if not process_param:
+        logger.warning(f"No process provided in request body for {part_number}. Falling back to first match.")
+
+    row_series, row_idx = _find_part_row(df, part_number, process=process_param)
     row_dict = row_series.to_dict()
 
     process = str(row_dict.get("process", "")).strip()
@@ -435,7 +457,7 @@ def create_email_drafts(
     any_success = False
 
     print(
-        f"[ROUTE] create_email_drafts: part={part_number!r} vendors={len(vendors)}"
+        f"[ROUTE] create_email_drafts: part={part_number!r} process_param={body.process!r} vendors={len(vendors)}"
         f" upn={user.get('sub')!r} share_link={share_link!r}",
         flush=True,
     )
