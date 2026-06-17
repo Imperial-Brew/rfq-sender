@@ -253,11 +253,6 @@
                 RFQ Files{% if is_cui %} &mdash; <span style="color:#C82022;">Password Protected (CUI)</span>{% endif %}
             </div>
             <a href="{{ box_link }}" class="box-button">Open RFQ Folder</a>
-            {% if is_cui and box_password %}
-            <p class="box-password">
-                <strong>Folder password:</strong> <code>{{ box_password }}</code>
-            </p>
-            {% endif %}
             <p class="box-url">
                 If you have trouble with the link, copy this URL into your browser:<br>
                 <code>{{ box_link }}</code>

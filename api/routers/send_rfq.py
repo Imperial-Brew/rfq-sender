@@ -430,6 +430,24 @@ def create_email_drafts(
         ))
         if success:
             any_success = True
+            # CUI/ITAR: send the Box folder password in a separate email so
+            # it is never in the same message as the folder link.
+            if box_password and is_cui_val:
+                pw_subject = f"Box Folder Password – {part_number}"
+                pw_body = (
+                    f"<p>The password for the RFQ Box folder for part "
+                    f"<strong>{part_number}</strong> is:</p>"
+                    f"<p><code style=\"font-size:16px;\">{box_password}</code></p>"
+                    f"<p>Please use this password to access the folder shared in the "
+                    f"accompanying RFQ email.</p>"
+                )
+                print(f"[ROUTE] sending password draft to={recipient!r}", flush=True)
+                em.create_draft_email(
+                    recipient=recipient,
+                    subject=pw_subject,
+                    body=pw_body,
+                    user_upn=user.get("sub"),
+                )
 
     # Mark item as sent today if at least one draft was created.
     # Reload from the store immediately before saving to minimise the window
