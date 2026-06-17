@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from api.deps import get_current_user
 from utils.rfq_queue import load_queue, save_queue
+from streamlit_app.utils.box_helpers import detect_cui_itar
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -373,7 +374,7 @@ def create_email_drafts(
         share_link = ''
 
     box_password = body.password.strip() if body.password else ''
-    is_cui_val = str(row_dict.get("cui_itar", "")).upper() in ("TRUE", "YES", "Y", "1")
+    is_cui_val = detect_cui_itar(row_series)
 
     results: List[EmailResult] = []
     any_success = False
@@ -432,7 +433,7 @@ def create_email_drafts(
             any_success = True
             # CUI/ITAR: send the Box folder password in a separate email so
             # it is never in the same message as the folder link.
-            if box_password and is_cui_val:
+            if box_password:
                 pw_subject = f"Box Folder Password – {part_number}"
                 pw_body = (
                     f"<p>The password for the RFQ Box folder for part "
