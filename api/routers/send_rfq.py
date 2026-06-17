@@ -383,6 +383,38 @@ def create_email_drafts(
 
     is_cui_val = detect_cui_itar(row_series)
 
+    # Auto-fix missing password for CUI/ITAR
+    if is_cui_val and not box_password and share_link:
+        logger.info(f"CUI/ITAR detected for {part_number} but no password found. Attempting to auto-generate and update Box.")
+        try:
+            from streamlit_app.utils.box_helpers import generate_password
+            box = _get_box()
+            folder_id = str(row_dict.get("box_part_folder_id", "")).strip()
+            
+            if box and folder_id:
+                new_password = generate_password()
+                # Re-create share link with password (Box API updates existing link)
+                updated_link = box.create_share_link(
+                    folder=box.client.folder(folder_id).get(),
+                    access="open",
+                    password=new_password,
+                    expire_days=30
+                )
+                if updated_link:
+                    box_password = new_password
+                    share_link = updated_link
+                    # Persist to queue
+                    df.loc[row_idx, 'box_password'] = box_password
+                    df.loc[row_idx, 'box_share_link'] = share_link
+                    save_queue(df)
+                    logger.info(f"Successfully auto-generated password and updated Box for {part_number}")
+                else:
+                    logger.warning(f"Failed to update Box share link with password for {part_number}")
+            else:
+                logger.warning(f"Box integration or folder ID missing for {part_number}, cannot auto-fix password.")
+        except Exception as e:
+            logger.error(f"Error during auto-password generation for {part_number}: {e}")
+
     results: List[EmailResult] = []
     any_success = False
 
