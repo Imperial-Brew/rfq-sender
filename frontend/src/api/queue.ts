@@ -34,6 +34,24 @@ export async function removeQueueItem(partNumber: string): Promise<void> {
   await client.delete(`/queue/${encodeURIComponent(partNumber)}`)
 }
 
+export interface QueueItemUpdate {
+  current_process: string
+  spec?: string
+  material?: string
+  quantities?: string
+  qt_so_number?: string
+  cui_itar?: string
+  rev?: string
+  notes?: string
+  due_date?: string
+  file_location?: string
+}
+
+export async function updateQueueItem(partNumber: string, body: QueueItemUpdate): Promise<QueueItem> {
+  const { data } = await client.patch<QueueItem>(`/queue/${encodeURIComponent(partNumber)}`, body)
+  return data
+}
+
 export async function fetchProcesses(): Promise<string[]> {
   const { data } = await client.get<string[]>('/specs/processes')
   return data
