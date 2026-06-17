@@ -307,7 +307,9 @@ async def create_box_folder(
     if "error" in result:
         return BoxResult(error=result["error"])
 
-    # Persist Box metadata back to queue
+    # Persist Box metadata back to queue.
+    # The Box folder is per-part (not per-process), so write the share link and
+    # password to ALL rows with this part_number so every process line can see it.
     try:
         persist_box_update(
             df, row_idx,
@@ -319,6 +321,15 @@ async def create_box_folder(
             quote_folder=result.get("quote_folder"),
             box=box,
         )
+        # Propagate share link / password to any sibling rows (same part, different process)
+        part_col = next((c for c in df.columns if c.lower().strip() == "part_number"), None)
+        share_link_val = result.get("share_link", "")
+        password_val = result.get("password", "")
+        if part_col and share_link_val:
+            sibling_mask = (df[part_col].astype(str).str.strip() == str(part_number).strip()) & (df.index != row_idx)
+            df.loc[sibling_mask, 'box_share_link'] = share_link_val
+            if password_val:
+                df.loc[sibling_mask, 'box_password'] = password_val
         save_queue(df)
     except Exception as e:
         logger.warning(f"Could not persist Box update to queue: {e}")
@@ -539,9 +550,12 @@ def create_email_drafts(
         try:
             fresh_df = load_queue()
             part_col = next((c for c in fresh_df.columns if c.lower().strip() == "part_number"), None)
+            proc_col = next((c for c in fresh_df.columns if c.lower().strip() == "process"), None)
             sent_col = next((c for c in fresh_df.columns if c.lower() == "sent"), "sent")
             if part_col is not None:
                 mask = fresh_df[part_col].astype(str).str.strip() == part_number.strip()
+                if proc_col is not None and process:
+                    mask = mask & (fresh_df[proc_col].astype(str).str.strip() == process.strip())
                 fresh_df.loc[mask, sent_col] = date.today().isoformat()
             save_queue(fresh_df)
         except Exception as e:

@@ -151,6 +151,8 @@ export default function SendRfqsPage() {
         boxLink: result.share_link || getRow(item).boxLink,
         boxPassword: result.password || '',
       })
+      // Reload queue so sibling rows (same part, different process) pick up the shared link
+      if (result.share_link) queryClient.invalidateQueries({ queryKey: ['send-rfq-queue'] })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       setRow(key, { boxLoading: false, boxResult: { share_link: '', password: '', is_cui: false, files_uploaded: 0, error: msg } })
