@@ -54,9 +54,11 @@ export async function createBoxFolder(
   partNumber: string,
   files: File[] = [],
   access = 'open',
+  process?: string,
 ): Promise<BoxResult> {
   const form = new FormData()
   form.append('access', access)
+  if (process) form.append('process', process)
   for (const f of files) form.append('files', f)
   const { data } = await client.post<BoxResult>(
     `/send-rfq/box/${encodeURIComponent(partNumber)}`,
@@ -71,10 +73,11 @@ export async function saveBoxLink(
   partNumber: string,
   shareLink: string,
   password: string,
+  process?: string,
 ): Promise<BoxResult> {
   const { data } = await client.patch<BoxResult>(
     `/send-rfq/box-link/${encodeURIComponent(partNumber)}`,
-    { share_link: shareLink, password },
+    { share_link: shareLink, password, process },
   )
   return data
 }
@@ -83,10 +86,11 @@ export async function createEmailDrafts(
   partNumber: string,
   shareLink: string,
   password: string,
+  process?: string,
 ): Promise<EmailResult[]> {
   const { data } = await client.post<EmailResult[]>(
     `/send-rfq/email/${encodeURIComponent(partNumber)}`,
-    { share_link: shareLink, password },
+    { share_link: shareLink, password, process },
   )
   return Array.isArray(data) ? data : []
 }

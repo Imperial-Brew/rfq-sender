@@ -84,43 +84,50 @@ export default function SendRfqsPage() {
     queryFn: () => fetchUnsentQueue(showSent),
   })
 
-  // Per-row state keyed by part_number
+  // Helper to generate a unique key for each row
+  function rowKey(item: SendQueueItem): string {
+    return `${item.part_number}|${item.process}`
+  }
+
+  // Per-row state keyed by part_number + process
   const [rows, setRows] = useState<Record<string, RowState>>({})
 
   function getRow(item: SendQueueItem): RowState {
-    return rows[item.part_number] ?? defaultRowState(item)
+    return rows[rowKey(item)] ?? defaultRowState(item)
   }
 
-  function setRow(partNumber: string, patch: Partial<RowState>) {
+  function setRow(key: string, patch: Partial<RowState>) {
     setRows(prev => ({
       ...prev,
-      [partNumber]: { ...(prev[partNumber] ?? defaultRowState({ part_number: partNumber } as SendQueueItem)), ...patch },
+      [key]: { ...(prev[key] ?? defaultRowState({ part_number: key.split('|')[0] } as SendQueueItem)), ...patch },
     }))
   }
 
   async function handlePreviewVendors(item: SendQueueItem) {
-    setRow(item.part_number, { vendorsLoading: true, vendors: null })
+    const key = rowKey(item)
+    setRow(key, { vendorsLoading: true, vendors: null })
     try {
       const v = await fetchVendors(item.process, item.spec)
-      setRow(item.part_number, { vendorsLoading: false, vendors: v })
+      setRow(key, { vendorsLoading: false, vendors: v })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
-      setRow(item.part_number, { vendorsLoading: false, vendors: [] })
+      setRow(key, { vendorsLoading: false, vendors: [] })
       alert(`Vendor lookup failed: ${msg}`)
     }
   }
 
   async function handleSaveLink(item: SendQueueItem) {
+    const key = rowKey(item)
     const row = getRow(item)
-    setRow(item.part_number, { saveLinkLoading: true, saveLinkStatus: 'idle' })
+    setRow(key, { saveLinkLoading: true, saveLinkStatus: 'idle' })
     try {
-      await saveBoxLink(item.part_number, row.boxLink, row.boxPassword)
-      setRow(item.part_number, { saveLinkLoading: false, saveLinkStatus: 'saved' })
+      await saveBoxLink(item.part_number, row.boxLink, row.boxPassword, item.process)
+      setRow(key, { saveLinkLoading: false, saveLinkStatus: 'saved' })
       // Reset the "Saved ✓" badge after 3 seconds
-      setTimeout(() => setRow(item.part_number, { saveLinkStatus: 'idle' }), 3000)
+      setTimeout(() => setRow(key, { saveLinkStatus: 'idle' }), 3000)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
-      setRow(item.part_number, { saveLinkLoading: false, saveLinkStatus: 'error' })
+      setRow(key, { saveLinkLoading: false, saveLinkStatus: 'error' })
       alert(`Save failed: ${msg}`)
     }
   }
@@ -134,10 +141,11 @@ export default function SendRfqsPage() {
     const item = boxModalItem
     setBoxModalItem(null)
     if (!item) return
-    setRow(item.part_number, { boxLoading: true, boxResult: null })
+    const key = rowKey(item)
+    setRow(key, { boxLoading: true, boxResult: null })
     try {
-      const result = await createBoxFolder(item.part_number, files)
-      setRow(item.part_number, {
+      const result = await createBoxFolder(item.part_number, files, 'open', item.process)
+      setRow(key, {
         boxLoading: false,
         boxResult: result,
         boxLink: result.share_link || getRow(item).boxLink,
@@ -145,23 +153,24 @@ export default function SendRfqsPage() {
       })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
-      setRow(item.part_number, { boxLoading: false, boxResult: { share_link: '', password: '', is_cui: false, files_uploaded: 0, error: msg } })
+      setRow(key, { boxLoading: false, boxResult: { share_link: '', password: '', is_cui: false, files_uploaded: 0, error: msg } })
     }
   }
 
   async function handleCreateEmails(item: SendQueueItem) {
+    const key = rowKey(item)
     const row = getRow(item)
-    setRow(item.part_number, { emailLoading: true, emailResults: null })
+    setRow(key, { emailLoading: true, emailResults: null })
     try {
-      const results = await createEmailDrafts(item.part_number, row.boxLink, row.boxPassword)
-      setRow(item.part_number, { emailLoading: false, emailResults: results })
+      const results = await createEmailDrafts(item.part_number, row.boxLink, row.boxPassword, item.process)
+      setRow(key, { emailLoading: false, emailResults: results })
       // Refresh the queue — item will disappear from unsent view, or update sent date in "show sent" view
       if (results.some(r => r.success)) {
         queryClient.invalidateQueries({ queryKey: ['send-rfq-queue'] })
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
-      setRow(item.part_number, { emailLoading: false, emailResults: [{ vendor: '—', contact_email: '', success: false, error: msg }] })
+      setRow(key, { emailLoading: false, emailResults: [{ vendor: '—', contact_email: '', success: false, error: msg }] })
     }
   }
 
@@ -217,14 +226,14 @@ export default function SendRfqsPage() {
                 const row = getRow(item)
                 return (
                   <ItemRow
-                    key={item.part_number}
+                    key={rowKey(item)}
                     item={item}
                     row={row}
                     onPreviewVendors={() => handlePreviewVendors(item)}
                     onSaveLink={() => handleSaveLink(item)}
                     onCreateBox={() => handleCreateBox(item)}
                     onCreateEmails={() => handleCreateEmails(item)}
-                    onBoxLinkChange={(v) => setRow(item.part_number, { boxLink: v, saveLinkStatus: 'idle' })}
+                    onBoxLinkChange={(v) => setRow(rowKey(item), { boxLink: v, saveLinkStatus: 'idle' })}
                   />
                 )
               })}

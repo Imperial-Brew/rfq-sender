@@ -54,6 +54,7 @@ class VendorMatch(BaseModel):
 
 
 class BoxRequest(BaseModel):
+    process: Optional[str] = None
     access: str = "open"
 
 
@@ -66,11 +67,13 @@ class BoxResult(BaseModel):
 
 
 class SaveLinkRequest(BaseModel):
+    process: Optional[str] = None
     share_link: str = ""
     password: str = ""
 
 
 class EmailRequest(BaseModel):
+    process: Optional[str] = None
     share_link: str = ""
     password: str = ""
 
@@ -86,15 +89,26 @@ class EmailResult(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _find_part_row(df: pd.DataFrame, part_number: str):
-    """Return the first DataFrame row matching part_number, or raise 404."""
-    col = next((c for c in df.columns if c.lower().strip() == "part_number"), None)
-    if col is None:
+def _find_part_row(df: pd.DataFrame, part_number: str, process: Optional[str] = None):
+    """Return the DataFrame row matching part_number (and optionally process), or raise 404."""
+    col_part = next((c for c in df.columns if c.lower().strip() == "part_number"), None)
+    if col_part is None:
         raise HTTPException(status_code=500, detail="Queue has no part_number column.")
-    mask = df[col].astype(str).str.strip() == part_number.strip()
+    
+    mask = df[col_part].astype(str).str.strip() == part_number.strip()
+    
+    if process:
+        col_proc = next((c for c in df.columns if c.lower().strip() == "process"), None)
+        if col_proc:
+            mask = mask & (df[col_proc].astype(str).str.strip() == process.strip())
+
     if not mask.any():
-        raise HTTPException(status_code=404, detail=f"'{part_number}' not found in queue.")
-    return df[mask].iloc[0], df[mask].index[0]
+        detail = f"'{part_number}'" + (f" with process '{process}'" if process else "") + " not found in queue."
+        raise HTTPException(status_code=404, detail=detail)
+    
+    # We want the integer index in the original DataFrame
+    # df[mask].index returns the index labels for the rows that match
+    return df[mask].iloc[0], df.index[mask][0]
 
 
 def _get_vendor_manager():
@@ -211,6 +225,7 @@ def preview_vendors(
 @router.post("/box/{part_number}", response_model=BoxResult)
 async def create_box_folder(
     part_number: str,
+    process: Optional[str] = Form(None),
     access: str = Form("open"),
     files: List[UploadFile] = File(default=[]),
     user: dict = Depends(get_current_user),
@@ -218,6 +233,7 @@ async def create_box_folder(
     """Create a Box folder for *part_number* and optionally upload files to it.
 
     Accepts ``multipart/form-data``:
+    - ``process`` (string, optional)
     - ``access``  (string, default ``"open"``)
     - ``files``   (zero or more file uploads)
 
@@ -228,7 +244,7 @@ async def create_box_folder(
     if df.empty:
         raise HTTPException(status_code=404, detail="Queue is empty.")
 
-    row_series, row_idx = _find_part_row(df, part_number)
+    row_series, row_idx = _find_part_row(df, part_number, process=process)
 
     box = _get_box()
     if box is None:
@@ -316,7 +332,7 @@ def save_box_link(
     if df.empty:
         raise HTTPException(status_code=404, detail="Queue is empty.")
 
-    _, row_idx = _find_part_row(df, part_number)
+    _, row_idx = _find_part_row(df, part_number, process=body.process)
 
     password = body.password.strip() if body.password else ''
 
@@ -342,7 +358,7 @@ def create_email_drafts(
     if df.empty:
         raise HTTPException(status_code=404, detail="Queue is empty.")
 
-    row_series, row_idx = _find_part_row(df, part_number)
+    row_series, row_idx = _find_part_row(df, part_number, process=body.process)
     row_dict = row_series.to_dict()
 
     process = str(row_dict.get("process", "")).strip()
