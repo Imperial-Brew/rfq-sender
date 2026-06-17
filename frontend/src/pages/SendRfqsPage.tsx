@@ -461,6 +461,7 @@ export default function SendRfqsPage() {
       {/* Modals */}
       {boxModalGroup && (
         <BoxUploadModal
+          partNumber={boxModalGroup.items[0].part_number}
           onConfirm={handleBoxConfirm}
           onCancel={() => setBoxModalGroup(null)}
         />

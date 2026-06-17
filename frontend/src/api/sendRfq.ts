@@ -10,6 +10,7 @@ export interface SendQueueItem {
   cui_itar: string
   rev: string
   notes: string
+  due_date: string
   file_location: string
   sent: string
   box_share_link: string

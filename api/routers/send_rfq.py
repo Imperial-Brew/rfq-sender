@@ -41,6 +41,7 @@ class SendQueueItem(BaseModel):
     cui_itar: str = ""
     rev: str = ""
     notes: str = ""
+    due_date: str = ""
     file_location: str = ""
     sent: str = ""
     box_share_link: str = ""
@@ -207,6 +208,7 @@ def get_unsent_queue(
             cui_itar=str(r.get("cui_itar", "")),
             rev=str(r.get("rev", "")),
             notes=str(r.get("notes", "")),
+            due_date=str(r.get("due_date", "")),
             file_location=str(r.get("file_location", "")),
             sent=str(r.get("sent", "")),
             box_share_link=str(r.get("box_share_link", "")),
