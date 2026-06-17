@@ -58,6 +58,12 @@
 		- [x] CLI argument parsing
 		- [x] Attachment retrieval logic
 		- [x] Template rendering
-	- [x] 10.2. Add a GitHub Actions (or similar) workflow to:
+ - [x] 10.2. Add a GitHub Actions (or similar) workflow to:
 		- [x] Run tests on each push
 		- [x] Lint via flake8 or black
+
+- [x] 11. Modernization & Cleanup
+	- [x] 11.1. Remove Streamlit web interface and related files
+	- [x] 11.2. Update requirements.txt to remove streamlit
+	- [x] 11.3. Clean up README.md and update for React/FastAPI structure
+	- [x] 11.4. Update CHANGELOG.md with removed components

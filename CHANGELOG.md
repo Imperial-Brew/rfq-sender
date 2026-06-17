@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Streamlit Web Interface: Removed the Streamlit-based web application (`streamlit_app/`, `.streamlit/`, `old.app.py`, `render.yaml`) in favor of the new React frontend and FastAPI backend.
+- Streamlit Dependency: Removed `streamlit` from `requirements.txt`.
+
 ### Fixed
 - Duplicate Part Numbers with Different Processes: Fixed an issue where drafting emails or creating Box folders for a part with multiple required finishes (e.g., Chromate and Anodize) would always select the first entry in the queue. The system now uniquely identifies queue items using both part number and process name. Added robust whitespace handling and enhanced logging for row identification.
 - ITAR/CUI RFQ password drafts: Improved reliability of password retrieval when drafting emails. Now explicitly checks and recovers passwords from the queue data if they are missing or "nan" in the request body, ensuring the second email is always drafted for ITAR/CUI requests with a password.
