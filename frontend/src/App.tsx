@@ -23,7 +23,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
-import QueuePage from './pages/QueuePage'
 import VendorsPage from './pages/VendorsPage'
 import SpecsPage from './pages/SpecsPage'
 import RfqMasterPage from './pages/RfqMasterPage'
@@ -52,11 +51,11 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/queue" element={<PrivateRoute><QueuePage /></PrivateRoute>} />
+            <Route path="/queue" element={<PrivateRoute><SendRfqsPage /></PrivateRoute>} />
+            <Route path="/send" element={<Navigate to="/queue" replace />} />
             <Route path="/vendors" element={<PrivateRoute><VendorsPage /></PrivateRoute>} />
             <Route path="/specs" element={<PrivateRoute><SpecsPage /></PrivateRoute>} />
             <Route path="/rfq-master" element={<PrivateRoute><RfqMasterPage /></PrivateRoute>} />
-            <Route path="/send" element={<PrivateRoute><SendRfqsPage /></PrivateRoute>} />
             <Route path="/" element={<Navigate to="/queue" replace />} />
           </Routes>
         </BrowserRouter>
