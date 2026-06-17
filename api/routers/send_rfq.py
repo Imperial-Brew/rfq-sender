@@ -367,15 +367,17 @@ def create_email_drafts(
     # fall back to whatever is stored in the queue row.
     # Reject the literal string "nan" that pandas produces from NaN cells.
     _bad = {'', 'nan', 'none', 'null'}
-    share_link = body.share_link.strip() if body.share_link else ''
+    share_link = (body.share_link or '').strip()
     if share_link.lower() in _bad:
         share_link = str(row_dict.get("box_share_link", "")).strip()
     if share_link.lower() in _bad:
         share_link = ''
 
-    box_password = body.password.strip() if body.password else ''
-    if not box_password:
+    # We MUST ensure box_password is recovered even if not in the body
+    box_password = (body.password or '').strip()
+    if not box_password or box_password.lower() in _bad:
         box_password = str(row_dict.get("box_password", "")).strip()
+    
     if box_password.lower() in _bad:
         box_password = ''
 
@@ -438,6 +440,7 @@ def create_email_drafts(
             any_success = True
             # CUI/ITAR: send the Box folder password in a separate email so
             # it is never in the same message as the folder link.
+            # LOGIC: we only send the second email if box_password is not empty.
             if box_password:
                 pw_subject = f"Box Folder Password – {part_number}"
                 pw_body = (
@@ -447,13 +450,17 @@ def create_email_drafts(
                     f"<p>Please use this password to access the folder shared in the "
                     f"accompanying RFQ email.</p>"
                 )
-                print(f"[ROUTE] sending password draft to={recipient!r}", flush=True)
-                em.create_draft_email(
+                print(f"[ROUTE] sending password draft to={recipient!r} password={box_password!r} is_cui={is_cui_val}", flush=True)
+                pw_success = em.create_draft_email(
                     recipient=recipient,
                     subject=pw_subject,
                     body=pw_body,
                     user_upn=user.get("sub"),
                 )
+                if not pw_success:
+                    logger.error(f"Failed to create password draft for {vendor.name} ({recipient})")
+            elif is_cui_val:
+                logger.warning(f"CUI/ITAR detected but NO password found for {part_number!r}")
 
     # Mark item as sent today if at least one draft was created.
     # Reload from the store immediately before saving to minimise the window

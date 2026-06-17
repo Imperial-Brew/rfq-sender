@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- ITAR/CUI RFQ password drafts: Fixed a bug where the separate password email draft was only created if the password was explicitly passed in the request body. It now correctly drafts both emails when the password is recovered from the queue (stored from a previous Box folder creation step).
+- ITAR/CUI RFQ password drafts: Improved reliability of password retrieval when drafting emails. Now explicitly checks and recovers passwords from the queue data if they are missing or "nan" in the request body, ensuring the second email is always drafted for ITAR/CUI requests with a password.
 - Personalized salutations: Updated email drafting to use the contact's first name only instead of their full name. Added fallbacks to the vendor name or a generic "Team" if no contact name is available.
 
 ### Changed
