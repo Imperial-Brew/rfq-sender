@@ -62,4 +62,4 @@ if _dist.exists():
         if full_path.startswith("api/"):
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Not found")
-        return FileResponse(str(_dist / "index.html"))
+        return FileResponse(str(_dist / "index.html"), headers={"Cache-Control": "no-cache"})
