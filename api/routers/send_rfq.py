@@ -363,17 +363,22 @@ def create_email_drafts(
     if em is None:
         raise HTTPException(status_code=503, detail="Email manager could not be initialized.")
 
-    # Resolve share link: prefer what was passed in the request body,
+    # Resolve share link and password: prefer what was passed in the request body,
     # fall back to whatever is stored in the queue row.
     # Reject the literal string "nan" that pandas produces from NaN cells.
-    _bad_links = {'', 'nan', 'none', 'null'}
-    share_link = body.share_link.strip()
-    if share_link.lower() in _bad_links:
+    _bad = {'', 'nan', 'none', 'null'}
+    share_link = body.share_link.strip() if body.share_link else ''
+    if share_link.lower() in _bad:
         share_link = str(row_dict.get("box_share_link", "")).strip()
-    if share_link.lower() in _bad_links:
+    if share_link.lower() in _bad:
         share_link = ''
 
     box_password = body.password.strip() if body.password else ''
+    if not box_password:
+        box_password = str(row_dict.get("box_password", "")).strip()
+    if box_password.lower() in _bad:
+        box_password = ''
+
     is_cui_val = detect_cui_itar(row_series)
 
     results: List[EmailResult] = []

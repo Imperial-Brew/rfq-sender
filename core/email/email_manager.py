@@ -194,6 +194,10 @@ class EmailManager:
         if contact_name.lower() in _generic:
             contact_name = ''
 
+        # Use first name only if it looks like a full name (contains space)
+        if ' ' in contact_name:
+            contact_name = contact_name.split(' ', 1)[0]
+
         vendor_name = vendor.get('name', '')
         vendor_name_short = self._LEGAL_SUFFIXES.sub('', vendor_name).strip()
 
