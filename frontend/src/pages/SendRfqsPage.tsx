@@ -73,13 +73,6 @@ function CuiBadge({ value }: { value: string }) {
   )
 }
 
-function SentBadge({ sent }: { sent: string }) {
-  if (!sent) return null
-  return (
-    <span style={{ fontSize: 11, color: '#888' }}>drafted {sent}</span>
-  )
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function SendRfqsPage() {
