@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, List
 
 
 class ContactOut(BaseModel):
@@ -30,3 +30,8 @@ class VendorDetail(VendorSummary):
     contacts: list[ContactOut] = []
     # { "Anodize": ["AMS 2468", "AMS 2469"], ... }
     approvals: dict[str, list[str]] = {}
+
+
+class ApprovalAdd(BaseModel):
+    process: str
+    spec: str

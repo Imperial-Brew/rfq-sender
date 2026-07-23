@@ -47,3 +47,15 @@ export async function searchVendorsBySpec(
   const { data } = await client.get<VendorSummary[]>('/vendors/search', { params })
   return data
 }
+
+export async function addVendorApproval(
+  vendorName: string,
+  process: string,
+  spec: string,
+): Promise<Record<string, string[]>> {
+  const { data } = await client.post<Record<string, string[]>>(
+    `/vendors/${encodeURIComponent(vendorName)}/approvals`,
+    { process, spec },
+  )
+  return data
+}

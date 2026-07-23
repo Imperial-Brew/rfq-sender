@@ -10,17 +10,19 @@
  */
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Nav from '../components/Nav'
 import {
   fetchVendors,
   fetchVendor,
   searchVendorsBySpec,
+  addVendorApproval,
   type VendorSummary,
   type VendorDetail,
   type Contact,
 } from '../api/vendors'
 import { fetchProcesses, fetchSpecsForProcess } from '../api/queue'
+import { useAuth } from '../context/AuthContext'
 
 type Tab = 'directory' | 'find-by-spec'
 type DetailTab = 'contacts' | 'processes' | 'approvals'
@@ -182,7 +184,7 @@ function VendorDetailPanel({ detail }: { detail: VendorDetail }) {
       <div style={{ paddingTop: 16 }}>
         {tab === 'contacts' && <ContactsTab contacts={detail.contacts} />}
         {tab === 'processes' && <ProcessesTab processes={detail.processes} />}
-        {tab === 'approvals' && <ApprovalsTab approvals={detail.approvals} />}
+        {tab === 'approvals' && <ApprovalsTab vendorName={detail.name} approvals={detail.approvals} />}
       </div>
     </div>
   )
@@ -224,11 +226,59 @@ function ProcessesTab({ processes }: { processes: string[] }) {
   )
 }
 
-function ApprovalsTab({ approvals }: { approvals: Record<string, string[]> }) {
+function ApprovalsTab({
+  vendorName,
+  approvals,
+}: {
+  vendorName: string
+  approvals: Record<string, string[]>
+}) {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const canEdit = user?.role === 'estimator' || user?.role === 'admin'
+
+  const [showForm, setShowForm] = useState(false)
+  const [selProcess, setSelProcess] = useState('')
+  const [specInput, setSpecInput] = useState('')
+  const [error, setError] = useState('')
+
+  const { data: allProcesses = [] } = useQuery({
+    queryKey: ['processes'],
+    queryFn: fetchProcesses,
+    enabled: showForm,
+  })
+
+  const mutation = useMutation({
+    mutationFn: ({ process, spec }: { process: string; spec: string }) =>
+      addVendorApproval(vendorName, process, spec),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendor', vendorName] })
+      setSelProcess('')
+      setSpecInput('')
+      setError('')
+      setShowForm(false)
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+      setError(msg ?? 'Failed to add approval.')
+    },
+  })
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (!selProcess || !specInput.trim()) return
+    mutation.mutate({ process: selProcess, spec: specInput.trim() })
+  }
+
   const processes = Object.keys(approvals).sort()
-  if (processes.length === 0) return <p style={{ color: '#666' }}>No approved specs on file.</p>
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {processes.length === 0 && !showForm && (
+        <p style={{ color: '#666' }}>No approved specs on file.</p>
+      )}
+
       {processes.map((process) => (
         <div key={process}>
           <div style={{ fontWeight: 600, marginBottom: 6 }}>{process}</div>
@@ -244,6 +294,71 @@ function ApprovalsTab({ approvals }: { approvals: Record<string, string[]> }) {
           </div>
         </div>
       ))}
+
+      {canEdit && !showForm && (
+        <button
+          onClick={() => setShowForm(true)}
+          style={{ alignSelf: 'flex-start', marginTop: 4 }}
+        >
+          + Add Approval
+        </button>
+      )}
+
+      {showForm && (
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            background: '#f8f9fa',
+            border: '1px solid #e0e0e0',
+            borderRadius: 6,
+            padding: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            maxWidth: 420,
+          }}
+        >
+          <div style={{ fontWeight: 600, fontSize: 14 }}>Add Spec Approval</div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={{ fontSize: 13 }}>Process</label>
+            <select
+              value={selProcess}
+              onChange={(e) => setSelProcess(e.target.value)}
+              required
+            >
+              <option value="">Select process…</option>
+              {allProcesses.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={{ fontSize: 13 }}>Spec Number</label>
+            <input
+              value={specInput}
+              onChange={(e) => setSpecInput(e.target.value)}
+              placeholder="e.g. AMS 2469"
+              required
+            />
+          </div>
+
+          {error && <p style={{ color: '#d93025', margin: 0, fontSize: 13 }}>{error}</p>}
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="submit" className="primary" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Saving…' : 'Save'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowForm(false); setError(''); setSelProcess(''); setSpecInput('') }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }

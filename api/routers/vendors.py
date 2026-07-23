@@ -9,8 +9,8 @@ GET /vendors/search?process=X&spec=Y  — vendors approved for a process/spec
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Optional
 
-from api.deps import get_current_user
-from api.models.vendor import ContactOut, VendorDetail, VendorSummary
+from api.deps import get_current_user, require_role
+from api.models.vendor import ApprovalAdd, ContactOut, VendorDetail, VendorSummary
 from core.vendors.vendor_manager import VendorManager
 
 router = APIRouter()
@@ -78,6 +78,34 @@ def search_vendors(
             primary_contact=_contact_to_out(primary) if primary else None,
         ))
     return out
+
+
+@router.post("/{name}/approvals", response_model=dict[str, list[str]])
+def add_approval(
+    name: str,
+    body: ApprovalAdd,
+    user: dict = Depends(require_role("estimator")),
+):
+    """
+    Add a spec approval for a vendor+process.
+    Creates the process entry in vendor_options.yaml if the vendor doesn't have it yet.
+    Returns the vendor's full updated approvals map.
+    """
+    vendor = next((v for v in _vm.vendors if v.name == name), None)
+    if not vendor:
+        raise HTTPException(status_code=404, detail=f"Vendor '{name}' not found.")
+
+    if not body.process.strip() or not body.spec.strip():
+        raise HTTPException(status_code=422, detail="process and spec are required.")
+
+    added = _vm.add_vendor_approval(name, body.process.strip(), body.spec.strip())
+    if not added:
+        raise HTTPException(
+            status_code=409,
+            detail=f"'{body.spec}' is already listed under {body.process} for {name}.",
+        )
+
+    return _vm.get_vendor_approvals(name)
 
 
 @router.get("/{name}", response_model=VendorDetail)

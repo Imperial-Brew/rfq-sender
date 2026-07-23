@@ -459,6 +459,63 @@ class VendorManager:
             logger.exception("Failed to remove vendor approval")
             return False
     
+    def add_vendor_approval(self, vendor_name: str, process_name: str, spec_number: str) -> bool:
+        """
+        Add a spec approval to a vendor+process in vendor_options.yaml.
+
+        Creates the process entry if the vendor doesn't have it yet.
+        Returns True if added, False if the spec was already present.
+        """
+        with open(self.vendor_options_file, 'r', encoding='utf-8') as f:
+            data: Dict[str, Any] = yaml.safe_load(f) or {'vendors': []}
+
+        vendors_list: List[Dict[str, Any]] = data.setdefault('vendors', [])
+
+        # Find vendor entry
+        vendor_entry: Optional[Dict[str, Any]] = None
+        for v in vendors_list:
+            if v.get('name') == vendor_name:
+                vendor_entry = v
+                break
+        if vendor_entry is None:
+            vn_lower = vendor_name.lower()
+            for v in vendors_list:
+                if str(v.get('name', '')).lower() == vn_lower:
+                    vendor_entry = v
+                    break
+        if vendor_entry is None:
+            vendor_entry = {'name': vendor_name, 'processes': []}
+            vendors_list.append(vendor_entry)
+
+        # Find or create process entry
+        processes: List[Dict[str, Any]] = vendor_entry.setdefault('processes', [])
+        proc_norm = self._normalize_process_spec(process_name)
+        proc_entry: Optional[Dict[str, Any]] = None
+        for p in processes:
+            if self._normalize_process_spec(p.get('name', '')) == proc_norm:
+                proc_entry = p
+                break
+        if proc_entry is None:
+            proc_entry = {'name': process_name, 'specs': []}
+            processes.append(proc_entry)
+
+        # Check for duplicate spec
+        specs: List[Any] = proc_entry.setdefault('specs', [])
+        spec_norm = self._normalize_process_spec(spec_number)
+        for s in specs:
+            if isinstance(s, dict) and self._normalize_process_spec(s.get('number', '')) == spec_norm:
+                return False
+
+        specs.append({'number': spec_number})
+
+        with open(self.vendor_options_file, 'w', encoding='utf-8') as f:
+            yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
+        # Refresh cached state
+        self.vendor_options = data
+        self.validator = SpecValidator(self.vendor_options_file)
+        return True
+
     def reload_vendors(self):
         """Reload vendor data from files."""
         self.vendors = self.load_vendors(self.vendor_file)
