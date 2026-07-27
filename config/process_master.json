@@ -1,0 +1,1202 @@
+{
+  "_meta": {
+    "source_specs": "familiar_specs_export.csv",
+    "source_workcenter": "workcenterIDS.xlsx",
+    "matched": 40,
+    "ambiguous": 0,
+    "unmatched": 51,
+    "total": 91,
+    "note": "status=unmatched use SUBMISC as placeholder pending buyer review. legacy_fpro_ids preserved where M2M had duplicate entries; primary fpro_id chosen by PO history volume."
+  },
+  "specs": [
+    {
+      "spec": "AMS 2469",
+      "process": "Anodize",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2471",
+      "process": "Anodize",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2472",
+      "process": "Anodize",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM B 580",
+      "process": "Anodize",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "BAC 5019",
+      "process": "Anodize",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C09"
+      ],
+      "fpro_descriptions": [
+        "ANODIZE PER BAC5019"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BAC 5632",
+      "process": "Anodize",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C32"
+      ],
+      "fpro_descriptions": [
+        "BORIC ACID ANODIZE PER BAC 5632"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4001",
+      "process": "Anodize",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C63"
+      ],
+      "fpro_descriptions": [
+        "CHROMIC ACID ANODIZE PER BPS4001"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4387",
+      "process": "Anodize",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C00"
+      ],
+      "fpro_descriptions": [
+        "HARD ANODIZE PER BPS-4387"
+      ],
+      "legacy_fpro_ids": [
+        "SUB-A77"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4555",
+      "process": "Anodize",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C11"
+      ],
+      "fpro_descriptions": [
+        "SULFURIC ACID ANODIZE"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "MIL-PRF-8625/MIL-A-8625",
+      "process": "Anodize",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "BAC 5701",
+      "process": "Cadmium Plating",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "BPS 4006",
+      "process": "Cadmium Plating",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C14"
+      ],
+      "fpro_descriptions": [
+        "CADMIUM PLATING PER BPS4006"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4312",
+      "process": "Cadmium Plating",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C07"
+      ],
+      "fpro_descriptions": [
+        "BRUSH CADMIUM PLATE"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "AMS 2473",
+      "process": "Chromate Conversion",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM B 449",
+      "process": "Chromate Conversion",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "BAC 5719",
+      "process": "Chromate Conversion",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C12"
+      ],
+      "fpro_descriptions": [
+        "CHEMICAL CONVERSION COATING"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4182",
+      "process": "Chromate Conversion",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C10"
+      ],
+      "fpro_descriptions": [
+        "CHEMICAL FILM PER BPS4182, CLASS 1A."
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "MIL-DTL-14072",
+      "process": "Chromate Conversion",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "MIL-DTL-5541",
+      "process": "Chromate Conversion",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C06"
+      ],
+      "fpro_descriptions": [
+        "CHEMICAL FILM PER MIL-DTL-5541"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "MIL-DTL-81706",
+      "process": "Chromate Conversion",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "0250-20000",
+      "process": "Cleaning",
+      "issuer": "AMAT",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-G36"
+      ],
+      "fpro_descriptions": [
+        "UHV CLEAN PER 0250-20000; TRIPLE BAG REQUIRED"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "0250-70351",
+      "process": "Cleaning",
+      "issuer": "AMAT",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-G37"
+      ],
+      "fpro_descriptions": [
+        "COMPONENT CLEAN TYPE 1 OR II PER 0250-70351"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "ASTM B 600",
+      "process": "Cleaning",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "BAC 5753",
+      "process": "Cleaning",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "BPS 4138",
+      "process": "Cleaning",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-G64"
+      ],
+      "fpro_descriptions": [
+        "CLEAN PER BPS4138"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "AMS 2418",
+      "process": "Copper Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "MIL-L-46010",
+      "process": "Dry Film Lubricant",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "PS18021",
+      "process": "Dry Film Lubricant",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "0250-13605",
+      "process": "Electropolish",
+      "issuer": "AMAT",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C50"
+      ],
+      "fpro_descriptions": [
+        "ELECTROPOLISH PER 0250-13605"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "ASTM B 912",
+      "process": "Electropolish",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "PRC-5009",
+      "process": "Electropolish",
+      "issuer": "NASA",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2422",
+      "process": "Gold Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM B 488",
+      "process": "Gold Plating",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C38"
+      ],
+      "fpro_descriptions": [
+        "GOLD PLATE PER ASTM B488, TYPE 1, CLASS 2.5"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "MIL-DTL-45204",
+      "process": "Gold Plating",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2759",
+      "process": "Heat Treat",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-B06"
+      ],
+      "fpro_descriptions": [
+        "ANNEAL, STRESS RELIEVE, STABILIZE, OR HEAT TREAT"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "AMS 2769",
+      "process": "Heat Treat",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2770",
+      "process": "Heat Treat",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "BAC 5613",
+      "process": "Heat Treat",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-B02"
+      ],
+      "fpro_descriptions": [
+        "STRESS RELEIVED PER BAC5613"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4139",
+      "process": "Heat Treat",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-B16"
+      ],
+      "fpro_descriptions": [
+        "HEAT TREAT PER BPS4139"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4140",
+      "process": "Heat Treat",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-B15"
+      ],
+      "fpro_descriptions": [
+        "HEAT TREAT OF STEEL PER BPS4140"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "MIL-H-6875",
+      "process": "Heat Treat",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "PS15634",
+      "process": "Heat Treat",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM E1444",
+      "process": "Magnetic Inspection",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-F74"
+      ],
+      "fpro_descriptions": [
+        "MAGNETIC PARTICLE INSPECTION PER ASTM E1444"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4075",
+      "process": "Magnetic Inspection",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-F39"
+      ],
+      "fpro_descriptions": [
+        "MAGNETIC PARTICLE INSPECTION PER BPS4075"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "0250-07726",
+      "process": "Nickel Plating",
+      "issuer": "AMAT",
+      "notes": "SPECIFICATION FOR ELECTROLESS NICKEL PLATING – GENERAL APPLICATIONS",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "0250-35000",
+      "process": "Nickel Plating",
+      "issuer": "AMAT",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C59"
+      ],
+      "fpro_descriptions": [
+        "ELECTROLESS NICKEL PER 0250-35000"
+      ],
+      "legacy_fpro_ids": [
+        "SUB-C19"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "AMS 2403",
+      "process": "Nickel Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C33"
+      ],
+      "fpro_descriptions": [
+        "NICKEL PLATE PER AMS2403"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "AMS 2404",
+      "process": "Nickel Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2423",
+      "process": "Nickel Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2424",
+      "process": "Nickel Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS-C-26074",
+      "process": "Nickel Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS-QQ-N-290",
+      "process": "Nickel Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM B 689",
+      "process": "Nickel Plating",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM B 733",
+      "process": "Nickel Plating",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "MIL-C-26074",
+      "process": "Nickel Plating",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "PRC-5007",
+      "process": "Nickel Plating",
+      "issuer": "NASA",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2753",
+      "process": "Nitride",
+      "issuer": "SAE",
+      "notes": "Liquid Salt Bath Ferritic Nitrocarburizing Non-Cyanide Bath",
+      "fpro_ids": [
+        "SUB-C48"
+      ],
+      "fpro_descriptions": [
+        "NITRIDE PER AMS 2753"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "ASTM G93",
+      "process": "Oxygen Cleaning",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "CGA G-4.1",
+      "process": "Oxygen Cleaning",
+      "issuer": "CGA",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2700",
+      "process": "Passivation",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C55"
+      ],
+      "fpro_descriptions": [
+        "PASSIVATE PER AMS -2700"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "AMS-QQ-P-35",
+      "process": "Passivation",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM A 380",
+      "process": "Passivation",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C56"
+      ],
+      "fpro_descriptions": [
+        "PASSIVATE PER ASTM A380"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "ASTM A 967",
+      "process": "Passivation",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C57"
+      ],
+      "fpro_descriptions": [
+        "PASSIVATE PER ASTM-A-967"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4007",
+      "process": "Passivation",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C67"
+      ],
+      "fpro_descriptions": [
+        "PASSIVATION PER BPS4007"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "ASTM E 1417",
+      "process": "Penetrant Inspect",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-F01"
+      ],
+      "fpro_descriptions": [
+        "PENETRANT INSPECT PER ASTM E 1417"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BAC 5423",
+      "process": "Penetrant Inspect",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-F30"
+      ],
+      "fpro_descriptions": [
+        "PENETRANT INSPECTION PER BAC5423"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4089",
+      "process": "Penetrant Inspect",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-F12"
+      ],
+      "fpro_descriptions": [
+        "FLOURESCENT PENETRANT INSPECTION PER BPS4089"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BSS 7039",
+      "process": "Penetrant Inspect",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "MIL-STD-6866",
+      "process": "Penetrant Inspect",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "PS21202",
+      "process": "Penetrant Inspect",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "MIL-DTL-16232",
+      "process": "Phosphate",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2430",
+      "process": "Shot Peen",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-H00"
+      ],
+      "fpro_descriptions": [
+        "SHOT PEEN PER AMS2430"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BPS 4409",
+      "process": "Shot Peen",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-H04"
+      ],
+      "fpro_descriptions": [
+        "SHOT PEEN STEEL, ALUMINUM, AND TITANIUM"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "AMS 2410",
+      "process": "Silver Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2411",
+      "process": "Silver Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2412",
+      "process": "Silver Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM B 700",
+      "process": "Silver Plating",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C75"
+      ],
+      "fpro_descriptions": [
+        "SILVER PLATE PER ASTM B700"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BAC 5715",
+      "process": "Silver Plating",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "QQ-S-365",
+      "process": "Silver Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C52"
+      ],
+      "fpro_descriptions": [
+        "SILVER PLATING PER QQ-S-365"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "",
+      "process": "Sol-Epoxy",
+      "issuer": "",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS 2408",
+      "process": "Tin Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "AMS P 81728",
+      "process": "Tin Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM B 545",
+      "process": "Tin Plating",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C51"
+      ],
+      "fpro_descriptions": [
+        "TIN PLATE PER ASTM B545"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "AMS 2417",
+      "process": "Zinc Nickel Plate",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM B 841",
+      "process": "Zinc Nickel Plate",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "BAC 5637",
+      "process": "Zinc Nickel Plate",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C05"
+      ],
+      "fpro_descriptions": [
+        "ZINC-NICKEL ALLOY PLATE, TYPE II, CLASS 2"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "BAC 5680",
+      "process": "Zinc Nickel Plate",
+      "issuer": "BOEING",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "BPS 4554",
+      "process": "Zinc Nickel Plate",
+      "issuer": "BELL",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C22"
+      ],
+      "fpro_descriptions": [
+        "ZINC-NICKEL PER BPS4554"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "MIL-DTL-32648",
+      "process": "Zinc Nickel Plate",
+      "issuer": "DOD",
+      "notes": "",
+      "fpro_ids": [
+        "SUBMISC"
+      ],
+      "fpro_descriptions": [
+        ""
+      ],
+      "status": "unmatched"
+    },
+    {
+      "spec": "ASTM B 633",
+      "process": "Zinc Plating",
+      "issuer": "ASTM",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C49"
+      ],
+      "fpro_descriptions": [
+        "ZINC-NICKEL PER ASTM B633"
+      ],
+      "status": "matched"
+    },
+    {
+      "spec": "QQ-Z-325",
+      "process": "Zinc Plating",
+      "issuer": "SAE",
+      "notes": "",
+      "fpro_ids": [
+        "SUB-C27"
+      ],
+      "fpro_descriptions": [
+        "ZINC GOLD PLATING, COSMETIC PER 0250-01019"
+      ],
+      "status": "matched"
+    }
+  ]
+}
