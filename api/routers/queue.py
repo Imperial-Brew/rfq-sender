@@ -119,6 +119,8 @@ def update_item(
     for field, value in body.model_dump(exclude={'current_process'}, exclude_none=True).items():
         col = col_map.get(field, field)
         if col in df.columns:
+            if df[col].dtype != object:
+                df[col] = df[col].astype(object)
             df.loc[idx, col] = value
 
     save_queue(df)
