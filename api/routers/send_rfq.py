@@ -328,6 +328,11 @@ async def create_box_folder(
         share_link_val = result.get("share_link", "")
         password_val = result.get("password", "")
         if part_col and share_link_val:
+            for _col in ('box_share_link', 'box_password'):
+                if _col not in df.columns:
+                    df[_col] = ''
+                elif df[_col].dtype != object:
+                    df[_col] = df[_col].astype(object)
             sibling_mask = (df[part_col].astype(str).str.strip() == str(part_number).strip()) & (df.index != row_idx)
             df.loc[sibling_mask, 'box_share_link'] = share_link_val
             if password_val:
@@ -364,7 +369,15 @@ def save_box_link(
 
     password = body.password.strip() if body.password else ''
 
-    # Write directly — no Box API call needed
+    # Ensure these columns are object dtype before assignment — a new queue row
+    # that has never had a Box link will have the column inferred as float64
+    # (all-NaN), which rejects string assignment.
+    for _col in ('box_share_link', 'box_password'):
+        if _col not in df.columns:
+            df[_col] = ''
+        elif df[_col].dtype != object:
+            df[_col] = df[_col].astype(object)
+
     df.loc[row_idx, 'box_share_link'] = share_link
     df.loc[row_idx, 'box_password'] = password
     try:
