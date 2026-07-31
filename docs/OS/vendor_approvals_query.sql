@@ -8,13 +8,16 @@
 -- Export results as CSV and save to docs/OS/vendor_approvals_raw.csv
 -- then run scripts/bootstrap_vendor_master.py to build vendor_master.json.
 
+-- fvendno is blank on JODRTG routing rows; vendor is on POMAST.
+-- Join on fpono to get it.
 SELECT
-    LTRIM(RTRIM(fpro_id))   AS fpro_id,
-    LTRIM(RTRIM(fvendno))   AS fvendno,
-    COUNT(DISTINCT fjobno)  AS job_count,
-    MAX(fddue_date)         AS last_used
-FROM JODRTG
-WHERE LTRIM(RTRIM(fpro_id)) IN (
+    LTRIM(RTRIM(jr.fpro_id))  AS fpro_id,
+    LTRIM(RTRIM(pm.fvendno))  AS fvendno,
+    COUNT(DISTINCT jr.fjobno) AS job_count,
+    MAX(jr.fddue_date)        AS last_used
+FROM JODRTG jr
+JOIN POMAST pm ON LTRIM(RTRIM(jr.fpono)) = LTRIM(RTRIM(pm.fpono))
+WHERE LTRIM(RTRIM(jr.fpro_id)) IN (
     -- Primary FPRO_IDs
     'SUB-B02', 'SUB-B06', 'SUB-B15', 'SUB-B16',
     'SUB-C00', 'SUB-C05', 'SUB-C06', 'SUB-C07', 'SUB-C09', 'SUB-C10',
@@ -26,10 +29,10 @@ WHERE LTRIM(RTRIM(fpro_id)) IN (
     -- Legacy FPRO_IDs (duplicate workcenter entries, kept for historical vendor data)
     'SUB-A77', 'SUB-C19'
 )
-  AND LTRIM(RTRIM(fvendno)) <> ''
+  AND LTRIM(RTRIM(jr.fpono)) <> ''
 GROUP BY
-    LTRIM(RTRIM(fpro_id)),
-    LTRIM(RTRIM(fvendno))
+    LTRIM(RTRIM(jr.fpro_id)),
+    LTRIM(RTRIM(pm.fvendno))
 ORDER BY
     fpro_id,
     job_count DESC
