@@ -45,6 +45,8 @@ export interface QueueItemUpdate {
   notes?: string
   due_date?: string
   file_location?: string
+  box_share_link?: string
+  box_password?: string
 }
 
 export async function updateQueueItem(partNumber: string, body: QueueItemUpdate): Promise<QueueItem> {

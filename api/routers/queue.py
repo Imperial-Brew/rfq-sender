@@ -27,6 +27,8 @@ class QueueItemUpdate(BaseModel):
     notes: Optional[str] = None
     due_date: Optional[str] = None
     file_location: Optional[str] = None
+    box_share_link: Optional[str] = None
+    box_password: Optional[str] = None
 
 router = APIRouter()
 
@@ -115,6 +117,7 @@ def update_item(
         'spec': 'spec', 'material': 'material', 'quantities': 'quantities',
         'qt_so_number': 'qt/so #', 'cui_itar': 'cui_itar', 'rev': 'rev',
         'notes': 'notes', 'due_date': 'due_date', 'file_location': 'file_location',
+        'box_share_link': 'box_share_link', 'box_password': 'box_password',
     }
     for field, value in body.model_dump(exclude={'current_process'}, exclude_none=True).items():
         col = col_map.get(field, field)

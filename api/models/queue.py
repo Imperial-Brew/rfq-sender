@@ -33,6 +33,8 @@ class QueueItem(QueueItemCreate):
     submitted_by: Optional[str] = ""
     file_location: Optional[str] = ""
     print_callout: Optional[str] = ""
+    box_share_link: Optional[str] = ""
+    box_password: Optional[str] = ""
 
     # from_attributes=True lets Pydantic build this model from a dict
     # (pandas .to_dict("records") produces dicts, not QueueItem objects)
