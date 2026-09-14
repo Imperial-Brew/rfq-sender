@@ -122,6 +122,13 @@ def _standardize_df(df: pd.DataFrame) -> pd.DataFrame:
             except Exception as e:
                 logger.warning(f"Error converting {col} to numeric: {str(e)}")
                 df[col] = df[col].astype(str).replace('nan', '')
+
+    # Coerce any column still not object dtype (e.g. bool, float64 from all-NaN
+    # columns) so that string assignment never fails downstream.
+    for col in df.columns:
+        if df[col].dtype != object and col not in ['due_date']:
+            df[col] = df[col].astype(object)
+
     return df
 
 
