@@ -133,8 +133,8 @@ export default function SendRfqsPage() {
     return partStates[key] ?? defaultPartState(groupItems)
   }
 
-  function setPart(key: string, patch: Partial<PartState>) {
-    setPartStates(prev => ({ ...prev, [key]: { ...(prev[key] ?? defaultPartState([])), ...patch } }))
+  function setPart(key: string, patch: Partial<PartState>, groupItems?: SendQueueItem[]) {
+    setPartStates(prev => ({ ...prev, [key]: { ...(prev[key] ?? defaultPartState(groupItems ?? [])), ...patch } }))
   }
 
   function getProc(item: SendQueueItem): ProcState {
@@ -149,7 +149,7 @@ export default function SendRfqsPage() {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   function handleToggle(key: string, groupItems: SendQueueItem[]) {
-    setPart(key, { expanded: !getPart(key, groupItems).expanded })
+    setPart(key, { expanded: !getPart(key, groupItems).expanded }, groupItems)
   }
 
   async function handlePreviewVendors(item: SendQueueItem) {
@@ -164,15 +164,15 @@ export default function SendRfqsPage() {
 
   async function handleSaveLink(key: string, groupItems: SendQueueItem[]) {
     const part = getPart(key, groupItems)
-    setPart(key, { saveLinkLoading: true, saveLinkStatus: 'idle' })
+    setPart(key, { saveLinkLoading: true, saveLinkStatus: 'idle' }, groupItems)
     try {
       for (const item of groupItems) {
         await saveBoxLink(item.part_number, part.boxLink, part.boxPassword, item.process)
       }
-      setPart(key, { saveLinkLoading: false, saveLinkStatus: 'saved' })
-      setTimeout(() => setPart(key, { saveLinkStatus: 'idle' }), 3000)
+      setPart(key, { saveLinkLoading: false, saveLinkStatus: 'saved' }, groupItems)
+      setTimeout(() => setPart(key, { saveLinkStatus: 'idle' }, groupItems), 3000)
     } catch (e: unknown) {
-      setPart(key, { saveLinkLoading: false, saveLinkStatus: 'error' })
+      setPart(key, { saveLinkLoading: false, saveLinkStatus: 'error' }, groupItems)
       alert(`Save failed: ${e instanceof Error ? e.message : e}`)
     }
   }
@@ -182,7 +182,7 @@ export default function SendRfqsPage() {
     setBoxModalGroup(null)
     if (!group) return
     const { key, items: groupItems } = group
-    setPart(key, { boxLoading: true, boxResult: null })
+    setPart(key, { boxLoading: true, boxResult: null }, groupItems)
     try {
       const result = await createBoxFolder(groupItems[0].part_number, files, 'open')
       setPart(key, {
@@ -215,11 +215,11 @@ export default function SendRfqsPage() {
     const allSent = groupItems.every(i => !!i.sent)
     // Re-draft All: send all processes. Draft All: send only unsent.
     const toSend = allSent ? groupItems : groupItems.filter(i => !i.sent)
-    setPart(key, { expanded: true, draftAllLoading: true })
+    setPart(key, { expanded: true, draftAllLoading: true }, groupItems)
     for (const item of toSend) {
       await handleDraftProcess(item, part)
     }
-    setPart(key, { draftAllLoading: false })
+    setPart(key, { draftAllLoading: false }, groupItems)
     queryClient.invalidateQueries({ queryKey: ['send-rfq-queue'] })
   }
 
