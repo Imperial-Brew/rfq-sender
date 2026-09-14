@@ -89,7 +89,6 @@ export default function SendRfqsPage() {
   const isAdmin = user?.role === 'admin'
   const canEdit = user?.role === 'admin' || user?.role === 'estimator'
 
-  const [showSent, setShowSent] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
   const [partStates, setPartStates] = useState<Record<string, PartState>>({})
   const [procStates, setProcStates] = useState<Record<string, ProcState>>({})
@@ -97,8 +96,8 @@ export default function SendRfqsPage() {
   const [editItem, setEditItem] = useState<SendQueueItem | null>(null)
 
   const { data: items = [], isLoading, isError } = useQuery({
-    queryKey: ['send-rfq-queue', showSent],
-    queryFn: () => fetchUnsentQueue(showSent),
+    queryKey: ['send-rfq-queue'],
+    queryFn: () => fetchUnsentQueue(true),
   })
 
   const deleteMutation = useMutation({
@@ -247,10 +246,6 @@ export default function SendRfqsPage() {
               {showAddForm ? '✕ Cancel' : '+ Add Part'}
             </button>
           )}
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, marginLeft: 'auto', cursor: 'pointer' }}>
-            <input type="checkbox" checked={showSent} onChange={e => setShowSent(e.target.checked)} />
-            Show sent
-          </label>
         </div>
 
         {/* Add form */}
@@ -268,7 +263,7 @@ export default function SendRfqsPage() {
         {isError && <div style={{ color: '#d93025', fontSize: 13 }}>Failed to load queue.</div>}
         {!isLoading && groups.length === 0 && (
           <div style={{ color: '#888', fontSize: 13 }}>
-            {showSent ? 'No items in queue.' : 'No unsent items — check "Show sent" to see history, or add a part above.'}
+            No items in queue. Add a part above to get started.
           </div>
         )}
 
