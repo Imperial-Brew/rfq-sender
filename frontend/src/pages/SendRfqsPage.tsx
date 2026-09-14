@@ -27,6 +27,7 @@ interface PartState {
   boxLink: string
   boxPassword: string
   showPwd: boolean
+  pwCopied: boolean
   saveLinkLoading: boolean
   saveLinkStatus: 'idle' | 'saved' | 'error'
   draftAllLoading: boolean
@@ -40,6 +41,12 @@ interface ProcState {
 }
 
 // ── Key helpers ──────────────────────────────────────────────────────────────
+
+function generateBoxPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const seg = (n: number) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  return `${seg(4)}-${seg(4)}-${seg(4)}`
+}
 
 function partKey(item: SendQueueItem): string {
   return `${item.part_number}|${item.qt_so_number || ''}`
@@ -58,6 +65,7 @@ function defaultPartState(items: SendQueueItem[]): PartState {
     boxLink: first?.box_share_link || '',
     boxPassword: first?.box_password || '',
     showPwd: false,
+    pwCopied: false,
     saveLinkLoading: false,
     saveLinkStatus: 'idle',
     draftAllLoading: false,
@@ -354,8 +362,8 @@ export default function SendRfqsPage() {
                   </button>
                 </div>
 
-                {/* Password / error sub-row */}
-                {(part.boxResult?.error || part.boxPassword) && (
+                {/* Password / error sub-row — always shown when a link exists */}
+                {(part.boxResult?.error || part.boxLink) && (
                   <div style={{
                     padding: '4px 14px 4px 42px', fontSize: 11,
                     background: '#f8f9fa',
@@ -363,19 +371,36 @@ export default function SendRfqsPage() {
                     display: 'flex', alignItems: 'center', gap: 6,
                   }}>
                     {part.boxResult?.error && <span style={{ color: '#d93025' }}>Box error: {part.boxResult.error}</span>}
-                    {part.boxPassword && !part.boxResult?.error && (
+                    {!part.boxResult?.error && (
                       <>
-                        <span style={{ color: '#666' }}>Box pwd:</span>
-                        <code style={{ userSelect: 'all', letterSpacing: part.showPwd ? 0 : 2 }}>
-                          {part.showPwd ? part.boxPassword : '••••••••••••••'}
-                        </code>
+                        <span style={{ color: '#666', whiteSpace: 'nowrap' }}>Box pwd:</span>
+                        <input
+                          value={part.boxPassword}
+                          onChange={e => setPart(key, { boxPassword: e.target.value, saveLinkStatus: 'idle' })}
+                          type={part.showPwd ? 'text' : 'password'}
+                          placeholder="No password"
+                          style={{ fontFamily: 'monospace', fontSize: 11, width: 140, padding: '2px 5px', border: '1px solid #ccc', borderRadius: 3 }}
+                        />
                         <button
                           onClick={() => setPart(key, { showPwd: !part.showPwd })}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '0 2px', color: '#666' }}
-                          title={part.showPwd ? 'Hide password' : 'Show password'}
-                        >
-                          {part.showPwd ? '🙈' : '👁'}
-                        </button>
+                          title={part.showPwd ? 'Hide' : 'Show'}
+                        >{part.showPwd ? '🙈' : '👁'}</button>
+                        <button
+                          onClick={() => setPart(key, { boxPassword: generateBoxPassword(), saveLinkStatus: 'idle' })}
+                          style={{ fontSize: 11, padding: '2px 7px', whiteSpace: 'nowrap' }}
+                          title="Generate password"
+                        >Generate</button>
+                        <button
+                          disabled={!part.boxPassword}
+                          onClick={() => {
+                            navigator.clipboard.writeText(part.boxPassword)
+                            setPart(key, { pwCopied: true })
+                            setTimeout(() => setPart(key, { pwCopied: false }), 2000)
+                          }}
+                          style={{ fontSize: 11, padding: '2px 7px' }}
+                          title="Copy password"
+                        >{part.pwCopied ? '✓' : 'Copy'}</button>
                       </>
                     )}
                   </div>

@@ -15,9 +15,7 @@ export default function QueueEditSidebar({ item, onClose, onSaved }: Props) {
   const [form, setForm] = useState({
     spec: '', material: '', quantities: '', qt_so_number: '',
     cui_itar: false, rev: '', notes: '', due_date: '', file_location: '',
-    box_share_link: '', box_password: '',
   })
-  const [pwCopied, setPwCopied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -33,8 +31,6 @@ export default function QueueEditSidebar({ item, onClose, onSaved }: Props) {
       notes: item.notes || '',
       due_date: item.due_date || '',
       file_location: item.file_location || '',
-      box_share_link: item.box_share_link || '',
-      box_password: item.box_password || '',
     })
     setError('')
   }, [item])
@@ -63,8 +59,6 @@ export default function QueueEditSidebar({ item, onClose, onSaved }: Props) {
         notes: form.notes || undefined,
         due_date: form.due_date || undefined,
         file_location: form.file_location || undefined,
-        box_share_link: form.box_share_link || undefined,
-        box_password: form.box_password || undefined,
       })
       onSaved()
     } catch (e: unknown) {
@@ -151,52 +145,6 @@ export default function QueueEditSidebar({ item, onClose, onSaved }: Props) {
             CUI / ITAR controlled
           </label>
 
-          <div style={{ borderTop: '1px solid #e8e8e8', paddingTop: 14, marginTop: 2 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Box Folder
-            </div>
-            <Field label="Share Link">
-              <input
-                value={form.box_share_link}
-                onChange={e => set('box_share_link', e.target.value)}
-                style={inputStyle}
-                placeholder="https://company.box.com/s/…"
-              />
-            </Field>
-            <div style={{ marginTop: 14 }}>
-              <Field label="Password">
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <input
-                    value={form.box_password}
-                    onChange={e => set('box_password', e.target.value)}
-                    style={{ ...inputStyle, flex: 1, fontFamily: 'monospace' }}
-                    placeholder="No password set"
-                  />
-                  <button
-                    type="button"
-                    title="Generate password"
-                    onClick={() => set('box_password', generatePassword())}
-                    style={{ padding: '6px 10px', fontSize: 13, whiteSpace: 'nowrap' }}
-                  >
-                    Generate
-                  </button>
-                  <button
-                    type="button"
-                    title="Copy to clipboard"
-                    disabled={!form.box_password}
-                    onClick={() => {
-                      navigator.clipboard.writeText(form.box_password)
-                      setPwCopied(true)
-                      setTimeout(() => setPwCopied(false), 2000)
-                    }}
-                    style={{ padding: '6px 10px', fontSize: 13 }}
-                  >
-                    {pwCopied ? '✓' : 'Copy'}
-                  </button>
-                </div>
-              </Field>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
@@ -217,15 +165,6 @@ export default function QueueEditSidebar({ item, onClose, onSaved }: Props) {
       </div>
     </>
   )
-}
-
-function generatePassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'  // no 0/O/1/I ambiguity
-  const seg = (n: number) => Array.from(
-    { length: n },
-    () => chars[Math.floor(Math.random() * chars.length)]
-  ).join('')
-  return `${seg(4)}-${seg(4)}-${seg(4)}`
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
