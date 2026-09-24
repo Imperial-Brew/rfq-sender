@@ -136,10 +136,12 @@ def update_item(
 @router.delete("/{part_number}", status_code=204)
 def remove_item(
     part_number: str,
+    process: Optional[str] = None,
     user: dict = Depends(require_role("admin")),
 ):
     """
-    Removes all queue entries matching part_number.
+    Removes queue entries matching part_number — only the row for `process`
+    when given (?process=Anodize), otherwise every process for that part.
     Admin only — this is a destructive action.
 
     Status 204 = "success, nothing to return." The client doesn't need
@@ -156,8 +158,13 @@ def remove_item(
         raise HTTPException(status_code=500, detail="Queue has no part_number column.")
 
     mask = df[col].astype(str).str.strip() == part_number.strip()
+    proc_col = next((c for c in df.columns if c.lower().strip() == "process"), None)
+    if process and proc_col:
+        mask = mask & (df[proc_col].astype(str).str.strip() == process.strip())
     if not mask.any():
-        raise HTTPException(status_code=404, detail=f"'{part_number}' not found in queue.")
+        raise HTTPException(
+            status_code=404, detail=f"'{part_number}' / '{process}' not found in queue."
+        )
 
     save_queue(df[~mask])
     # 204 responses have no body — just return None (FastAPI handles it)

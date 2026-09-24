@@ -223,9 +223,9 @@ export default function SendRfqsPage() {
     queryClient.invalidateQueries({ queryKey: ['send-rfq-queue'] })
   }
 
-  function handleDelete(partNumber: string) {
-    if (!confirm(`Remove all queue entries for "${partNumber}"?`)) return
-    deleteMutation.mutate(partNumber)
+  function handleDelete(partNumber: string, process: string) {
+    if (!confirm(`Remove "${process}" for "${partNumber}" from the queue?`)) return
+    deleteMutation.mutate({ partNumber, process })
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -457,7 +457,7 @@ export default function SendRfqsPage() {
 
                         {isAdmin && (
                           <button
-                            onClick={() => handleDelete(item.part_number)}
+                            onClick={() => handleDelete(item.part_number, item.process)}
                             disabled={deleteMutation.isPending}
                             style={{ fontSize: 12, padding: '3px 8px', background: 'none', border: '1px solid #f5c6c6', color: '#d93025', cursor: 'pointer', borderRadius: 4 }}
                             title="Remove from queue"

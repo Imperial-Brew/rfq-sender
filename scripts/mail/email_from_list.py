@@ -1788,7 +1788,7 @@ Phone: (123) 456-7890
         successful_drafts, total_quotes = process_queue(
             queue, 
             vendor_info, 
-            outlook, 
+            outlook,  # noqa: F821 - legacy Outlook COM path, never defined; app uses Graph
             logs_file, 
             template_path=template_path,
             sample_table_path=sample_table_path,
@@ -1902,7 +1902,7 @@ Phone: (123) 456-7890
         queue, vendor_info = load_data(queue_file, contacts_file, vendor_options_file, logger)
 
         # Initialize Outlook
-        outlook = initialize_outlook(logger)
+        outlook = initialize_outlook(logger)  # noqa: F821 - legacy, see above
 
         # Process queue
         successful_drafts, total_quotes = process_queue(

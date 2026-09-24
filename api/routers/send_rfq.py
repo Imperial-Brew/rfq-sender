@@ -6,6 +6,7 @@ GET   /send-rfq/vendors                — preview vendor matching (process + sp
 POST  /send-rfq/box/{part_number}      — create Box folder; optional multipart file uploads
 PATCH /send-rfq/box-link/{part_number} — save a manually entered Box link to the queue
 POST  /send-rfq/email/{part_number}    — create Outlook draft emails; marks item as sent
+                                         and logs one RFQ Master row per vendor
 """
 
 import logging
@@ -22,6 +23,7 @@ from pydantic import BaseModel
 from api.deps import get_current_user
 from utils.rfq_queue import load_queue, save_queue
 from utils.box_helpers import detect_cui_itar
+from utils.rfq_tracking import get_tracker
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -481,6 +483,7 @@ def create_email_drafts(
 
     results: List[EmailResult] = []
     any_success = False
+    drafted: List[tuple] = []  # (vendor_name, contact_email, contact_name) for RFQ Master
 
     print(
         f"[ROUTE] create_email_drafts: part={part_number!r} process_param={body.process!r} vendors={len(vendors)}"
@@ -534,6 +537,7 @@ def create_email_drafts(
         ))
         if success:
             any_success = True
+            drafted.append((vendor.name, recipient, contact.name))
             # CUI/ITAR: send the Box folder password in a separate email so
             # it is never in the same message as the folder link.
             # LOGIC: we only send the second email if box_password is not empty.
@@ -546,7 +550,7 @@ def create_email_drafts(
                     f"<p>Please use this password to access the folder shared in the "
                     f"accompanying RFQ email.</p>"
                 )
-                print(f"[ROUTE] sending password draft to={recipient!r} password={box_password!r} is_cui={is_cui_val}", flush=True)
+                print(f"[ROUTE] sending password draft to={recipient!r}", flush=True)
                 pw_success = em.create_draft_email(
                     recipient=recipient,
                     subject=pw_subject,
@@ -576,4 +580,34 @@ def create_email_drafts(
         except Exception as e:
             logger.warning(f"Could not mark item as sent: {e}")
 
+        _log_to_rfq_master(row_dict, drafted, share_link)
+
     return results
+
+
+def _log_to_rfq_master(row_dict: dict, drafted: List[tuple], share_link: str) -> None:
+    """Record one RFQ Master row per vendor that got a draft.
+
+    Re-drafting the same part/process/vendor/contact updates the existing row
+    instead of adding a duplicate. Failures are logged, never raised: the
+    drafts already exist in Outlook, so the request should still succeed.
+    """
+    try:
+        tracker = get_tracker()
+    except Exception as e:
+        logger.warning(f"RFQ Master unavailable; {len(drafted)} draft(s) not logged: {e}")
+        return
+    for vendor_name, contact_email, contact_name in drafted:
+        try:
+            tracker.add_master_entry(
+                row_dict,
+                vendor_name=vendor_name,
+                contact_email=contact_email,
+                contact_name=contact_name,
+                status="pending",
+                rfq_folder_link=share_link or None,
+                dedupe=True,
+                on_duplicate="update",
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log RFQ Master row for {vendor_name}/{contact_email}: {e}")

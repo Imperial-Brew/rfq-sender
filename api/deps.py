@@ -14,6 +14,9 @@ instead of running the route at all. This is how auth works throughout the app.
 """
 
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
@@ -26,7 +29,28 @@ _bearer = HTTPBearer()
 # A JWT is signed with this key — if someone tampers with the token,
 # the signature won't match and jwt.decode() will raise an error.
 # NEVER hardcode this in production — always use an environment variable.
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "change-me-before-deploying")
+#
+# The app refuses to start without a real key: a known default would let
+# anyone who has read this repo forge a token for any user, including admins.
+# Locally, put JWT_SECRET_KEY in .env (loaded below); on Render, set it as an
+# environment variable on the service.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+_INSECURE_DEFAULTS = {"", "change-me-before-deploying"}
+
+
+def _load_secret_key() -> str:
+    key = os.environ.get("JWT_SECRET_KEY", "").strip()
+    if key in _INSECURE_DEFAULTS:
+        raise RuntimeError(
+            "JWT_SECRET_KEY is not set (or is still the placeholder). Generate one with\n"
+            '  python -c "import secrets; print(secrets.token_hex(32))"\n'
+            "and set it in .env (local) or the Render service's environment variables."
+        )
+    return key
+
+
+SECRET_KEY = _load_secret_key()
 ALGORITHM = "HS256"
 
 

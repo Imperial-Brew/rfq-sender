@@ -391,11 +391,12 @@ class RFQTracking:
                                         df.loc[match_idx, _col(df, "rfq_folder")] = rfq_folder
                                 except Exception:
                                     pass
-                                try:
-                                    if _col(df, "date"):
-                                        df.loc[match_idx, _col(df, "date")] = now_iso
-                                except Exception:
-                                    pass
+                                for _ts_col in ("date", "sent"):
+                                    try:
+                                        if _col(df, _ts_col):
+                                            df.loc[match_idx, _col(df, _ts_col)] = now_iso
+                                    except Exception:
+                                        pass
                                 # Save back
                                 try:
                                     if self.master_store is not None:
@@ -433,6 +434,7 @@ class RFQTracking:
             "email": contact_value,
             "rfq_folder": rfq_folder,
             "status": status,
+            "sent": datetime.now().isoformat(timespec="seconds"),
             "notes": notes or "",
             "validation_status": "ok" if ok else f"mismatch: {msg}",
         }
