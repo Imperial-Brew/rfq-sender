@@ -69,3 +69,7 @@ $RECYCLE.BIN/
 .coverage.*
 .venv/.streamlit/secrets.toml
 .streamlit/secrets.toml
+
+# Local data — kept on disk, not in git (real vendor emails, quotes, DBs)
+data_raw/
+data_cleaned/

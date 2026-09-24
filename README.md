@@ -25,7 +25,7 @@ for email drafts · Box for files and shared data. Deployed on Render.
 | **Queue** (`/queue`) | Add parts (one row per part + process), edit them, create a Box folder and share link per part (password-protected automatically for CUI/ITAR), and create Outlook drafts for every vendor approved for that process/spec. Drafts are never sent automatically. |
 | **Vendors** (`/vendors`) | Search vendors, see contacts and process/spec approvals, add approvals. |
 | **Specs** (`/specs`) | Browse and add "familiar specs" per process and issuer. |
-| **RFQ Master** (`/rfq-master`) | One row per RFQ sent to a vendor. A row is added automatically each time a draft is created; update status, received date and notes by hand. |
+| **RFQ Master** (`/rfq-master`) | One row per part + process + vendor. A row is added automatically when a draft is created (re-drafting updates it instead of duplicating); update status, received date and notes by hand. |
 
 For CUI/ITAR parts the Box password is sent in a **second, separate** draft so it
 never travels with the link.
@@ -110,14 +110,18 @@ email), so each user's email must be a real Microsoft 365 mailbox in the tenant.
 
 ## Users and logins
 
-Accounts live in `users.yaml` (committed; passwords are bcrypt-hashed). The API
-knows three roles; any other value (e.g. `engineer`, `Buyer`) is treated as `viewer`.
+Accounts live in `users.yaml` (committed; passwords are bcrypt-hashed). Role names
+are case-insensitive; any unrecognized role is treated as `viewer`.
 
-| Action | Minimum role |
-|--------|--------------|
-| View everything, create Box folders, create drafts, edit RFQ Master rows | any logged-in user |
-| Add/edit queue items, add vendor approvals | `estimator` |
-| Delete queue items or RFQ Master rows, add specs | `admin` |
+| Role | Can do |
+|------|--------|
+| `viewer` | View everything (read only) |
+| `buyer`, `engineer` | + create Box folders / save links and passwords, create Outlook drafts, edit RFQ Master rows |
+| `estimator` | + add and edit queue items, add vendor approvals |
+| `admin` | + delete queue items and RFQ Master rows, add specs |
+
+The roles are defined in `api/deps.py` (`_ROLE_RANK`) and mirrored in
+`frontend/src/api/auth.ts`; the UI hides or disables actions a role can't do.
 
 To add a user or reset a password:
 ```bash
@@ -152,9 +156,9 @@ pull request to `master`.
 
 ## Roadmap / not built yet
 
-- **Vendor response tracking.** Nothing reads replies or quotes yet. Sample
-  `.eml`/`.msg` files are in `data_raw/RFQ responses/`, and `rfq_responses.csv`
-  plus its Box IDs are reserved for this.
+- **Vendor response tracking.** Nothing reads replies or quotes yet.
+  `rfq_responses.csv` and its Box IDs are reserved for this. (Sample reply emails
+  live in the local-only `data_raw/` folder, which is not in git.)
 - Importing parts into the queue automatically (e.g. from Paperless Parts).
 - Customer approved-vendor lists (AVLs); spec classes and exceptions.
 - Material and hardware RFQs (only outside processing is supported today).
