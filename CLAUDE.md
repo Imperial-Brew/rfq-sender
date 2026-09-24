@@ -4,29 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RFQ Sender is a manufacturing Request for Quote (RFQ) management system. It handles vendor communication, secure file sharing via Box, and quote tracking. The app is in active migration from a Streamlit UI to a FastAPI + React stack.
+RFQ Sender is a manufacturing Request for Quote (RFQ) tool: queue parts, share files
+securely via Box, and create Outlook drafts to approved vendors via Microsoft Graph.
+It is a FastAPI backend + React frontend deployed as one Render web service. The old
+Streamlit UI has been removed (commit `d0f06e9`); don't reintroduce Streamlit code.
 
 ## Commands
 
-### Backend (Python)
+### Backend (Python 3.11)
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-pip install -r requirements-api.txt   # FastAPI-specific
+pip install -r requirements.txt -r requirements-api.txt
 
-# Run legacy Streamlit UI
-streamlit run streamlit_app\app.py
-
-# Run FastAPI backend
 uvicorn api.main:app --reload          # http://localhost:8000, docs at /docs
+                                       # needs JWT_SECRET_KEY in .env (see .env.example)
 
-# Run tests
-pytest -q                              # all tests
-pytest tests/email -v                  # single directory
-pytest tests/email/test_graph.py -v   # single file
+pytest -q                              # all tests (conftest sets a test JWT secret)
+pytest tests/api_routes -v             # FastAPI route tests
+pytest tests/mail/test_utils.py -v     # single file
 
-# Lint / format
 flake8
 black --check .
 isort --check-only .
@@ -39,9 +35,10 @@ mypy
 cd frontend
 npm install
 npm run dev        # http://localhost:5173 (proxies /api → localhost:8000)
-npm run build
-npm run lint
+npm run build      # tsc type-check + vite build → frontend/dist (served by FastAPI)
 ```
+
+There is no frontend lint script; `npm run build` is the type check.
 
 ## Architecture
 
@@ -49,76 +46,81 @@ npm run lint
 
 | Layer | Technology |
 |-------|-----------|
-| Legacy UI | Streamlit (production, maintained) |
-| New UI | React 18 + TypeScript + Vite |
-| API | FastAPI + Uvicorn |
+| UI | React 18 + TypeScript + Vite |
+| API | FastAPI + Uvicorn (also serves `frontend/dist` in production) |
 | Data fetching | TanStack React Query |
-| Auth (API) | JWT via `python-jose` + bcrypt |
-| Email | Microsoft Graph API (creates Outlook drafts) |
+| Auth | JWT via `python-jose`; bcrypt hashes in `users.yaml` |
+| Email | Microsoft Graph — creates Outlook drafts, never sends |
 | File storage | Box SDK (JWT auth) |
-| Database | SQLite (dev); CSV files for queue/specs/responses |
+| Data | CSV files (queue, specs, RFQ master, responses) stored in Box, with local CSV fallback under `docs/` when Box IDs aren't configured |
 
 ### Directory Layout
 
 ```
-api/             FastAPI app (new backend)
-  main.py        App entry point
-  deps.py        JWT auth dependency (get_current_user)
-  routers/       auth, queue, specs, vendors
+api/
+  main.py        App entry; mounts routers under /api/*, serves the SPA
+  deps.py        get_current_user / require_role; loads JWT_SECRET_KEY (fails fast if unset)
+  routers/       auth, queue, specs, vendors, rfq_master, send_rfq
   models/        Pydantic schemas
-core/            Shared business logic used by both Streamlit and FastAPI
-  config.py      Centralized config and logging setup
-  email/         Microsoft Graph client, email composition
-  auth/          User YAML management
-  queue/         Queue CRUD
-  specs/         Specifications logic
-  vendors/       Vendor management
+core/
+  config.py      Config + logging; loads .env, maps [box] secrets to env vars
+  secrets.py     get_section(): reads .streamlit/secrets.toml or STREAMLIT_SECRETS_TOML
+  email/         Graph client (graph_client.py), EmailManager (templates + drafts)
+  specs/         SpecManager
+  vendors/       VendorManager (config/vendors.json, docs/OS/*)
+utils/
+  auth.py        users.yaml loading, bcrypt
+  rfq_queue.py   Queue load/save (Box-first, local fallback)
+  rfq_tracking.py RFQ Master / responses CSVs (get_tracker(), add_master_entry)
+  box_helpers.py Box folder/share/password helpers used by send_rfq
+scripts/box/     BoxIntegration + Box-backed CSV stores
 frontend/src/
   api/           Axios API client functions
   context/       AuthContext (JWT storage)
-  pages/         Page-level components
-  components/    Shared UI components
-streamlit_app/   Legacy UI (still active in production)
-utils/           Thin helpers used by Streamlit pages
+  pages/         SendRfqsPage (the /queue page), VendorsPage, SpecsPage, RfqMasterPage, LoginPage
+  components/    Nav, AddToQueueForm, QueueEditSidebar, BoxUploadModal
 templates/       Jinja2 email templates
-tests/           Mirrors core/ structure
+tests/           pytest; tests/api_routes covers the FastAPI layer
+docs/archive/    Historical notes — do not treat as current
 ```
 
-### Request Flow (FastAPI + React)
+`core/auth/` and `core/queue/` are empty packages; the real code is in `utils/`.
+
+### Request Flow
 
 ```
 React component
-  → frontend/src/api/*.ts  (axios, Bearer token)
-  → Vite proxy strips /api prefix
-  → FastAPI router (api/routers/*.py)
-  → get_current_user() JWT check (api/deps.py)
-  → core/* business logic
-  → SQLite / Box / Microsoft Graph
+  → frontend/src/api/*.ts  (axios, Bearer token, baseURL /api)
+  → FastAPI router (api/routers/*.py, mounted at /api/...)
+  → get_current_user() / require_role() (api/deps.py)
+  → utils/* and core/* business logic
+  → Box CSVs / Microsoft Graph
 ```
 
-### Authentication
+### Queue identity
 
-- Users stored in `users.yaml`; passwords hashed with bcrypt (`utils/auth.py`)
-- FastAPI login (`api/routers/auth.py`) returns a signed JWT (8-hour expiry)
-- Frontend stores token in memory/sessionStorage; sends as `Authorization: Bearer <token>`
-- `get_current_user()` in `api/deps.py` decodes and validates on every protected route
+A queue row is identified by **part_number + process** (one part can need several
+finishes). Routes that act on one row take the process in the body or a query param;
+don't match on part_number alone.
 
-### Email
+### Drafting flow (`POST /api/send-rfq/email/{part_number}`)
 
-Email is sent exclusively through Microsoft Graph (creates an Outlook draft, no direct SMTP). Credentials come from `.streamlit/secrets.toml` under `[azure]`. The Graph client is at `core/email/graph_client.py`.
+Finds vendors for process/spec → one Graph draft per vendor in the logged-in user's
+mailbox → for CUI/ITAR a second draft with the Box password → stamps the queue row's
+`sent` → logs one RFQ Master row per successful vendor (`_log_to_rfq_master`).
+Never log Box passwords.
 
 ## Configuration
 
-### `.streamlit/secrets.toml` (required)
+Two places only (templates are checked in):
 
-Contains Azure OAuth credentials (`[azure]`), company branding (`[company]`), Box config (`[box]`), and email settings (`[exchange]`, `[app]`). This file is the single source of truth for all runtime secrets.
+- **`.env`** (local) / Render env var: `JWT_SECRET_KEY` (required), optional
+  `USERS_FILE`, `FRONTEND_ORIGIN`. Template: `.env.example`.
+- **`.streamlit/secrets.toml`** (local) / Render env var `STREAMLIT_SECRETS_TOML`
+  (whole file): `[azure]`, `[box]`, `[company]`, `[exchange]`, `[app]`.
+  Template: `.streamlit/secrets.toml.example`. The folder name is historical.
 
-### `.env` (optional, API mode)
-
-```
-JWT_SECRET_KEY=<generate with: python -c "import secrets; print(secrets.token_hex(32))">
-USERS_FILE=users.yaml
-```
+See the README's "Configuration" section for the full key list.
 
 ## Code Conventions
 
@@ -126,4 +128,5 @@ USERS_FILE=users.yaml
 - **Type hints**: required on all function signatures
 - **Commit format**: `<scope>(<module>): <summary>` — e.g. `feat(email): add graph retry logic`
 - **Frontend state**: TanStack React Query for server state; React Context for auth
+- Default branch is `master`; CI runs pytest + frontend build on push/PR
 - Pre-commit hooks enforce flake8, black, isort, and mypy

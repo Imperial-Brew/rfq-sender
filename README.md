@@ -1,146 +1,167 @@
-# RFQ Sender System
+# RFQ Sender
 
-A modern system for managing and sending Request for Quote (RFQ) emails to multiple vendors for finishing, material, and hardware quotes. Featuring a React frontend and FastAPI backend.
+Internal tool for sending Requests for Quote (RFQs) to outside-processing vendors
+(finishing, plating, heat treat, …): build a queue of parts, share the part files
+securely through Box, and create personalized Outlook drafts for every approved
+vendor.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**Stack:** React 18 + TypeScript (Vite) frontend · FastAPI backend · Microsoft Graph
+for email drafts · Box for files and shared data. Deployed on Render.
 
-## Table of Contents
-- [Problem Statement](#problem-statement)
-- [Solution](#solution)
-- [Project Structure](#project-structure)
-- [Setup](#setup)
-- [Environment Variables](#environment-variables)
-- [Usage](#usage)
-- [Development](#development)
-- [Scalability](#scalability)
-- [Contributing](#contributing)
-- [License](#license)
+## Contents
+- [What it does today](#what-it-does-today)
+- [Project structure](#project-structure)
+- [Local setup](#local-setup)
+- [Configuration: which secret goes where](#configuration-which-secret-goes-where)
+- [Users and logins](#users-and-logins)
+- [Deploying on Render](#deploying-on-render)
+- [Testing and CI](#testing-and-ci)
+- [Roadmap / not built yet](#roadmap--not-built-yet)
 
-## Problem Statement
+## What it does today
 
-- Need to manage quotes for finishing/material/hardware
-- Working with multiple vendors, each with multiple contacts
-- Dealing with various processes with different industry names and specifications
-- Managing customers with their own internal naming conventions
-- Handling file sharing with security requirements (CUI/ITAR)
+| Page | What you can do |
+|------|-----------------|
+| **Queue** (`/queue`) | Add parts (one row per part + process), edit them, create a Box folder and share link per part (password-protected automatically for CUI/ITAR), and create Outlook drafts for every vendor approved for that process/spec. Drafts are never sent automatically. |
+| **Vendors** (`/vendors`) | Search vendors, see contacts and process/spec approvals, add approvals. |
+| **Specs** (`/specs`) | Browse and add "familiar specs" per process and issuer. |
+| **RFQ Master** (`/rfq-master`) | One row per RFQ sent to a vendor. A row is added automatically each time a draft is created; update status, received date and notes by hand. |
 
-## Solution
+For CUI/ITAR parts the Box password is sent in a **second, separate** draft so it
+never travels with the link.
 
-The RFQ Sender System provides:
-
-- **React Web Interface**: Modern, responsive UI for queue and vendor management.
-- **FastAPI Backend**: High-performance API for data processing and integration.
-- **Secure File Sharing**: CUI/ITAR compliant sharing via Box integration.
-- **Accurate Specifications**: Process specifications mapping to vendor-friendly data.
-- **Automated Drafting**: Integration with Microsoft Graph for automated Outlook drafts.
-- **BOM Integration**: File preparation and organization based on Bill of Materials.
-
-## Project Structure
+## Project structure
 
 ```
-rfq-sender/
-├── api/              # FastAPI backend application
-├── cli/              # Command-line interface tools
-├── config/           # Configuration files (vendors, email settings)
-├── core/             # Core application modules
-├── data_raw/         # Raw data files (CSV, input files)
-├── data_cleaned/     # Processed data files (databases, cleaned data)
-├── docs/             # Documentation
-├── frontend/         # React (Vite + TypeScript) web application
-├── logs/             # Application logs
-├── scripts/          # Python scripts
-├── templates/        # Jinja2 templates for emails and forms
-├── tests/            # Test files
-└── utils/            # Utility modules (specs, queue, email, auth)
+api/              FastAPI app — main.py, deps.py (JWT auth), routers/, models/
+core/             Business logic: config, secrets loader, email (Graph), specs, vendors
+utils/            Queue, auth, Box helpers, RFQ tracking — used by the API
+scripts/box/      Box SDK integration (BoxIntegration, CSV stores)
+frontend/         React app (Vite + TypeScript); `npm run build` → frontend/dist/
+config/           vendors.json, process master, email templates
+docs/             Working CSVs (local fallback when Box isn't configured), OS vendor data
+docs/archive/     Old notes — historical only
+templates/        Jinja2 email templates
+tests/            pytest suite (tests/api_routes covers the FastAPI layer)
+users.yaml        Login accounts (bcrypt hashes)
 ```
 
-## Setup
+## Local setup
 
-### Backend (Python)
+**Prerequisites:** Python 3.11, Node 20.
 
-1. Clone this repository
-2. Create a virtual environment:
-   ```powershell
-   python -m venv venv
-   venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   pip install -r requirements-api.txt
-   ```
-4. Set up environment variables:
-   - Copy `.env.example` to `.env`
-   - Edit `.env` with your actual configuration values
-
-### Frontend (React)
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-## Usage
-
-### Running the API
-
-Start the FastAPI server:
 ```bash
+# 1. Python environment
+python -m venv venv
+venv\Scripts\activate            # Windows  (macOS/Linux: source venv/bin/activate)
+pip install -r requirements.txt -r requirements-api.txt
+
+# 2. Configuration — see the next section for what goes in each file
+copy .env.example .env                                   # macOS/Linux: cp
+copy .streamlit\secrets.toml.example .streamlit\secrets.toml
+
+# 3. Run the API  →  http://localhost:8000  (interactive docs at /docs)
 uvicorn api.main:app --reload
+
+# 4. Run the frontend (second terminal)  →  http://localhost:5173
+cd frontend
+npm install
+npm run dev                       # proxies /api → localhost:8000
 ```
-The API documentation will be available at `http://localhost:8000/docs`.
 
-### Running the CLI
+Check the Graph connection any time with `python scripts/smoke_graph.py`.
 
-CLI tools are available in the `cli/` directory for automation.
+## Configuration: which secret goes where
 
-### Mail backend (Microsoft Graph)
+There are exactly **two places** configuration lives. Each has a checked-in
+template listing every key with comments:
 
-The system uses Microsoft Graph to create Draft emails.
+| What | Local machine | Render | Template |
+|------|---------------|--------|----------|
+| `JWT_SECRET_KEY` — signs logins. **Required**; the API won't start without it. | `.env` | Environment variable `JWT_SECRET_KEY` | [`.env.example`](.env.example) |
+| Everything else: `[azure]` Graph credentials, `[box]` JWT config + file IDs, `[company]` branding, `[exchange]`, `[app]` | `.streamlit/secrets.toml` | Environment variable `STREAMLIT_SECRETS_TOML` containing the **entire** TOML file | [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example) |
 
-- Configure your Azure app credentials and company information in your environment variables or `.env` file.
-- Use `scripts/smoke_graph.py` to verify Graph connectivity.
+Notes:
+- Both real files (`.env`, `.streamlit/secrets.toml`) are git-ignored. Never commit them.
+- Locally, `.streamlit/secrets.toml` takes priority over `STREAMLIT_SECRETS_TOML`.
+- The `.streamlit` folder name is historical; Streamlit itself is no longer used.
+- **Use a different `JWT_SECRET_KEY` locally than on Render.** Changing it just logs
+  everyone out; nothing else is affected.
+- If the `[box]` file/folder IDs are empty, the app reads and writes the local CSVs
+  under `docs/` instead of the shared Box copies. That's handy for local testing,
+  but those changes won't be visible on Render.
 
-## Environment Variables
+### Keys at a glance
 
-The application uses environment variables for configuration. See `.env.example` for a full list.
+| Section | Keys | Used for |
+|---------|------|----------|
+| `[azure]` | `tenant_id`, `client_id`, `client_secret` | Creating Outlook drafts via Microsoft Graph. The Azure app needs the **application** permission `Mail.ReadWrite` with admin consent. |
+| `[box]` | `BOX_JWT_JSON` | Box app auth (paste the full JSON from the Box Developer Console). |
+| `[box]` | `BOX_QUEUE_FILE_ID` / `_FOLDER_ID` | Shared queue CSV. |
+| `[box]` | `BOX_FAMILIAR_SPECS_FILE_ID` | Specs page data. |
+| `[box]` | `BOX_RFQ_MASTER_FILE_ID` / `_FOLDER_ID` | RFQ Master log. |
+| `[box]` | `BOX_RFQ_RESPONSES_FILE_ID` / `_FOLDER_ID` | Vendor responses (reserved for response tracking). |
+| `[company]` | `name`, `logo_url`, `address`, `sender_name`, `sender_title`, `sender_email`, `sender_phone` | Email template branding and signature. |
+| `[exchange]` | `username`, `cc` | Fallback mailbox for scripts; optional CC on every RFQ. |
+| `[app]` | `subject_prefix` | Prefix for every email subject. |
 
-### Box Integration
+Drafts are created in the mailbox of **whoever is logged in** (their `users.yaml`
+email), so each user's email must be a real Microsoft 365 mailbox in the tenant.
 
-Box integration uses JWT authentication. 
-1. Create a Box Custom App with JWT.
-2. Save the configuration JSON as `scripts/box/0__config.json`.
-3. For more details on the hybrid folder structure, see [Box Hybrid Structure](.junie/mds/box_hybrid_structure.md).
+## Users and logins
 
-## Development
+Accounts live in `users.yaml` (committed; passwords are bcrypt-hashed). The API
+knows three roles; any other value (e.g. `engineer`, `Buyer`) is treated as `viewer`.
 
-This project follows the style guidelines in [.junie/mds/guidelines.md](.junie/mds/guidelines.md).
+| Action | Minimum role |
+|--------|--------------|
+| View everything, create Box folders, create drafts, edit RFQ Master rows | any logged-in user |
+| Add/edit queue items, add vendor approvals | `estimator` |
+| Delete queue items or RFQ Master rows, add specs | `admin` |
 
-### Testing
-Run tests using pytest:
+To add a user or reset a password:
 ```bash
-pytest
+python pw_gen.py        # prompts for email + password, prints the hash
+```
+Paste the hash into `users.yaml` as `password_hash`, commit, and redeploy.
+Logins last 8 hours.
+
+## Deploying on Render
+
+The service is a single Render **Web Service**: FastAPI serves the API and the
+built React app from the same origin.
+
+| Setting | Value |
+|---------|-------|
+| Runtime | Python 3.11 (`runtime.txt`) |
+| Build command | `pip install -r requirements.txt -r requirements-api.txt && cd frontend && npm ci && npm run build` |
+| Start command | `uvicorn api.main:app --host 0.0.0.0 --port $PORT` |
+| Environment variables | `JWT_SECRET_KEY` (random, 64 hex chars), `STREAMLIT_SECRETS_TOML` (full contents of your filled-in `secrets.toml`), `PYTHONUNBUFFERED=1` |
+
+Health check: `GET /health`.
+
+## Testing and CI
+
+```bash
+pytest -q                 # backend (JWT_SECRET_KEY is set automatically for tests)
+cd frontend && npm run build   # type-check + build
 ```
 
-## Scalability
+GitHub Actions (`.github/workflows/python-tests.yml`) runs both on every push and
+pull request to `master`.
 
-The RFQ Sender system is designed to handle a moderate volume of RFQs. For larger scale operations:
-- **Database**: Migrate from SQLite to PostgreSQL.
-- **Async**: API is built on FastAPI for asynchronous performance.
-- **Storage**: Leverages Box for scalable, secure file storage.
+## Roadmap / not built yet
 
-## Contributing
+- **Vendor response tracking.** Nothing reads replies or quotes yet. Sample
+  `.eml`/`.msg` files are in `data_raw/RFQ responses/`, and `rfq_responses.csv`
+  plus its Box IDs are reserved for this.
+- Importing parts into the queue automatically (e.g. from Paperless Parts).
+- Customer approved-vendor lists (AVLs); spec classes and exceptions.
+- Material and hardware RFQs (only outside processing is supported today).
 
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [`CHANGELOG.md`](CHANGELOG.md) for history. Older design notes are in
+[`docs/archive/`](docs/archive/). They're historical and don't describe the current app.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT. See [LICENSE](LICENSE).

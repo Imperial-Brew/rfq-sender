@@ -7,8 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- The API now refuses to start unless `JWT_SECRET_KEY` is set to a real value. Previously it
+  silently fell back to a placeholder published in the repo, which would let anyone forge an
+  admin login.
+- CUI/ITAR Box passwords are no longer printed to the server log when drafting.
+
+### Fixed
+- Drafting RFQ emails logs one row per vendor to RFQ Master again (with the `sent`
+  timestamp). This was lost when the Streamlit pages were removed.
+- Deleting a queue row from the Queue page removes only that process, not every process
+  for the part. `DELETE /api/queue/{part}` accepts `?process=`.
+- Box RFQ folders are named after the quote number (`qt/so #`) instead of `UNKNOWN_QUOTE`.
+- CI now runs: it targeted `main` (the branch is `master`) and Python 3.8. It now tests on
+  3.11/3.12 with the API dependencies and builds the frontend.
+
+### Added
+- `tests/api_routes/`: tests for auth, queue delete, and drafting → RFQ Master.
+- `.streamlit/secrets.toml.example` and a rewritten `.env.example`, which together list
+  every setting. The README documents which settings go where, locally and on Render.
+
+### Changed
+- README and CLAUDE.md rewritten to describe the current FastAPI + React app.
+- Old agent notes moved from `.junie/mds/` to `docs/archive/junie-notes/`.
+- Removed the unused `frontend/src/pages/QueuePage.tsx`.
+
 ### Removed
-- Streamlit Web Interface: Removed the Streamlit-based web application (`streamlit_app/`, `.streamlit/`, `old.app.py`, `render.yaml`) in favor of the new React frontend and FastAPI backend.
+- Streamlit Web Interface: Removed the Streamlit-based web application (`streamlit_app/`, `old.app.py`, `render.yaml`) in favor of the new React frontend and FastAPI backend. Secrets still use the `.streamlit/secrets.toml` format (or the `STREAMLIT_SECRETS_TOML` env var).
 - Streamlit Dependency: Removed `streamlit` from `requirements.txt`.
 
 ### Fixed
@@ -19,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ITAR/CUI Password Auto-fix: Added logic to automatically generate a password and update the Box folder share link if a password is missing for ITAR/CUI parts when drafting emails. This ensures compliance even if the folder was initially shared without protection.
 - Personalized salutations: Updated email drafting to use the contact's first name only instead of their full name. Added fallbacks to the vendor name or a generic "Team" if no contact name is available.
 
-### Changed
+### Changed (Streamlit era, before its removal)
 - Familiar Specs now load from Box when `[box].BOX_FAMILIAR_SPECS_FILE_ID` is
   configured; falls back to local CSV if Box is unavailable. Updated
   SpecManager and Streamlit Specifications page to be Box-aware.
@@ -34,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - utils.specs now rebuilds SpecManager on each call (no module-level singleton)
   so the current Box file ID and credentials are always respected across reruns.
 
-### Fixed
+### Fixed (Streamlit era, before its removal)
 - Suppress config warning for missing local FamiliarSpecs.csv when
   `BOX_FAMILIAR_SPECS_FILE_ID` is set.
 - Prevented AttributeError when no process is selected in Streamlit Queue

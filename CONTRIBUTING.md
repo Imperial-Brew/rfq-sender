@@ -12,7 +12,7 @@ Please be respectful and considerate of others when contributing to this project
 
 If you find a bug or have a suggestion for improvement:
 
-1. Check if the issue already exists in the [GitHub Issues](https://github.com/yourusername/rfq-sender/issues)
+1. Check if the issue already exists in the [GitHub Issues](https://github.com/imperial-brew/rfq-sender/issues)
 2. If not, create a new issue with a descriptive title and detailed description
 3. Include steps to reproduce the issue, expected behavior, and actual behavior
 4. Add relevant screenshots or error messages if applicable
@@ -26,7 +26,7 @@ If you find a bug or have a suggestion for improvement:
 5. Run tests to ensure they pass
 6. Commit your changes with a descriptive commit message following the format: `<scope>(<module>): <short summary>`
 7. Push your branch to your fork
-8. Submit a pull request to the main repository
+8. Submit a pull request against `master`
 
 ## Development Setup
 
@@ -34,7 +34,7 @@ Follow the setup instructions in the README.md file to set up your development e
 
 ## Coding Standards
 
-This project follows the style guidelines outlined in the [Project Style Guidelines](.junie/mds/guidelines.md), which include:
+This project follows the style guidelines outlined in the Code Conventions section of [CLAUDE.md](CLAUDE.md), which include:
 
 - Using type hints for all function parameters and return values
 - Following PEP 8 style guidelines
