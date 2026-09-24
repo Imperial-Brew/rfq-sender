@@ -86,6 +86,21 @@ def test_delete_unknown_process_is_404(client, fake_queue) -> None:
     assert len(fake_queue["df"]) == 3
 
 
+def test_delete_unknown_part_message_omits_process(client, fake_queue) -> None:
+    r = client.delete("/api/queue/P-404", headers=_auth())
+    assert r.status_code == 404
+    assert r.json()["detail"] == "'P-404' not found in queue."
+
+
+def test_delete_with_process_fails_closed_without_process_column(client, monkeypatch) -> None:
+    state = {"df": pd.DataFrame({"part_number": ["P-1", "P-1"]})}
+    monkeypatch.setattr(queue_router, "load_queue", lambda: state["df"].copy())
+    monkeypatch.setattr(queue_router, "save_queue", lambda df: state.__setitem__("df", df))
+    r = client.delete("/api/queue/P-1", params={"process": "Anodize"}, headers=_auth())
+    assert r.status_code == 500
+    assert len(state["df"]) == 2  # nothing deleted
+
+
 def test_delete_requires_admin(client, fake_queue) -> None:
     r = client.delete("/api/queue/P-1", headers=_auth("estimator"))
     assert r.status_code == 403

@@ -158,13 +158,15 @@ def remove_item(
         raise HTTPException(status_code=500, detail="Queue has no part_number column.")
 
     mask = df[col].astype(str).str.strip() == part_number.strip()
-    proc_col = next((c for c in df.columns if c.lower().strip() == "process"), None)
-    if process and proc_col:
+    if process:
+        proc_col = next((c for c in df.columns if c.lower().strip() == "process"), None)
+        if proc_col is None:
+            # Fail closed: never fall back to deleting every process for the part.
+            raise HTTPException(status_code=500, detail="Queue has no process column.")
         mask = mask & (df[proc_col].astype(str).str.strip() == process.strip())
     if not mask.any():
-        raise HTTPException(
-            status_code=404, detail=f"'{part_number}' / '{process}' not found in queue."
-        )
+        target = f"'{part_number}' / '{process}'" if process else f"'{part_number}'"
+        raise HTTPException(status_code=404, detail=f"{target} not found in queue.")
 
     save_queue(df[~mask])
     # 204 responses have no body — just return None (FastAPI handles it)

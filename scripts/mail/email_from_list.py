@@ -1624,6 +1624,20 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def initialize_outlook(logger: logging.Logger) -> Any:
+    """The Outlook desktop (COM) backend was removed; fail with a clear message.
+
+    Drafts are now created through Microsoft Graph from the web app
+    (POST /api/send-rfq/email/{part_number}).
+    """
+    msg = (
+        "email_from_list.py's Outlook desktop (COM) sending was removed. "
+        "Create RFQ drafts from the web app, which uses Microsoft Graph."
+    )
+    logger.error(msg)
+    raise RuntimeError(msg)
+
+
 def interactive_mode(
     project_root: str,
     logger: logging.Logger
@@ -1635,6 +1649,7 @@ def interactive_mode(
         project_root: Path to the project root directory
         logger: Logger for logging messages
     """
+    outlook = initialize_outlook(logger)  # raises: legacy backend removed
     console.print("[bold blue]Email From List - Interactive Mode[/bold blue]")
     console.print("This tool creates draft emails from a queue of RFQs.")
 
@@ -1788,7 +1803,7 @@ Phone: (123) 456-7890
         successful_drafts, total_quotes = process_queue(
             queue, 
             vendor_info, 
-            outlook,  # noqa: F821 - legacy Outlook COM path, never defined; app uses Graph
+            outlook,
             logs_file, 
             template_path=template_path,
             sample_table_path=sample_table_path,
@@ -1902,7 +1917,7 @@ Phone: (123) 456-7890
         queue, vendor_info = load_data(queue_file, contacts_file, vendor_options_file, logger)
 
         # Initialize Outlook
-        outlook = initialize_outlook(logger)  # noqa: F821 - legacy, see above
+        outlook = initialize_outlook(logger)
 
         # Process queue
         successful_drafts, total_quotes = process_queue(
