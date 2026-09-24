@@ -117,6 +117,13 @@ class RFQTracking:
             header = []
         return header or default
 
+    @staticmethod
+    def _with_process_column(header: list) -> list:
+        """Return header with a `process` column inserted after part_number (or appended)."""
+        low = [str(c).lower().strip() for c in header]
+        pos = low.index("part_number") + 1 if "part_number" in low else len(header)
+        return list(header[:pos]) + ["process"] + list(header[pos:])
+
     def _ensure_file_from_template(self, dest: Path, template: Path) -> None:
         if dest.exists():
             return
@@ -303,6 +310,23 @@ class RFQTracking:
                     header = next(reader)
             except Exception:
                 header = []
+
+        # Older RFQ Master files have no `process` column. Add it (after part_number) so
+        # each row says which finish it is for and re-drafting the same part/process/vendor
+        # updates the existing row instead of appending a duplicate. Existing rows keep a
+        # blank process.
+        if header and "process" not in [str(c).lower().strip() for c in header]:
+            header = self._with_process_column(header)
+            if existing_df is not None:
+                existing_df = existing_df.reindex(columns=header, fill_value="")
+            elif self.master_path.exists():
+                try:
+                    local_df = pd.read_csv(self.master_path, dtype=str, keep_default_na=False)
+                    local_df.reindex(columns=header, fill_value="").to_csv(
+                        self.master_path, index=False
+                    )
+                except Exception as _e:
+                    logger.warning(f"Could not add process column to {self.master_path}: {_e}")
 
         # Prepare values from queue row
         qt_so = str(queue_row.get("qt/so #", "") or "")

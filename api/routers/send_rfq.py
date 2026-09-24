@@ -20,7 +20,7 @@ import pandas as pd
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
-from api.deps import get_current_user
+from api.deps import get_current_user, require_role
 from utils.rfq_queue import load_queue, save_queue
 from utils.box_helpers import detect_cui_itar
 from utils.rfq_tracking import get_tracker
@@ -247,7 +247,7 @@ async def create_box_folder(
     process: Optional[str] = Form(None),
     access: str = Form("open"),
     files: List[UploadFile] = File(default=[]),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_role("buyer")),
 ):
     """Create a Box folder for *part_number* and optionally upload files to it.
 
@@ -355,7 +355,7 @@ async def create_box_folder(
 def save_box_link(
     part_number: str,
     body: SaveLinkRequest,
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_role("buyer")),
 ):
     """Save a manually entered Box share link (and optional password) to the queue."""
     _bad = {'', 'nan', 'none', 'null'}
@@ -395,7 +395,7 @@ def save_box_link(
 def create_email_drafts(
     part_number: str,
     body: EmailRequest = EmailRequest(),
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_role("buyer")),
 ):
     df = load_queue()
     if df.empty:

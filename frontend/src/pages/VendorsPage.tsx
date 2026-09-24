@@ -23,6 +23,7 @@ import {
 } from '../api/vendors'
 import { fetchProcesses, fetchSpecsForProcess } from '../api/queue'
 import { useAuth } from '../context/AuthContext'
+import { hasRole } from '../api/auth'
 
 type Tab = 'directory' | 'find-by-spec'
 type DetailTab = 'contacts' | 'processes' | 'approvals'
@@ -235,7 +236,7 @@ function ApprovalsTab({
 }) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const canEdit = user?.role === 'estimator' || user?.role === 'admin'
+  const canEdit = hasRole(user, 'estimator')
 
   const [showForm, setShowForm] = useState(false)
   const [selProcess, setSelProcess] = useState('')

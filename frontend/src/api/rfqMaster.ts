@@ -4,6 +4,7 @@ export interface MasterEntry {
   rfq_id: string
   qt_so: string
   part_number: string
+  process: string
   vendor: string
   vendor_contact: string
   rfq_folder: string

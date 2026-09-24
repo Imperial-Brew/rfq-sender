@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Nav from '../components/Nav'
 import { useAuth } from '../context/AuthContext'
+import { hasRole } from '../api/auth'
 import {
   fetchMaster,
   updateEntry,
@@ -66,9 +67,9 @@ export default function RfqMasterPage() {
   }, {} as Record<string, number>)
 
   function handleExport() {
-    const header = 'rfq#,qt/so #,part_number,vendor,vendor_contact,status,sent,received,notes,rfq_folder'
+    const header = 'rfq#,qt/so #,part_number,process,vendor,vendor_contact,status,sent,received,notes,rfq_folder'
     const rows = entries.map((e) =>
-      [e.rfq_id, e.qt_so, e.part_number, e.vendor, e.vendor_contact, e.status, e.sent, e.received, e.notes, e.rfq_folder]
+      [e.rfq_id, e.qt_so, e.part_number, e.process, e.vendor, e.vendor_contact, e.status, e.sent, e.received, e.notes, e.rfq_folder]
         .map((v) => `"${(v ?? '').replace(/"/g, '""')}"`)
         .join(',')
     )
@@ -153,6 +154,7 @@ export default function RfqMasterPage() {
                   <th>RFQ #</th>
                   <th>QT/SO #</th>
                   <th>Part</th>
+                  <th>Process</th>
                   <th>Vendor</th>
                   <th>Contact</th>
                   <th>Status</th>
@@ -166,7 +168,7 @@ export default function RfqMasterPage() {
               <tbody>
                 {entries.length === 0 ? (
                   <tr>
-                    <td colSpan={11} style={{ textAlign: 'center', padding: 32, color: '#666' }}>
+                    <td colSpan={12} style={{ textAlign: 'center', padding: 32, color: '#666' }}>
                       No entries match the selected filters.
                     </td>
                   </tr>
@@ -178,6 +180,7 @@ export default function RfqMasterPage() {
                           <td><strong>{entry.rfq_id}</strong></td>
                           <td>{entry.qt_so}</td>
                           <td>{entry.part_number}</td>
+                          <td>{entry.process}</td>
                           <td>{entry.vendor}</td>
                           <td style={{ fontSize: 12 }}>{entry.vendor_contact}</td>
                           <td>
@@ -229,6 +232,7 @@ export default function RfqMasterPage() {
                           <td><strong>{entry.rfq_id}</strong></td>
                           <td>{entry.qt_so}</td>
                           <td>{entry.part_number}</td>
+                          <td>{entry.process}</td>
                           <td>{entry.vendor}</td>
                           <td style={{ fontSize: 12, color: '#666' }}>{entry.vendor_contact}</td>
                           <td><StatusBadge value={entry.status} /></td>
@@ -245,13 +249,15 @@ export default function RfqMasterPage() {
                             )}
                           </td>
                           <td style={{ whiteSpace: 'nowrap' }}>
-                            <button
-                              style={{ fontSize: 12, padding: '3px 10px', marginRight: 4 }}
-                              onClick={() => startEdit(entry)}
-                            >
-                              Edit
-                            </button>
-                            {user?.role === 'admin' && (
+                            {hasRole(user, 'buyer') && (
+                              <button
+                                style={{ fontSize: 12, padding: '3px 10px', marginRight: 4 }}
+                                onClick={() => startEdit(entry)}
+                              >
+                                Edit
+                              </button>
+                            )}
+                            {hasRole(user, 'admin') && (
                               <button
                                 className="danger"
                                 style={{ fontSize: 12, padding: '3px 10px' }}

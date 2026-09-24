@@ -73,8 +73,18 @@ def get_current_user(
         )
 
 
-# Role hierarchy: higher number = more permissions
-_ROLE_RANK = {"viewer": 0, "estimator": 1, "admin": 2}
+# Role hierarchy: higher number = more permissions.
+#   viewer            — read only (also any unrecognized role)
+#   buyer / engineer  — plus Box folders/links, Outlook drafts, RFQ Master edits
+#   estimator         — plus add/edit queue items and vendor approvals
+#   admin             — plus deletes and adding specs
+_ROLE_RANK = {"viewer": 0, "buyer": 1, "engineer": 1, "estimator": 2, "admin": 3}
+
+
+def normalize_role(role: object) -> str:
+    """Lower-case a role from users.yaml; unknown or missing roles become 'viewer'."""
+    r = str(role or "").strip().lower()
+    return r if r in _ROLE_RANK else "viewer"
 
 
 def require_role(minimum_role: str):
@@ -90,7 +100,7 @@ def require_role(minimum_role: str):
     The extra layer is needed because Depends() can't accept arguments directly.
     """
     def _check(user: dict = Depends(get_current_user)) -> dict:
-        user_rank = _ROLE_RANK.get(user.get("role", "viewer"), 0)
+        user_rank = _ROLE_RANK[normalize_role(user.get("role"))]
         required_rank = _ROLE_RANK.get(minimum_role, 999)
         if user_rank < required_rank:
             raise HTTPException(

@@ -234,3 +234,110 @@ def test_box_folder_uses_quote_number_from_queue_row(key) -> None:
     box = SimpleNamespace(create_rfq_structure=create_rfq_structure)
     upload_and_share_for_part(box, pd.Series({"part_number": "P-1", key: "55149"}), [])
     assert seen["quote_id"] == "55149"
+
+
+# ── Roles ─────────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [("Buyer", "buyer"), (" ENGINEER ", "engineer"), ("admin", "admin"),
+     ("intern", "viewer"), (None, "viewer")],
+)
+def test_normalize_role(raw, expected) -> None:
+    assert deps.normalize_role(raw) == expected
+
+
+@pytest.mark.parametrize("role", ["buyer", "Buyer", "engineer", "estimator", "admin"])
+def test_buyer_and_up_can_draft(client, monkeypatch, role) -> None:
+    _patch_email_route(monkeypatch, {"gina@good.example": True, "bob@bad.example": True})
+    r = client.post("/api/send-rfq/email/P-1", json={"process": "Anodize"}, headers=_auth(role))
+    assert r.status_code == 200
+
+
+@pytest.mark.parametrize("role", ["viewer", "intern"])
+def test_viewer_cannot_draft_or_touch_box(client, monkeypatch, role) -> None:
+    tracker = _patch_email_route(monkeypatch, {"gina@good.example": True, "bob@bad.example": True})
+    r = client.post("/api/send-rfq/email/P-1", json={"process": "Anodize"}, headers=_auth(role))
+    assert r.status_code == 403
+    assert tracker.calls == []
+    r = client.patch("/api/send-rfq/box-link/P-1", json={"share_link": "x"}, headers=_auth(role))
+    assert r.status_code == 403
+
+
+@pytest.mark.parametrize("role", ["buyer", "engineer"])
+def test_buyer_cannot_add_or_delete_queue_items(client, fake_queue, role) -> None:
+    item = {"part_number": "P-3", "process": "Anodize", "spec": "MIL-A-8625"}
+    assert client.post("/api/queue/", json=item, headers=_auth(role)).status_code == 403
+    assert client.delete("/api/queue/P-1", headers=_auth(role)).status_code == 403
+    assert len(fake_queue["df"]) == 3
+
+
+def test_login_token_carries_normalized_role(client, monkeypatch) -> None:
+    from api.routers import auth as auth_router
+
+    monkeypatch.setattr(auth_router, "load_users", lambda path: [])
+    monkeypatch.setattr(
+        auth_router, "login_user",
+        lambda users, email, pw: {"email": email, "name": "B", "role": "Buyer"},
+    )
+    r = client.post("/api/auth/login", json={"email": "b@example.com", "password": "x"})
+    assert r.status_code == 200
+    assert r.json()["user"]["role"] == "buyer"
+    claims = deps.jwt.decode(r.json()["access_token"], deps.SECRET_KEY, algorithms=[deps.ALGORITHM])
+    assert claims["role"] == "buyer"
+
+
+# ── RFQ Master process column ─────────────────────────────────────────────────
+
+_OLD_HEADER = "rfq#,qt/so #,part_number,vendor,vendor_contact,rfq_folder,status,sent,received\n"
+_OLD_ROW = "55149-1,55149,512-030,Mayday,h@mayday.example,,received,8/25/2025,8/26/2025\n"
+
+
+def _offline_tracker(tmp_path, monkeypatch):
+    import utils.rfq_tracking as rfq_tracking
+
+    for var in ("BOX_RFQ_MASTER_FILE_ID", "BOX_RFQ_MASTER_FOLDER_ID",
+                "BOX_RFQ_RESPONSES_FILE_ID", "BOX_RFQ_RESPONSES_FOLDER_ID"):
+        monkeypatch.delenv(var, raising=False)
+        monkeypatch.delenv(f"BOX_{var}", raising=False)
+    monkeypatch.setattr("core.secrets.get_section", lambda name: {})
+    return rfq_tracking.RFQTracking(base_docs_dir=tmp_path)
+
+
+_ROW = {"qt/so #": "60001", "part_number": "P-9", "process": "Anodize"}
+
+
+def test_local_master_gains_process_column_and_dedupes(tmp_path, monkeypatch) -> None:
+    (tmp_path / "rfq_master.csv").write_text(_OLD_HEADER + _OLD_ROW)
+    tracker = _offline_tracker(tmp_path, monkeypatch)
+
+    for _ in range(2):  # drafting twice must not duplicate the row
+        tracker.add_master_entry(_ROW, vendor_name="Good Co", contact_email="g@good.example",
+                                 dedupe=True, on_duplicate="update")
+    tracker.add_master_entry({**_ROW, "process": "Chromate"}, vendor_name="Good Co",
+                             contact_email="g@good.example", dedupe=True, on_duplicate="update")
+
+    df = pd.read_csv(tmp_path / "rfq_master.csv", dtype=str, keep_default_na=False)
+    assert list(df.columns[:4]) == ["rfq#", "qt/so #", "part_number", "process"]
+    assert df.loc[df["rfq#"] == "55149-1", "process"].tolist() == [""]  # old row kept, blank
+    new = df[df["part_number"] == "P-9"]
+    assert sorted(new["process"]) == ["Anodize", "Chromate"]
+
+
+def test_box_master_gains_process_column_and_dedupes(tmp_path, monkeypatch) -> None:
+    from io import StringIO
+
+    tracker = _offline_tracker(tmp_path, monkeypatch)
+    store = {"df": pd.read_csv(StringIO(_OLD_HEADER + _OLD_ROW), dtype=str)}
+    tracker.master_store = SimpleNamespace(
+        load_df=lambda: store["df"].copy(),
+        save_df=lambda df: store.__setitem__("df", df),
+    )
+    for _ in range(2):
+        tracker.add_master_entry(_ROW, vendor_name="Good Co", contact_email="g@good.example",
+                                 dedupe=True, on_duplicate="update")
+
+    df = store["df"].fillna("")
+    assert "process" in df.columns
+    assert len(df) == 2
+    assert df.loc[df["part_number"] == "P-9", "process"].tolist() == ["Anodize"]
