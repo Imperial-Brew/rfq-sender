@@ -30,8 +30,11 @@ export async function addQueueItem(item: QueueItemCreate): Promise<QueueItem> {
   return data
 }
 
-export async function removeQueueItem(partNumber: string): Promise<void> {
-  await client.delete(`/queue/${encodeURIComponent(partNumber)}`)
+export async function removeQueueItem(
+  { partNumber, process }: { partNumber: string; process?: string },
+): Promise<void> {
+  // With `process`, only that row is removed; without it, every process for the part.
+  await client.delete(`/queue/${encodeURIComponent(partNumber)}`, { params: process ? { process } : {} })
 }
 
 export interface QueueItemUpdate {

@@ -15,7 +15,8 @@ lib/
 lib64/
 parts/
 sdist/
-.streamlit/
+.streamlit/*
+!.streamlit/secrets.toml.example
 var/
 *.egg-info/
 .installed.cfg

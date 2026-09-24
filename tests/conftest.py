@@ -3,6 +3,10 @@ import os
 from pathlib import Path
 import tomllib  # py3.11+
 
+# api.deps refuses to import without a real JWT secret; give tests a throwaway one.
+os.environ.setdefault("JWT_SECRET_KEY", "test-only-jwt-secret")
+
+
 def pytest_sessionstart(session):
     p = Path(__file__).resolve().parents[1] / ".streamlit" / "secrets.toml"
     if not p.exists():
