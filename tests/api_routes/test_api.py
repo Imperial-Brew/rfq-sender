@@ -341,3 +341,29 @@ def test_box_master_gains_process_column_and_dedupes(tmp_path, monkeypatch) -> N
     assert "process" in df.columns
     assert len(df) == 2
     assert df.loc[df["part_number"] == "P-9", "process"].tolist() == ["Anodize"]
+
+
+# ── Company settings come from [company] in the secrets TOML ──────────────────
+
+def test_company_info_reads_company_section(monkeypatch) -> None:
+    from core import config
+
+    monkeypatch.setattr(
+        "core.secrets.get_section",
+        lambda name: {"name": "Athena", "sender_email": "rfq@athena.example",
+                      "sender_name": "Dana"} if name == "company" else {},
+    )
+    monkeypatch.setenv("SENDER_NAME", "RFQ Sender")  # the guessed default config writes
+    assert config.CompanyInfo.get_name() == "Athena"
+    assert config.CompanyInfo.get_sender_email() == "rfq@athena.example"
+    assert config.CompanyInfo.get_sender_name() == "Dana"
+
+
+def test_company_info_falls_back_to_env_then_default(monkeypatch) -> None:
+    from core import config
+
+    monkeypatch.setattr("core.secrets.get_section", lambda name: {})
+    monkeypatch.setenv("SENDER_EMAIL", "env@example.com")
+    monkeypatch.delenv("COMPANY_NAME", raising=False)
+    assert config.CompanyInfo.get_sender_email() == "env@example.com"
+    assert config.CompanyInfo.get_name() == "Your Company"

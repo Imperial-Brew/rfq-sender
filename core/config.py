@@ -189,7 +189,8 @@ def load_environment(env_file: Optional[str] = None) -> None:
             load_dotenv(dotenv_path=dotenv_path)
             logger.info(f"Environment variables loaded from {dotenv_path}")
         else:
-            logger.warning(f".env file not found at {dotenv_path}")
+            # Normal on Render, where settings come from the service's env vars.
+            logger.info(f"No .env file at {dotenv_path}; using environment variables")
 
         # Then try to load from Streamlit secrets if available
         if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and st.secrets:
@@ -210,7 +211,8 @@ def load_environment(env_file: Optional[str] = None) -> None:
             logger.info(f"COMPANY_NAME: {os.environ.get('COMPANY_NAME', 'Not set')}")
             logger.info(f"SENDER_NAME: {os.environ.get('SENDER_NAME', 'Not set')}")
         else:
-            logger.warning("Streamlit secrets not available")
+            # Streamlit is gone; [box]/[company]/... are read via core.secrets instead.
+            logger.debug("Streamlit secrets not available")
 
         # Regardless of Streamlit availability, attempt to map [box] secrets to env vars
         try:
@@ -294,48 +296,53 @@ class ExchangeConfig:
 # Company information
 class CompanyInfo:
     """Container for company information used in emails."""
+
+    @staticmethod
+    def _get(key: str, section_key: str, default: str = "") -> str:
+        """Look up a company setting: Streamlit secrets, then the [company] section of
+        .streamlit/secrets.toml / STREAMLIT_SECRETS_TOML, then a flat env var (KEY).
+
+        [company] is checked before env vars because infer_sender_defaults() writes
+        guessed defaults (e.g. SENDER_NAME="RFQ Sender") into the environment.
+        """
+        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and key in st.secrets:
+            return st.secrets[key]
+        try:
+            from core.secrets import get_section
+            value = str(get_section("company").get(section_key, "") or "").strip()
+            if value:
+                return value
+        except Exception:
+            pass
+        return os.environ.get(key, default)
     
     @classmethod
     def get_name(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'COMPANY_NAME' in st.secrets:
-            return st.secrets['COMPANY_NAME']
-        return os.environ.get("COMPANY_NAME", "Your Company")
+        return cls._get('COMPANY_NAME', 'name', 'Your Company')
     
     @classmethod
     def get_logo_url(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'COMPANY_LOGO_URL' in st.secrets:
-            return st.secrets['COMPANY_LOGO_URL']
-        return os.environ.get("COMPANY_LOGO_URL", "")
+        return cls._get('COMPANY_LOGO_URL', 'logo_url')
     
     @classmethod
     def get_sender_name(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'SENDER_NAME' in st.secrets:
-            return st.secrets['SENDER_NAME']
-        return os.environ.get("SENDER_NAME", "")
+        return cls._get('SENDER_NAME', 'sender_name')
     
     @classmethod
     def get_sender_title(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'SENDER_TITLE' in st.secrets:
-            return st.secrets['SENDER_TITLE']
-        return os.environ.get("SENDER_TITLE", "")
+        return cls._get('SENDER_TITLE', 'sender_title')
     
     @classmethod
     def get_sender_email(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'SENDER_EMAIL' in st.secrets:
-            return st.secrets['SENDER_EMAIL']
-        return os.environ.get("SENDER_EMAIL", "")
+        return cls._get('SENDER_EMAIL', 'sender_email')
     
     @classmethod
     def get_sender_phone(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'SENDER_PHONE' in st.secrets:
-            return st.secrets['SENDER_PHONE']
-        return os.environ.get("SENDER_PHONE", "")
+        return cls._get('SENDER_PHONE', 'sender_phone')
     
     @classmethod
     def get_address(cls):
-        if STREAMLIT_AVAILABLE and hasattr(st, 'secrets') and 'COMPANY_ADDRESS' in st.secrets:
-            return st.secrets['COMPANY_ADDRESS']
-        return os.environ.get("COMPANY_ADDRESS", "")
+        return cls._get('COMPANY_ADDRESS', 'address')
     
     @classmethod
     def get_info(cls) -> Dict[str, str]:
