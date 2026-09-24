@@ -53,7 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `scratch.json`, `commit_message.txt`) and unused `vendors.consolidated*.json` copies;
   old Streamlit error logs in `.junie/errors/`.
 - `data_raw/`, `data_cleaned/` and `logs.csv` are no longer tracked in git (they hold
-  real vendor emails, quotes and local databases). Existing copies stay on disk.
+  real vendor emails, quotes and local databases). ⚠️ Pulling this into an existing clone
+  deletes them there; back them up first or restore with
+  `git checkout 2b73492 -- data_raw data_cleaned logs.csv`.
+- Real vendor/quote rows removed from `docs/rfq_master.csv` (local fallback, unused when
+  Box is configured) and `docs/rfq_master_template.csv`; both are now header-only.
 - Streamlit Web Interface: Removed the Streamlit-based web application (`streamlit_app/`, `old.app.py`, `render.yaml`) in favor of the new React frontend and FastAPI backend. Secrets still use the `.streamlit/secrets.toml` format (or the `STREAMLIT_SECRETS_TOML` env var).
 - Streamlit Dependency: Removed `streamlit` from `requirements.txt`.
 

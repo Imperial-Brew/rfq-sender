@@ -25,7 +25,7 @@ for email drafts · Box for files and shared data. Deployed on Render.
 | **Queue** (`/queue`) | Add parts (one row per part + process), edit them, create a Box folder and share link per part (password-protected automatically for CUI/ITAR), and create Outlook drafts for every vendor approved for that process/spec. Drafts are never sent automatically. |
 | **Vendors** (`/vendors`) | Search vendors, see contacts and process/spec approvals, add approvals. |
 | **Specs** (`/specs`) | Browse and add "familiar specs" per process and issuer. |
-| **RFQ Master** (`/rfq-master`) | One row per part + process + vendor. A row is added automatically when a draft is created (re-drafting updates it instead of duplicating); update status, received date and notes by hand. |
+| **RFQ Master** (`/rfq-master`) | One row per quote (QT/SO #) + part + process + vendor + contact. A row is added automatically when a draft is created (re-drafting the same combination updates it instead of duplicating); update status, received date and notes by hand. |
 
 For CUI/ITAR parts the Box password is sent in a **second, separate** draft so it
 never travels with the link.
