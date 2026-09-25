@@ -107,8 +107,17 @@ don't match on part_number alone.
 
 Finds vendors for process/spec → one Graph draft per vendor in the logged-in user's
 mailbox → for CUI/ITAR a second draft with the Box password → stamps the queue row's
-`sent` → logs one RFQ Master row per successful vendor (`_log_to_rfq_master`).
+`sent` → logs one RFQ Master row per successful vendor (`_log_to_rfq_master`), keyed on
+qt/so # + part + process + vendor + contact so re-drafts update rather than duplicate.
 Never log Box passwords.
+
+### Roles
+
+`viewer` < `buyer` = `engineer` < `estimator` < `admin`, defined in `api/deps.py`
+(`_ROLE_RANK`, `normalize_role`, `require_role`) and mirrored in
+`frontend/src/api/auth.ts` (`hasRole`). Keep the two in sync. Box/draft/RFQ Master
+edit routes require `buyer`; queue add/edit and vendor approvals `estimator`;
+deletes and spec creation `admin`.
 
 ## Configuration
 

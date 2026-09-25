@@ -22,6 +22,7 @@ class MasterEntry(BaseModel):
     rfq_id: str
     qt_so: str = ""
     part_number: str = ""
+    process: str = ""
     vendor: str = ""
     vendor_contact: str = ""
     rfq_folder: str = ""
@@ -88,6 +89,7 @@ def _row_to_entry(row: dict, col_map: dict) -> MasterEntry:
         rfq_id=g("rfq_id"),
         qt_so=g("qt_so"),
         part_number=g("part_number"),
+        process=g("process"),
         vendor=g("vendor"),
         vendor_contact=g("vendor_contact"),
         rfq_folder=g("rfq_folder"),
@@ -103,6 +105,7 @@ def _build_col_map(df: pd.DataFrame) -> dict:
         "rfq_id":         _find_col(df, "rfq#", "rfq #", "rfqno"),
         "qt_so":          _find_col(df, "qt/so #", "qt/so#", "qt", "so #"),
         "part_number":    _find_col(df, "part_number", "part number", "part"),
+        "process":        _find_col(df, "process"),
         "vendor":         _find_col(df, "vendor", "vendor name", "vendor_name"),
         "vendor_contact": _find_col(df, "vendor_contact", "contact", "contact email", "email"),
         "rfq_folder":     _find_col(df, "rfq_folder", "rfq folder", "box_rfq_folder"),
@@ -142,7 +145,7 @@ def list_master(
 def update_entry(
     rfq_id: str,
     body: MasterUpdate,
-    user: dict = Depends(get_current_user),
+    user: dict = Depends(require_role("buyer")),
 ):
     df = _load_df()
     if df.empty:
