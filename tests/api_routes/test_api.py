@@ -106,6 +106,60 @@ def test_delete_requires_admin(client, fake_queue) -> None:
     assert r.status_code == 403
 
 
+# ── Queue update ──────────────────────────────────────────────────────────────
+
+def test_patch_updates_only_targeted_process_row(client, monkeypatch) -> None:
+    state = {
+        "df": pd.DataFrame(
+            {
+                "part_number": ["P-1", "P-1", "P-2"],
+                "process": ["Anodize", "Chromate", "Anodize"],
+                "spec": ["SPEC-A", "SPEC-C", "SPEC-Z"],
+            }
+        )
+    }
+    monkeypatch.setattr(queue_router, "load_queue", lambda: state["df"].copy())
+    monkeypatch.setattr(queue_router, "save_queue", lambda df: state.__setitem__("df", df))
+
+    r = client.patch(
+        "/api/queue/P-1",
+        json={"current_process": "Chromate", "spec": "SPEC-C-UPDATED"},
+        headers=_auth("estimator"),
+    )
+    assert r.status_code == 200
+    assert r.json()["process"] == "Chromate"
+    assert r.json()["spec"] == "SPEC-C-UPDATED"
+
+    rows = state["df"].set_index(["part_number", "process"])["spec"].to_dict()
+    assert rows[("P-1", "Anodize")] == "SPEC-A"
+    assert rows[("P-1", "Chromate")] == "SPEC-C-UPDATED"
+    assert rows[("P-2", "Anodize")] == "SPEC-Z"
+
+
+def test_patch_qt_so_number_round_trips_to_queue_column(client, monkeypatch) -> None:
+    state = {
+        "df": pd.DataFrame(
+            {
+                "part_number": ["P-1"],
+                "process": ["Anodize"],
+                "spec": ["SPEC-A"],
+                "qt/so #": ["55149"],
+            }
+        )
+    }
+    monkeypatch.setattr(queue_router, "load_queue", lambda: state["df"].copy())
+    monkeypatch.setattr(queue_router, "save_queue", lambda df: state.__setitem__("df", df))
+
+    r = client.patch(
+        "/api/queue/P-1",
+        json={"current_process": "Anodize", "qt_so_number": "77881"},
+        headers=_auth("estimator"),
+    )
+    assert r.status_code == 200
+    assert r.json()["qt_so_number"] == "77881"
+    assert state["df"].loc[0, "qt/so #"] == "77881"
+
+
 # ── Drafting logs to RFQ Master ───────────────────────────────────────────────
 
 class _FakeTracker:
