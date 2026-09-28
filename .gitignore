@@ -59,6 +59,9 @@ $RECYCLE.BIN/
 # Claude Code worktrees
 .claude/worktrees/
 
+# Local scratch / one-off scripts (not part of the app)
+scratch/
+
 # Caches and tooling
 .pytest_cache/
 .mypy_cache/
