@@ -118,11 +118,11 @@ The application uses environment variables for configuration. See `.env.example`
 Box integration uses JWT authentication. 
 1. Create a Box Custom App with JWT.
 2. Save the configuration JSON as `scripts/box/0__config.json`.
-3. For more details on the hybrid folder structure, see [Box Hybrid Structure](.junie/mds/box_hybrid_structure.md).
+3. For more details on the hybrid folder structure, see [Box Hybrid Structure](docs/archive/junie/box_hybrid_structure.md).
 
 ## Development
 
-This project follows the style guidelines in [.junie/mds/guidelines.md](.junie/mds/guidelines.md).
+This project follows the style guidelines in [docs/archive/junie/guidelines.md](docs/archive/junie/guidelines.md) (historical reference only).
 
 ### Testing
 Run tests using pytest:
