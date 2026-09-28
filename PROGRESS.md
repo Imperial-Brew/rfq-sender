@@ -16,3 +16,11 @@
 - Skipped from A: `rfq-fixes.bundle` (SHA 7cde928 in branch claude/brave-fermi-vkypev, NOT master — needs Dustin);
   `Claude outputs/` (contains PLAN/PROGRESS/SPEC copies from desktop app — leave for Dustin to verify).
 - Executing sections A–D on branch chore/T0.2-cleanup.
+
+## 2026-09-28 — T0.2 complete (Claude)
+- Section A: deleted 9 tracked files (stale logs, 0-byte configs, Streamlit DB, junie errors, runtime.txt).
+  Skipped: rfq-fixes.bundle (SHA 7cde928 only in claude/brave-fermi-vkypev, not master); Claude outputs/ (has PLAN/SPEC/PROGRESS copies — Dustin to verify).
+- Section B: moved 5 scratch files to scratch/ (gitignored). Added scratch/ to .gitignore.
+- Section C: pw_gen.py → scripts/create_user_hash.py; goals.md → docs/goals.md.
+- Section D: 63 Junie docs → docs/archive/junie/; archive README added; README.md links updated.
+- All 4 commits on chore/T0.2-cleanup; import check green throughout.
