@@ -10,3 +10,9 @@
 - Wrote CLEANUP.md from git index + live-code grep. Sections A–D safe; E (untrack users.yaml, data_raw/) needs Dustin.
 - Found users.yaml, vendor reply emails, vendor quotes, contacts committed to GitHub history.
 - Live code imports scripts/box/* — production code in scripts/; queued as T0.6 after tests.
+
+## 2026-09-28 — T0.2 start (Claude)
+- Baseline: `import api.main` OK; `pytest` fails pre-existing (tomllib missing in conftest, not introduced here).
+- Skipped from A: `rfq-fixes.bundle` (SHA 7cde928 in branch claude/brave-fermi-vkypev, NOT master — needs Dustin);
+  `Claude outputs/` (contains PLAN/PROGRESS/SPEC copies from desktop app — leave for Dustin to verify).
+- Executing sections A–D on branch chore/T0.2-cleanup.
