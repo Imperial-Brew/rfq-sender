@@ -32,7 +32,7 @@ def test_get_attachments():
 
 def test_render_template():
     context = {
-        "vendor": {"first_name": "Alice"},
+        "contact_name": "Alice",
         "sample_table": None,
         "attachments": [],
     }

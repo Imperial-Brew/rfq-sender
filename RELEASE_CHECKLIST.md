@@ -3,9 +3,8 @@
 This checklist helps ensure a clean, repeatable release process. Adapt to your workflow as needed.
 
 ## 1. Pre-flight
-- [ ] Confirm the app runs via Streamlit: `streamlit run streamlit_app\app.py`
+- [ ] Confirm the app runs: `uvicorn api.main:app` + `cd frontend && npm run build`, then log in and draft one RFQ
 - [ ] Confirm key scripts run (if used):
-  - [ ] `python scripts\mail\email_from_list.py --help`
   - [ ] `python scripts\smoke_graph.py` (creates Draft via Microsoft Graph)
 - [ ] Ensure secrets are not committed: `.env`, `.streamlit/secrets.toml`, Box config JSON, etc.
 

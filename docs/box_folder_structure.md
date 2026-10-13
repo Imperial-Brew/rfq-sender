@@ -26,7 +26,7 @@ The hybrid folder structure organizes RFQ documentation first by quote/order num
 The hybrid folder structure is implemented in the following files:
 
 - `scripts/box/box_integration.py`: Contains the `BoxIntegration` class with methods for creating the hybrid folder structure
-- `scripts/email/email_from_list.py`: Contains the `create_draft_email` function that uses the hybrid folder structure
+- `utils/box_helpers.py`: `upload_and_share_for_part()` creates the quote/part folders, uploads files and creates the share link; the web app calls it from `POST /api/send-rfq/box/{part_number}`
 - `scripts/box/test_hybrid_structure.py`: A test script for verifying the hybrid folder structure
 
 ### BoxIntegration Class
@@ -93,16 +93,16 @@ def link_files_to_vendor(self, vendor: str, part_numbers: List[str],
 
 This method creates links to part files in the vendor folder, allowing vendors to access only the files relevant to them.
 
-### Email Integration
+### Web app integration
 
-The `create_draft_email` function in `email_from_list.py` has been updated to use the hybrid folder structure. It now:
+`upload_and_share_for_part()` in `utils/box_helpers.py`:
 
-1. Extracts part numbers from file paths or names
-2. Groups files by part number
-3. Creates the hybrid folder structure using `create_rfq_structure`
-4. Uploads files to the appropriate part folders using `upload_part_files`
-5. Links files to the vendor folder using `link_files_to_vendor`
-6. Creates a share link for the vendor folder
+1. Creates (or finds) the quote folder and part folder using `create_rfq_structure`
+2. Uploads the part's files using `upload_part_files`
+3. Creates the share link, password-protected for CUI/ITAR parts
+
+Vendor sub-folders and `link_files_to_vendor` exist in `BoxIntegration` but are not
+used by the web app today; every vendor gets the part folder's share link.
 
 ## Testing
 

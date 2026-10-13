@@ -7,11 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Removed
-- Streamlit Web Interface: Removed the Streamlit-based web application (`streamlit_app/`, `.streamlit/`, `old.app.py`, `render.yaml`) in favor of the new React frontend and FastAPI backend.
-- Streamlit Dependency: Removed `streamlit` from `requirements.txt`.
+### Security
+- The API now refuses to start unless `JWT_SECRET_KEY` is set to a real value. Previously it
+  silently fell back to a placeholder published in the repo, which would let anyone forge an
+  admin login.
+- CUI/ITAR Box passwords are no longer printed to the server log when drafting.
+
+### Added
+- `buyer` and `engineer` roles: can create Box folders, save links/passwords, create
+  drafts and edit RFQ Master rows, but not add/edit/delete queue items. Role names in
+  `users.yaml` are now case-insensitive (`Buyer` works). The UI hides or disables actions
+  a role can't perform.
+- RFQ Master now has a `process` column. Existing Box/local files get it added
+  automatically on the next write (old rows stay, blank). Re-drafting the same
+  part/process/vendor updates the existing row instead of adding a duplicate.
+- `tests/api_routes/`: tests for auth, queue delete, and drafting → RFQ Master.
+- `.streamlit/secrets.toml.example` and a rewritten `.env.example`, which together list
+  every setting. The README documents which settings go where, locally and on Render.
 
 ### Fixed
+- Drafting RFQ emails logs one row per vendor to RFQ Master again (with the `sent`
+  timestamp). This was lost when the Streamlit pages were removed.
+- Deleting a queue row from the Queue page removes only that process, not every process
+  for the part. `DELETE /api/queue/{part}` accepts `?process=`.
+- Box RFQ folders are named after the quote number (`qt/so #`) instead of `UNKNOWN_QUOTE`.
+- CI now runs: it targeted `main` (the branch is `master`) and Python 3.8. It now tests on
+  3.11/3.12 with the API dependencies and builds the frontend.
 - Deployment `ModuleNotFoundError`: Fixed a critical issue where the FastAPI backend failed to start because of lingering imports from the removed `streamlit_app`.
 - Box Utility Restoration: Reconstructed essential Box helper functions (`detect_cui_itar`, `generate_password`, `upload_and_share_for_part`, `persist_box_update`, `get_rfq_files`) in `utils/box_helpers.py` to support API operations without the Streamlit dependency.
 - Duplicate Part Numbers with Different Processes: Fixed an issue where drafting emails or creating Box folders for a part with multiple required finishes (e.g., Chromate and Anodize) would always select the first entry in the queue. The system now uniquely identifies queue items using both part number and process name. Added robust whitespace handling and enhanced logging for row identification.
@@ -20,6 +41,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Personalized salutations: Updated email drafting to use the contact's first name only instead of their full name. Added fallbacks to the vendor name or a generic "Team" if no contact name is available.
 
 ### Changed
+- `viewer` (and any unrecognized role) is now read-only: it can no longer create Box
+  folders, drafts, or edit RFQ Master rows.
+- README and CLAUDE.md rewritten to describe the current FastAPI + React app.
+- Old agent notes moved from `.junie/mds/` to `docs/archive/junie-notes/`.
+- Removed the unused `frontend/src/pages/QueuePage.tsx`.
+
+### Removed
+- Legacy `scripts/mail/email_from_list.py` (Outlook desktop sending) and the Windows-only
+  scripts/tests that imported it; scratch files (`test.py`, `sql_testing.py`,
+  `scratch.json`, `commit_message.txt`) and unused `vendors.consolidated*.json` copies;
+  old Streamlit error logs in `.junie/errors/`.
+- `data_raw/`, `data_cleaned/` and `logs.csv` are no longer tracked in git (they hold
+  real vendor emails, quotes and local databases). ⚠️ Pulling this into an existing clone
+  deletes them there; back them up first or restore with
+  `git checkout 2b73492 -- data_raw data_cleaned logs.csv`.
+- Real vendor/quote rows removed from `docs/rfq_master.csv` (local fallback, unused when
+  Box is configured) and `docs/rfq_master_template.csv`; both are now header-only.
+- Streamlit Web Interface: Removed the Streamlit-based web application (`streamlit_app/`, `old.app.py`, `render.yaml`) in favor of the new React frontend and FastAPI backend. Secrets still use the `.streamlit/secrets.toml` format (or the `STREAMLIT_SECRETS_TOML` env var).
+- Streamlit Dependency: Removed `streamlit` from `requirements.txt`.
+
+### Changed (Streamlit era, before its removal)
 - Familiar Specs now load from Box when `[box].BOX_FAMILIAR_SPECS_FILE_ID` is
   configured; falls back to local CSV if Box is unavailable. Updated
   SpecManager and Streamlit Specifications page to be Box-aware.
@@ -34,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - utils.specs now rebuilds SpecManager on each call (no module-level singleton)
   so the current Box file ID and credentials are always respected across reruns.
 
-### Fixed
+### Fixed (Streamlit era, before its removal)
 - Suppress config warning for missing local FamiliarSpecs.csv when
   `BOX_FAMILIAR_SPECS_FILE_ID` is set.
 - Prevented AttributeError when no process is selected in Streamlit Queue

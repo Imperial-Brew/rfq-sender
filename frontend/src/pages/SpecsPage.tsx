@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Nav from '../components/Nav'
 import { useAuth } from '../context/AuthContext'
+import { hasRole } from '../api/auth'
 import {
   fetchSpecs,
   fetchIssuers,
@@ -240,7 +241,7 @@ function AddTab({ onSuccess }: { onSuccess: () => void }) {
     },
   })
 
-  if (user?.role !== 'admin') {
+  if (!hasRole(user, 'admin')) {
     return (
       <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 6, padding: 16, maxWidth: 480 }}>
         Admin privileges are required to add new specifications.

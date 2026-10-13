@@ -86,7 +86,11 @@ def upload_and_share_for_part(
     upload files, and create a share link.
     """
     part_number = str(row.get("part_number", "")).strip()
-    quote_id = str(row.get("qt_so_number", "")).strip() or "UNKNOWN_QUOTE"
+    # Queue rows use the CSV column name "qt/so #"; API models use qt_so_number.
+    quote_id = (
+        str(row.get("qt/so #", "") or row.get("qt_so_number", "") or "").strip()
+        or "UNKNOWN_QUOTE"
+    )
     
     if not part_number:
         return {"error": "No part number found in row."}

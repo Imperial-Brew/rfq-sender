@@ -5,6 +5,7 @@ import BoxUploadModal from '../components/BoxUploadModal'
 import QueueEditSidebar from '../components/QueueEditSidebar'
 import AddToQueueForm from '../components/AddToQueueForm'
 import { useAuth } from '../context/AuthContext'
+import { hasRole } from '../api/auth'
 import { removeQueueItem } from '../api/queue'
 import {
   fetchUnsentQueue,
@@ -94,8 +95,9 @@ function CuiBadge({ value }: { value: string }) {
 export default function SendRfqsPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const isAdmin = user?.role === 'admin'
-  const canEdit = user?.role === 'admin' || user?.role === 'estimator'
+  const isAdmin = hasRole(user, 'admin')
+  const canEdit = hasRole(user, 'estimator')
+  const canDraft = hasRole(user, 'buyer') // Box folders/links + Outlook drafts
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [partStates, setPartStates] = useState<Record<string, PartState>>({})
@@ -223,9 +225,9 @@ export default function SendRfqsPage() {
     queryClient.invalidateQueries({ queryKey: ['send-rfq-queue'] })
   }
 
-  function handleDelete(partNumber: string) {
-    if (!confirm(`Remove all queue entries for "${partNumber}"?`)) return
-    deleteMutation.mutate(partNumber)
+  function handleDelete(partNumber: string, process: string) {
+    if (!confirm(`Remove "${process}" for "${partNumber}" from the queue?`)) return
+    deleteMutation.mutate({ partNumber, process })
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -332,7 +334,7 @@ export default function SendRfqsPage() {
 
                   <button
                     onClick={() => handleSaveLink(key, groupItems)}
-                    disabled={part.saveLinkLoading || !part.boxLink}
+                    disabled={!canDraft || part.saveLinkLoading || !part.boxLink}
                     style={{ fontSize: 12, padding: '4px 10px' }}
                   >
                     {part.saveLinkLoading ? '…' : 'Save'}
@@ -340,7 +342,7 @@ export default function SendRfqsPage() {
 
                   <button
                     onClick={() => setBoxModalGroup({ key, items: groupItems })}
-                    disabled={part.boxLoading}
+                    disabled={!canDraft || part.boxLoading}
                     style={{ fontSize: 12, padding: '4px 10px' }}
                   >
                     {part.boxLoading ? 'Creating…' : part.boxLink ? '↺ Box' : '+ Box'}
@@ -350,7 +352,7 @@ export default function SendRfqsPage() {
                   <button
                     className="primary"
                     onClick={() => handleDraftAll(key, groupItems)}
-                    disabled={part.draftAllLoading || anyProcLoading}
+                    disabled={!canDraft || part.draftAllLoading || anyProcLoading}
                     style={{ fontSize: 12, padding: '4px 12px', whiteSpace: 'nowrap' }}
                     title="Creates Outlook drafts for review — does not send automatically"
                   >
@@ -443,21 +445,23 @@ export default function SendRfqsPage() {
                           className={item.sent ? '' : 'primary'}
                           style={{ fontSize: 12, padding: '3px 10px', whiteSpace: 'nowrap' }}
                           onClick={() => handleDraftProcess(item, getPart(key, groupItems))}
-                          disabled={proc.emailLoading}
+                          disabled={!canDraft || proc.emailLoading}
                           title="Creates an Outlook draft for your review — does not send automatically"
                         >
                           {proc.emailLoading ? 'Drafting…' : item.sent ? 'Re-draft' : 'Draft'}
                         </button>
 
-                        <button
-                          onClick={() => setEditItem(item)}
-                          style={{ fontSize: 12, padding: '3px 8px', background: 'none', border: '1px solid #ccc', cursor: 'pointer', borderRadius: 4 }}
-                          title="Edit queue row"
-                        >✏</button>
+                        {canEdit && (
+                          <button
+                            onClick={() => setEditItem(item)}
+                            style={{ fontSize: 12, padding: '3px 8px', background: 'none', border: '1px solid #ccc', cursor: 'pointer', borderRadius: 4 }}
+                            title="Edit queue row"
+                          >✏</button>
+                        )}
 
                         {isAdmin && (
                           <button
-                            onClick={() => handleDelete(item.part_number)}
+                            onClick={() => handleDelete(item.part_number, item.process)}
                             disabled={deleteMutation.isPending}
                             style={{ fontSize: 12, padding: '3px 8px', background: 'none', border: '1px solid #f5c6c6', color: '#d93025', cursor: 'pointer', borderRadius: 4 }}
                             title="Remove from queue"

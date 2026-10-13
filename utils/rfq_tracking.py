@@ -117,6 +117,13 @@ class RFQTracking:
             header = []
         return header or default
 
+    @staticmethod
+    def _with_process_column(header: list) -> list:
+        """Return header with a `process` column inserted after part_number (or appended)."""
+        low = [str(c).lower().strip() for c in header]
+        pos = low.index("part_number") + 1 if "part_number" in low else len(header)
+        return list(header[:pos]) + ["process"] + list(header[pos:])
+
     def _ensure_file_from_template(self, dest: Path, template: Path) -> None:
         if dest.exists():
             return
@@ -304,6 +311,23 @@ class RFQTracking:
             except Exception:
                 header = []
 
+        # Older RFQ Master files have no `process` column. Add it (after part_number) so
+        # each row says which finish it is for and re-drafting the same part/process/vendor
+        # updates the existing row instead of appending a duplicate. Existing rows keep a
+        # blank process.
+        if header and "process" not in [str(c).lower().strip() for c in header]:
+            header = self._with_process_column(header)
+            if existing_df is not None:
+                existing_df = existing_df.reindex(columns=header, fill_value="")
+            elif self.master_path.exists():
+                try:
+                    local_df = pd.read_csv(self.master_path, dtype=str, keep_default_na=False)
+                    local_df.reindex(columns=header, fill_value="").to_csv(
+                        self.master_path, index=False
+                    )
+                except Exception as _e:
+                    logger.warning(f"Could not add process column to {self.master_path}: {_e}")
+
         # Prepare values from queue row
         qt_so = str(queue_row.get("qt/so #", "") or "")
         part_number = str(queue_row.get("part_number", "") or "")
@@ -391,11 +415,12 @@ class RFQTracking:
                                         df.loc[match_idx, _col(df, "rfq_folder")] = rfq_folder
                                 except Exception:
                                     pass
-                                try:
-                                    if _col(df, "date"):
-                                        df.loc[match_idx, _col(df, "date")] = now_iso
-                                except Exception:
-                                    pass
+                                for _ts_col in ("date", "sent"):
+                                    try:
+                                        if _col(df, _ts_col):
+                                            df.loc[match_idx, _col(df, _ts_col)] = now_iso
+                                    except Exception:
+                                        pass
                                 # Save back
                                 try:
                                     if self.master_store is not None:
@@ -433,6 +458,7 @@ class RFQTracking:
             "email": contact_value,
             "rfq_folder": rfq_folder,
             "status": status,
+            "sent": datetime.now().isoformat(timespec="seconds"),
             "notes": notes or "",
             "validation_status": "ok" if ok else f"mismatch: {msg}",
         }

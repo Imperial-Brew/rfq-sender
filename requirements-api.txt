@@ -1,5 +1,4 @@
 # Additional dependencies for the FastAPI layer.
-# Your existing requirements.txt stays as-is for the Streamlit app.
 # Install both: pip install -r requirements.txt -r requirements-api.txt
 
 fastapi>=0.111.0

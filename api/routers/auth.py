@@ -12,7 +12,7 @@ from jose import jwt
 from pydantic import BaseModel
 
 from utils.auth import load_users, login_user
-from api.deps import SECRET_KEY, ALGORITHM
+from api.deps import SECRET_KEY, ALGORITHM, normalize_role
 
 router = APIRouter()
 
@@ -74,7 +74,7 @@ def login(body: LoginRequest):
     payload = {
         "sub": user["email"],       # "sub" = subject, the standard JWT field for "who is this for"
         "name": user.get("name", ""),
-        "role": user.get("role", "viewer"),
+        "role": normalize_role(user.get("role")),
         "exp": datetime.now(timezone.utc) + timedelta(hours=8),
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
@@ -84,6 +84,6 @@ def login(body: LoginRequest):
         user=UserOut(
             email=user["email"],
             name=user.get("name", ""),
-            role=user.get("role", "viewer"),
+            role=normalize_role(user.get("role")),
         ),
     )
